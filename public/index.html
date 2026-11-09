@@ -1,131 +1,3589 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <link rel="icon" href="docs/netease.png">
-  <title>网易云音乐 API Enhanced</title>
-  <style>
-    :root {
-      --fg: #333;
-      --muted: #666;
-      --border: #ddd;
-      --bg: #f5f5f5;
-      --panel: #ffffff;
-      --accent: #333;
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--fg); background: var(--bg); line-height: 1.6; }
-    .container { max-width: 960px; margin: 40px auto; padding: 0 20px; }
-    @media (max-width: 480px) {
-      .container { margin: 20px auto; padding: 0 16px; }
-      header.site-header h1 { font-size: 22px; }
-      .block { padding: 16px; }
-    }
-    header.site-header { margin-bottom: 24px; }
-    header.site-header h1 { font-size: 28px; font-weight: 600; margin: 0; }
-    .badge { display: inline-block; margin-left: 8px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 12px; font-size: 12px; color: var(--muted); }
-    .sub { margin-top: 8px; color: var(--muted); font-size: 14px; }
-    .block { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); }
-    .block h2 { margin: 0 0 12px; font-size: 18px; font-weight: 600; }
-    .kvs { display: grid; grid-template-columns: 100px 1fr; gap: 8px 12px; align-items: start; }
-    .kvs div:first-child { color: var(--muted); flex-shrink: 0; }
-    .kvs div:last-child { word-break: break-all; overflow-wrap: anywhere; min-width: 0; overflow: hidden; }
-    @media (max-width: 480px) {
-      .kvs { grid-template-columns: 1fr; gap: 4px 12px; }
-      .kvs div:first-child { font-weight: 500; }
-    }
-    ul.links { list-style: none; padding: 0; margin: 0; }
-    ul.links li { margin: 8px 0; }
-    ul.links a { color: var(--fg); text-decoration: none; border-bottom: 1px dotted var(--border); transition: all 0.2s ease; }
-    ul.links a:hover { color: var(--accent); border-bottom-color: var(--accent); }
-    pre { margin: 0; background: #f9f9f9; border: 1px solid var(--border); border-radius: 6px; padding: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
-    code { font-family: 'Courier New', monospace; font-size: 13px; }
-    @media (max-width: 480px) {
-      code { font-size: 12px; }
-    }
-    footer.site-footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--border); color: var(--muted); text-align: center; }
-    footer.site-footer a { color: var(--fg); text-decoration: none; transition: color 0.2s ease; }
-    footer.site-footer a:hover { color: var(--accent); }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WebGL 磨砂玻璃雨滴 · 网易云播放器</title>
+<style>
+  :root{
+    --fs-future: 22px;
+    --fs-past: 20px;
+    --fs-active: 24px;
+    --scale-sung: 1.05;
+    --scale-singing: 1.35;
+    --lyric-trans: 0.4s;
+    --hl-a: 1;
+    --char-bounce: 8px;
+    --char-stagger: 40ms;
+    --char-easing: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b0b0f;
+            font-family:system-ui,-apple-system,"PingFang SC",sans-serif}
+  #c{display:block;width:100vw;height:100vh;touch-action:none}
+
+  /* ---------- 设置面板 ---------- */
+  #ui{position:fixed;left:16px;top:16px;z-index:10;color:#eaeaea;font-size:12px;
+      background:rgba(15,18,25,.72);padding:14px 16px;border-radius:12px;
+      backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+      display:flex;flex-direction:column;gap:8px;
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 8px 32px rgba(0,0,0,.4);user-select:none;
+      max-height:calc(100vh - 32px);overflow-y:auto;scrollbar-width:thin;
+      transition:opacity .22s ease, transform .22s ease}
+  #ui.hidden{opacity:0;pointer-events:none;transform:translateY(-10px) scale(.97)}
+  #ui::-webkit-scrollbar{width:5px}
+  #ui::-webkit-scrollbar-thumb{background:rgba(120,160,255,.35);border-radius:3px}
+
+  .range-row {display:flex; align-items:center; justify-content:space-between; gap:10px; white-space:nowrap;}
+  .range-row input[type=range]{flex:1; width:auto; max-width:120px; accent-color:#4f9bff;}
+  .range-row .val{color:#6fb0ff; min-width:44px; text-align:right; font-variant-numeric:tabular-nums;}
+  
+  .range-row select {
+    flex:1; width:100%; max-width:120px; background:rgba(255,255,255,.06); 
+    border:1px solid rgba(255,255,255,.12); border-radius:4px; color:#fff;
+    padding:4px; font-size:11px; outline:none; cursor:pointer;
+  }
+  .range-row select option { background: #1a1e29; color: #fff; }
+
+  .toggle-row{display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin:4px 0; padding:2px 0;}
+  .toggle-row span.lbl {color:#b8c6dc; transition:color .2s;}
+  .toggle-row:hover span.lbl {color:#fff;}
+
+  .toggle-row input[type=checkbox] { display: none; }
+  .switch {
+    width: 36px; height: 20px; background: rgba(255,255,255,.12);
+    border-radius: 20px; position: relative;
+    transition: background .3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.4);
+  }
+  .switch::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; background: #8ea4c8;
+    border-radius: 50%;
+    transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1), background .3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.5);
+  }
+  .toggle-row input:checked + .switch {
+    background: #4f9bff;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.2), 0 0 8px rgba(79,155,255,.4);
+  }
+  .toggle-row input:checked + .switch::after {
+    transform: translateX(16px); background: #fff;
+  }
+  
+  #ui input[type=color]{width:44px;height:22px;border:1px solid rgba(255,255,255,.15);
+      border-radius:4px;background:transparent;cursor:pointer;padding:0}
+  #ui input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+  #ui input[type=color]::-webkit-color-swatch{border:none;border-radius:3px}
+  #ui .file{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  #ui input[type=file]{width:120px;font-size:11px;color:#aaa}
+  #ui input[type=file]::file-selector-button{
+      background:#2f6fe0;border:0;color:#fff;padding:5px 10px;border-radius:6px;
+      cursor:pointer;font-size:11px;margin-right:6px}
+
+  .mini-btn{
+    flex:0 0 auto; background:rgba(79,155,255,.18);
+    border:1px solid rgba(79,155,255,.35); color:#cfe3ff;border-radius:5px;
+    padding:4px 8px;font-size:11px;cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s; white-space:nowrap;
+  }
+  .mini-btn:hover{background:rgba(79,155,255,.32);border-color:rgba(79,155,255,.6);color:#fff}
+  .mini-btn:active{background:rgba(79,155,255,.45)}
+
+  .title{display:flex;align-items:center;justify-content:space-between;gap:10px;
+         font-weight:600;font-size:14px;letter-spacing:.5px;color:#fff;
+         border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:8px;margin-bottom:4px}
+  .title span{flex:1}
+  #minimizeBtn, #playerMinBtn{
+    flex:0 0 auto;width:22px;height:22px;padding:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:6px;color:#eaeaea;cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s;
+  }
+  #minimizeBtn:hover, #playerMinBtn:hover{background:rgba(79,155,255,.28);border-color:rgba(79,155,255,.55);color:#fff}
+  #minimizeBtn:active, #playerMinBtn:active{background:rgba(79,155,255,.4)}
+
+  .group{color:#6fb0ff;font-size:11px;font-weight:600;letter-spacing:.5px;
+         margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)}
+
+  #restoreBtn, #playerRestoreBtn{
+    position:fixed; z-index:11; width:44px;height:44px;padding:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(15,18,25,.72); border:1px solid rgba(255,255,255,.12);
+    border-radius:50%;color:#eaeaea;cursor:pointer;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    box-shadow:0 8px 32px rgba(0,0,0,.45);
+    opacity:0;pointer-events:none;transform:scale(.85);
+    transition:opacity .22s ease,transform .22s ease,background .15s,border-color .15s;
+  }
+  #restoreBtn{left:16px;top:16px;}
+  #playerRestoreBtn{right:16px;top:16px;}
+  #restoreBtn.visible, #playerRestoreBtn.visible{opacity:1;pointer-events:auto;transform:scale(1)}
+  #restoreBtn:hover, #playerRestoreBtn:hover{background:rgba(79,155,255,.28);border-color:rgba(79,155,255,.55)}
+  #restoreBtn:active, #playerRestoreBtn:active{background:rgba(79,155,255,.42)}
+
+  #player{
+    position:fixed;right:16px;top:16px;z-index:10;width:288px;color:#eaeaea;font-size:12px;
+    background:rgba(15,18,25,.72);padding:14px 16px;border-radius:12px;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    display:flex;flex-direction:column;gap:9px;
+    border:1px solid rgba(255,255,255,.08); box-shadow:0 8px 32px rgba(0,0,0,.4);user-select:none;
+    max-height:calc(100vh - 32px);overflow-y:auto;scrollbar-width:thin;
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  #player.hidden{opacity:0;pointer-events:none;transform:translateY(-10px) scale(.97)}
+  #player::-webkit-scrollbar{width:5px}
+  #player::-webkit-scrollbar-thumb{background:rgba(120,160,255,.35);border-radius:3px}
+
+  /* 用户信息区 */
+  .user-info {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px; border-radius: 8px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.06);
+  }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+    background: #333; border: 1px solid rgba(255,255,255,.2);
+  }
+  .user-details { flex: 1; overflow: hidden; display: flex; flex-direction: column;}
+  .user-name { font-weight: 600; color: #fff; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+  .user-status { font-size: 10px; color: #8ea4c8; }
+  .login-btn {
+    background: rgba(79,155,255,.15); border: 1px solid rgba(79,155,255,.4);
+    color: #cfe3ff; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    transition: background .15s; font-size: 12px; text-align: center;
+  }
+  .login-btn:hover { background: rgba(79,155,255,.3); }
+  .logout-btn {
+    background: transparent; border: none; color: #ff6b6b;
+    font-size: 11px; cursor: pointer; text-decoration: underline;
+  }
+
+  .search-row{display:flex;gap:6px; margin-top: 4px;}
+  #searchInput{
+    flex:1;min-width:0; background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12); border-radius:6px;padding:6px 8px;
+    color:#fff;font-size:12px;outline:none; transition:border-color .15s,background .15s;
+  }
+  #searchInput:focus{border-color:rgba(79,155,255,.55);background:rgba(255,255,255,.09)}
+  #searchInput::placeholder{color:#7f8ea8}
+  #searchBtn{
+    background:#2f6fe0;border:0;color:#fff; padding:6px 12px;border-radius:6px;cursor:pointer;
+    font-size:12px;white-space:nowrap; transition:background .15s;
+  }
+  #searchBtn:hover{background:#3d7ce8}
+  #searchBtn:disabled{opacity:.5;cursor:wait}
+
+  #playerStatus{min-height:14px;font-size:11px;color:#ffb36b;line-height:1.4}
+
+  #resultList{
+    max-height:210px;overflow-y:auto; display:flex;flex-direction:column;gap:2px;
+    scrollbar-width:thin; border-radius:6px;
+  }
+  #resultList::-webkit-scrollbar{width:4px}
+  #resultList::-webkit-scrollbar-thumb{background:rgba(120,160,255,.3);border-radius:2px}
+  .result-item{
+    padding:6px 8px;border-radius:6px;cursor:pointer;
+    display:flex;flex-direction:column;gap:2px; transition:background .15s;
+  }
+  .result-item:hover{background:rgba(79,155,255,.18)}
+  .result-item.active{background:rgba(79,155,255,.28)}
+  .result-item .t{color:#fff;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .result-item .a{color:#8ea4c8;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .result-empty,.result-loading{color:#7f8ea8;font-size:11px;padding:8px;text-align:center}
+
+  /* 喜欢列表 */
+  .like-row{display:flex;align-items:center;gap:8px;padding-top:2px;}
+  .like-btn{
+    display:flex;align-items:center;gap:5px;
+    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+    color:#b8c6dc;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s;
+  }
+  .like-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;}
+  .like-btn:hover{background:rgba(255,77,109,.12);border-color:rgba(255,77,109,.4);color:#ff8fa3;}
+  .like-btn.liked{background:rgba(255,77,109,.18);border-color:rgba(255,77,109,.55);color:#ff4d6d;}
+  .like-btn.liked svg{fill:currentColor;}
+  .like-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  #likedPanel{
+    display:none;
+    max-height:220px;
+    overflow-y:auto;
+    flex-direction:column;
+    gap:2px;
+    scrollbar-width:thin;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:6px;
+    padding:4px;
+    background:rgba(0,0,0,.15);
+  }
+  #likedPanel.open{display:flex;}
+  #likedPanel::-webkit-scrollbar{width:4px}
+  #likedPanel::-webkit-scrollbar-thumb{background:rgba(120,160,255,.3);border-radius:2px}
+
+  .controls{display:flex;align-items:center;gap:9px}
+  #playPauseBtn{
+    flex:0 0 auto;width:30px;height:30px;padding:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(79,155,255,.22); border:1px solid rgba(79,155,255,.45);
+    border-radius:50%;color:#fff;cursor:pointer;
+    transition:background .15s,border-color .15s,opacity .15s;
+  }
+  #playPauseBtn:hover{background:rgba(79,155,255,.35)}
+  #playPauseBtn:disabled{opacity:.35;cursor:not-allowed}
+
+  .progress-bar{ flex:1;height:4px;background:rgba(255,255,255,.1); border-radius:2px;cursor:pointer;overflow:hidden; min-width:40px;}
+  #progressFill{ height:100%;width:0%; background:linear-gradient(90deg,#4f9bff,#8ec5ff); border-radius:2px; transition:width .12s linear;}
+  .time-label{ flex:0 0 auto;color:#8ea4c8;font-size:10px; font-variant-numeric:tabular-nums;min-width:64px;text-align:right;}
+
+  /* 登录弹窗 */
+  #loginModal{
+    position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.6); backdrop-filter:blur(4px);
+    opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  #loginModal.visible{opacity:1;pointer-events:auto}
+  .modal-content{
+    background:rgba(25,30,40,.95);border:1px solid rgba(255,255,255,.1);
+    border-radius:16px;padding:24px;width:280px;display:flex;flex-direction:column;align-items:center;gap:16px;
+    box-shadow:0 10px 40px rgba(0,0,0,.6);
+  }
+  .modal-title{font-size:16px;font-weight:600;color:#fff;}
+  .qr-container{
+    width:160px;height:160px;background:#fff;border-radius:8px;padding:8px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .qr-container img{width:100%;height:100%;}
+  .qr-status{font-size:12px;color:#8ea4c8;text-align:center;}
+  .modal-actions{display:flex;gap:12px;width:100%;justify-content:center;}
+  .modal-btn{
+    flex:1;padding:8px;border-radius:6px;border:none;cursor:pointer;font-size:13px;
+    background:rgba(255,255,255,.1);color:#fff;transition:background .15s;
+  }
+  .modal-btn:hover{background:rgba(255,255,255,.2);}
+  .modal-btn.primary{background:#2f6fe0;}
+  .modal-btn.primary:hover{background:#3d7ce8;}
+
+  #lyricLayer{
+    position:fixed;inset:0;z-index:5; pointer-events:none;overflow:hidden;
+    transition:opacity .35s ease;
+    -webkit-mask-image:linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,1) 80%, transparent 100%);
+    mask-image:linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,1) 80%, transparent 100%);
+  }
+  #lyricLayer.hidden{opacity:0}
+  #lyricScroll{
+    position:absolute;top:50%;left:0;right:0;
+    transition:transform .55s cubic-bezier(.22,1,.36,1); will-change:transform;
+  }
+
+  .lyric-line{
+    min-height:52px;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; 
+    font-size: calc(var(--fs-future) * var(--adaptive-scale, 1)); 
+    font-weight:500;
+    color:rgba(255,255,255,.32); letter-spacing:.5px;
+    white-space:nowrap; overflow:visible; padding:4px 8%; box-sizing:border-box;
+    opacity:.55; filter:blur(.4px); text-shadow:0 2px 18px rgba(0,0,0,.55);
+    transform-origin:center center;
+    transition: color var(--lyric-trans) ease, font-size var(--lyric-trans) ease,
+                opacity var(--lyric-trans) ease, filter var(--lyric-trans) ease,
+                text-shadow var(--lyric-trans) ease, transform .6s cubic-bezier(.22,1,.36,1);
+    will-change:font-size, opacity, filter, transform;
+  }
+  .lyric-line.past{
+    color:rgba(255,255,255,.18); 
+    font-size: calc(var(--fs-past) * var(--adaptive-scale, 1)); 
+    opacity:.42;
+  }
+  .lyric-line.active{
+    color:#ffffff; 
+    font-size: calc(var(--fs-active) * var(--adaptive-scale, 1)); 
+    font-weight:700; opacity:1;
+    filter:blur(0); text-shadow:0 2px 18px rgba(0,0,0,.55); transform:scale(1.12);
+  }
+  .lyric-line.lyric-empty{ font-size:18px;font-style:italic; }
+
+  body.hide-past .lyric-line.past{ opacity:0; }
+  body.hide-future .lyric-line:not(.active):not(.past){ opacity:0; }
+
+  .lyric-translation {
+    font-size: 0.6em; font-weight: 500;
+    color: rgba(255,255,255,.6); margin-top: 2px; letter-spacing: 0.5px;
+    transition: opacity .3s;
+  }
+  .lyric-line.active .lyric-translation { color: rgba(200, 220, 255, 0.85); }
+  body.hide-translation .lyric-translation { display: none; }
+
+  .lyric-char{
+    display:inline-block; white-space: pre; 
+    vertical-align: bottom;
+    transform: scale(1); 
+    transform-origin: center bottom;
+    transition: color 0.1s ease, text-shadow 0.15s ease,
+                transform 0.45s var(--char-easing) var(--char-delay, 0ms);
+    will-change: color, text-shadow, transform;
+  }
+  .lyric-char.en-char { letter-spacing: -0.5px; }
+  .lyric-line.active .lyric-char{ color:rgba(255,255,255,.35); text-shadow:none; }
+  .lyric-line.active .lyric-char.sung{
+    color:#ffffff;
+    text-shadow: 0 0 10px rgba(140,190,255, calc(0.85 * var(--hl-a))),
+                 0 0 22px rgba(80,140,255, calc(0.45 * var(--hl-a)));
+    transform: scale(var(--scale-sung));
+    transition: color 0.1s ease, text-shadow 0.15s ease,
+                transform 0.45s var(--char-easing) 0ms;
+  }
+  .lyric-line.active .lyric-char.singing{
+    color:#ffffff;
+    position: relative;
+    z-index: 10;
+    text-shadow: 0 0 14px rgba(150,200,255, calc(1.00 * var(--hl-a))),
+                 0 0 30px rgba(90,150,255, calc(0.75 * var(--hl-a))),
+                 0 0 52px rgba(60,110,255, calc(0.40 * var(--hl-a)));
+    transform: scale(var(--scale-singing)) translateY(calc(var(--char-bounce) * -1));
+  }
+
+  /* ---------- 歌词静止模式：不滚动，当前句固定在屏幕中间 ---------- */
+  body.lyric-static:not(.lyric-ring) #lyricScroll{
+    transform: translateY(-50%) !important;
+    transition: transform .35s ease;
+  }
+  body.lyric-static:not(.lyric-ring) .lyric-line{ display: none; }
+  body.lyric-static:not(.lyric-ring) .lyric-line.active,
+  body.lyric-static:not(.lyric-ring) .lyric-line.lyric-empty{ display: flex; }
+
+  /* ---------- 打字机：还没唱到的字先不占位，整行从行头展开 ---------- */
+  body.typewriter .lyric-line.active .lyric-char.tw-hidden{ display: none; }
+
+  /* 展开方式一：行头固定屏幕中央，歌词向右展开 */
+  body.lyric-static:not(.lyric-ring).tw-anchor-head .lyric-line.active{
+    align-items: flex-start;
+    text-align: left;
+  }
+  body.lyric-static:not(.lyric-ring).tw-anchor-head .lyric-line.active > *{ margin-left: 50%; }
+
+  /* ---------- 半圆环排版：整段歌词沿圆弧排开，当前句压在屏幕正中 ---------- */
+  body.lyric-ring #lyricScroll{
+    top: 0; bottom: 0;
+    transform: none !important;
+    transition: none;
+  }
+  body.lyric-ring .lyric-line{
+    position: absolute;
+    left: 50%; top: 50%;
+    width: auto; max-width: 96vw;
+    padding: 4px 0;                 /* 绝对定位下百分比 padding 会撑爆，必须归零 */
+    transform: translate(-50%, -50%);
+    transition: transform .55s cubic-bezier(.22,1,.36,1),
+                color var(--lyric-trans) ease,
+                font-size var(--lyric-trans) ease,
+                opacity var(--lyric-trans) ease,
+                filter var(--lyric-trans) ease;
+    will-change: transform;
+  }
+  body.lyric-ring .lyric-line.ring-far{ display: none; }
+
+  /* ---------- 歌词律动：作用在当前句的"字"上，不是整句缩放 ---------- */
+  body.lyric-beat .lyric-line.active{
+    filter: blur(0) brightness(calc(1 + var(--beat, 0) * 0.30));
+    /* 去掉 filter 的过渡，让律动紧跟音频；其余保持原样 */
+    transition: color var(--lyric-trans) ease,
+                font-size var(--lyric-trans) ease,
+                opacity var(--lyric-trans) ease,
+                transform .6s cubic-bezier(.22,1,.36,1);
+  }
+  body.lyric-beat .lyric-line.active .lyric-char.sung{
+    scale: calc(1 + var(--beat, 0) * 0.09);
+  }
+  body.lyric-beat .lyric-line.active .lyric-char.singing{
+    scale: calc(1 + var(--beat, 0) * 0.16);
+  }
+
+  #bottomBar{
+    position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:8;
+    display:flex; align-items:center; transition:opacity .25s ease, transform .25s ease;
+    color:#eaeaea; font-size:12px; user-select:none; width:70vw; max-width:70vw;
+  }
+  #bottomBarFull{ display:flex; align-items:center; gap:10px; width:100%; min-width:0; }
+  #bottomBarMini{ display:none; align-items:center; gap:8px; width:100%; }
+  #bottomBar.collapsed #bottomBarFull{display:none}
+  #bottomBar.collapsed #bottomBarMini{display:flex}
+
+  .bar-btn{
+    flex:0 0 auto; width:32px;height:32px; border-radius:50%;
+    border:1px solid rgba(255,255,255,.15); background:rgba(15,18,25,.5);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    color:#eaeaea; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:background .15s, border-color .15s, color .15s;
+    padding:0; font-size:15px; line-height:1;
+  }
+  .bar-btn:hover{ background:rgba(79,155,255,.32); border-color:rgba(79,155,255,.55); color:#fff; }
+  .bar-btn:disabled{opacity:.35;cursor:not-allowed}
+  .bar-btn.bar-play{ width:38px;height:38px; background:rgba(79,155,255,.35); border-color:rgba(79,155,255,.6); }
+  .bar-btn.bar-play:hover{background:rgba(79,155,255,.55)}
+  .bar-btn.bar-play svg{width:18px;height:18px}
+  .bar-btn svg{width:16px;height:16px;fill:currentColor}
+  .bar-btn.bar-mode{font-size:14px}
+
+  .song-progress{
+    flex:1; height:4px; background:rgba(255,255,255,.18); border-radius:2px;
+    cursor:pointer; overflow:hidden; min-width:80px; box-shadow:0 0 0 1px rgba(0,0,0,.3);
+  }
+  .song-progress-fill{
+    height:100%; width:0%; background:linear-gradient(90deg,#4f9bff,#8ec5ff);
+    border-radius:2px; transition:width .12s linear;
+  }
+  .song-time{
+    flex:0 0 auto; color:#eaeaea; font-size:11px; font-variant-numeric:tabular-nums;
+    white-space:nowrap; min-width:70px; text-align:right; text-shadow:0 1px 4px rgba(0,0,0,.8);
+  }
+
+  @media (max-width: 760px){
+    #player{width:240px;right:8px;top:8px;padding:10px 12px}
+    #ui{max-width:220px; left:8px; top:8px;}
+    :root{ --fs-future: 17px; --fs-past: 16px; --fs-active: 19px; }
+  }
+  @media (max-width: 700px){
+    #bottomBar{bottom:14px;width:88vw;max-width:88vw}
+    #bottomBarFull{gap:6px}
+    #bottomBarFull .song-time{display:none}
+    .bar-btn{width:28px;height:28px;font-size:13px}
+    .bar-btn.bar-play{width:32px;height:32px}
+    .bar-btn.bar-play svg{width:16px;height:16px}
+  }
+</style>
 </head>
-<body>
-  <main class="container">
-    <header class="site-header">
-      <h1>网易云音乐 API Enhanced <span id="api-version" class="badge"></span></h1>
-      <p class="sub">🔍 A revival project for NeteaseCloudMusicApi Node.js Api Services || 网易云音乐 API 备份 + 增强 || 本项目自原版v4.28.0版本后开始自行维护</p>
-    </header>
+<body class="hide-past hide-future">
+<canvas id="c"></canvas>
 
-    <section class="block">
-      <h2>状态</h2>
-      <div class="kvs">
-        <div>Base URL</div><div id="base-url">—</div>
-        <div>当前页</div><div id="current-url">—</div>
+<div id="loginModal">
+  <div class="modal-content" style="width:320px;">
+    <div class="modal-title">网易云登录</div>
+    <div class="qr-container" id="qrContainer">
+      <div style="color:#333; font-size:12px; text-align:center;">正在加载...</div>
+    </div>
+    <div class="qr-status" id="qrStatus">请使用网易云音乐App扫码</div>
+
+    <div id="riskBox" style="display:none;width:100%;box-sizing:border-box;font-size:11px;line-height:1.6;
+         color:#ffb454;background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.35);
+         border-radius:8px;padding:8px 10px;"></div>
+
+    <div style="width:100%;box-sizing:border-box;">
+      <div style="font-size:11px;color:#8ea4c8;margin-bottom:4px;line-height:1.5;">
+        扫码被风控时，可用浏览器 Cookie 登录（推荐兜底）
       </div>
-    </section>
+      <textarea id="cookieInput" spellcheck="false" placeholder="MUSIC_U=xxxx; __csrf=xxxx"
+        style="width:100%;box-sizing:border-box;height:44px;resize:vertical;background:rgba(255,255,255,.06);
+        border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#fff;font-size:11px;
+        padding:6px;outline:none;font-family:ui-monospace,Consolas,monospace;"></textarea>
+      <button class="modal-btn" id="cookieLoginBtn" style="margin-top:6px;width:100%;">用 Cookie 登录</button>
+    </div>
 
-    <section class="block">
-      <h2>文档</h2>
-      <p><a href="/docs" target="_blank">查看在线文档</a></p>
-    </section>
+    <div class="modal-actions">
+      <button class="modal-btn" id="guestLoginBtn">游客登录</button>
+      <button class="modal-btn" id="closeLoginBtn">关闭</button>
+    </div>
+  </div>
+</div>
 
-    <section class="block">
-      <h2>常用接口</h2>
-      <ul class="links">
-        <li><a href="/search?keywords=妖精小姐的魔法邀约">搜索音乐: <code>GET /search</code></a></li>
-        <li><a href="/song/detail?ids=2756058128">获取音乐详情: <code>GET /song/detail</code></a></li>
-        <li><a href="/comment/music?id=2756058128&limit=1">获取音乐评论: <code>GET /comment/music</code></a></li>
-        <li><a href="/song/url/v1?id=2756058128&level=exhigh">获取音乐播放链接: <code>GET /song/url/v1</code></a></li>
-      </ul>
-    </section>
+<div id="ui">
+  <div class="title">
+    <span>设置面板</span>
+    <button id="minimizeBtn" title="收起面板" aria-label="收起面板">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="6" x2="10" y2="6"/></svg>
+    </button>
+  </div>
 
-    <section class="block">
-      <h2>调试部分</h2>
-      <pre><code>curl -s {origin}/inner/version
-curl -s {origin}/search?keywords=网易云</code></pre>
-      <div style="margin-top:10px; line-height:2;">
-        <a href="/api.html">交互式调试</a> ·
-        <a href="/qrlogin.html">二维码登录示例</a> ·
-        <a href="/unblock_test.html">解灰测试</a> ·
-        <a href="/audio_match_demo/index.html">听歌识曲 Demo</a> ·
-        <a href="/cloud.html">云盘上传</a> ·
-        <a href="/playlist_import.html">歌单导入</a> ·
-        <a href="/api_decrypt.html">API 解密</a> ·
-        <a href="/listen_together_host.html">一起听示例</a> ·
-        <a href="/playlist_cover_update.html">更新歌单封面示例</a> ·
-        <a href="/avatar_update.html">头像更新示例</a> ·
-        <a href="/scrobble.html">听歌打卡示例</a> ·
-        <a href="/yidun.html">获取 CheckToken</a> ·
-        <a href="/free_listen.html">免费听权益</a> ·
-        <a href="/yunbei_task.html">云贝广告任务</a> ·
-        <a href="/ugc.html">云小编任务中心</a> ·
-        <a href="/ugc_lottery.html">云小编每日抽奖</a>
+  <div class="file">
+    <span>背景图</span>
+    <div style="display:flex; gap:6px;">
+      <input type="file" id="file" accept="image/*" style="width: 90px;">
+      <button id="coverBgBtn" type="button" class="mini-btn" title="使用当前歌曲封面作为背景">封面</button>
+    </div>
+  </div>
+
+  <div class="group">背景调节</div>
+  <label class="toggle-row">
+    <span class="lbl">背景压暗</span>
+    <input type="checkbox" id="autoDim" checked><div class="switch"></div>
+  </label>
+  <div class="range-row"><span>压暗强度</span><input type="range" id="autoDimStrength" min="0" max="1" step="0.01" value="0.8"><span class="val" id="vAutoDimStrength">0.80</span></div>
+
+  <div class="group">液体背景（取自封面配色）</div>
+  <label class="toggle-row">
+    <span class="lbl">液体背景</span>
+    <input type="checkbox" id="liquidBg"><div class="switch"></div>
+  </label>
+  <div class="range-row"><span>扭曲强度</span><input type="range" id="liquidWarp" min="0" max="2.5" step="0.05" value="1"><span class="val" id="vLiquidWarp">1.00</span></div>
+  <div class="range-row"><span>流动速度</span><input type="range" id="liquidSpeed" min="0" max="2" step="0.05" value="0.4"><span class="val" id="vLiquidSpeed">0.40</span></div>
+  <div class="range-row"><span>模糊程度</span><input type="range" id="liquidBlur" min="0" max="1" step="0.02" value="0.3"><span class="val" id="vLiquidBlur">0.30</span></div>
+  <div class="range-row"><span>颜色占比</span><input type="range" id="liquidShare" min="0" max="1" step="0.05" value="1"><span class="val" id="vLiquidShare">1.00</span></div>
+
+  <div class="group">歌词律动（随节奏）</div>
+  <label class="toggle-row">
+    <span class="lbl">歌词律动</span>
+    <input type="checkbox" id="lyricBeat"><div class="switch"></div>
+  </label>
+  <div class="range-row"><span>律动幅度</span><input type="range" id="lyricBeatAmp" min="0" max="2" step="0.05" value="1"><span class="val" id="vLyricBeatAmp">1.00</span></div>
+
+  <div class="group">歌词控制</div>
+  <label class="toggle-row">
+    <span class="lbl">长句自适应字号</span>
+    <input type="checkbox" id="enableAutoFit" checked><div class="switch"></div>
+  </label>
+  <div class="range-row"><span>最大占据宽度</span><input type="range" id="maxWidthRatio" min="50" max="100" step="1" value="85"><span class="val" id="vMaxWidthRatio">85%</span></div>
+
+  <div class="range-row"><span>未播放行字号</span><input type="range" id="fsFuture" min="10" max="40" step="1" value="22"><span class="val" id="vFsFuture">22</span></div>
+  <div class="range-row"><span>已播放行字号</span><input type="range" id="fsPast" min="10" max="40" step="1" value="20"><span class="val" id="vFsPast">20</span></div>
+  <div class="range-row"><span>当前句字号</span><input type="range" id="fsActive" min="12" max="48" step="1" value="24"><span class="val" id="vFsActive">24</span></div>
+  <div class="range-row"><span>已唱字缩放</span><input type="range" id="scaleSung" min="0.8" max="1.6" step="0.01" value="1.05"><span class="val" id="vScaleSung">1.05</span></div>
+  <div class="range-row"><span>正在唱字缩放</span><input type="range" id="scaleSinging" min="0.8" max="2.0" step="0.01" value="1.35"><span class="val" id="vScaleSinging">1.35</span></div>
+  
+  <div class="range-row"><span>字母弹跳高度</span><input type="range" id="charBounce" min="0" max="20" step="1" value="8"><span class="val" id="vCharBounce">8px</span></div>
+  <div class="range-row"><span>字母错峰延迟</span><input type="range" id="charStagger" min="0" max="100" step="5" value="40"><span class="val" id="vCharStagger">40ms</span></div>
+  <div class="range-row">
+    <span>字母缓动</span>
+    <select id="charEasing">
+      <option value="cubic-bezier(0.34, 1.56, 0.64, 1)">弹性 (Q弹)</option>
+      <option value="ease-out">平滑 (减速)</option>
+      <option value="linear">线性 (匀速)</option>
+    </select>
+  </div>
+
+  <div class="range-row"><span>缓动时间</span><input type="range" id="lyricTrans" min="0.1" max="2" step="0.05" value="0.4"><span class="val" id="vLyricTrans">0.40s</span></div>
+  <div class="range-row"><span>高亮强度</span><input type="range" id="hlStrength" min="0" max="1.5" step="0.05" value="1"><span class="val" id="vHlStrength">1.00</span></div>
+
+  <div class="group">歌词滚动 / 打字机</div>
+  <label class="toggle-row">
+    <span class="lbl">歌词自动滚动</span>
+    <input type="checkbox" id="lyricScrollOn" checked><div class="switch"></div>
+  </label>
+  <label class="toggle-row">
+    <span class="lbl">打字机效果</span>
+    <input type="checkbox" id="typewriter"><div class="switch"></div>
+  </label>
+  <div class="range-row"><span>打字速度</span><input type="range" id="typeSpeed" min="30" max="300" step="10" value="90"><span class="val" id="vTypeSpeed">90ms</span></div>
+  <div class="range-row">
+    <span>展开方式</span>
+    <select id="twAnchor">
+      <option value="center" selected>向两侧展开</option>
+      <option value="head">行头固定居中</option>
+    </select>
+  </div>
+
+  <div class="group">歌词排版</div>
+  <div class="range-row">
+    <span>排版</span>
+    <select id="lyricLayout">
+      <option value="default">竖排</option>
+      <option value="ring">半圆环</option>
+    </select>
+  </div>
+  <div class="range-row">
+    <span>弧线方向</span>
+    <select id="ringDir">
+      <option value="right">向右弯</option>
+      <option value="left">向左弯</option>
+    </select>
+  </div>
+  <div class="range-row"><span>弧半径</span><input type="range" id="ringRadius" min="300" max="1600" step="20" value="700"><span class="val" id="vRingRadius">700px</span></div>
+  <div class="range-row"><span>每行角度</span><input type="range" id="ringStep" min="4" max="18" step="1" value="8"><span class="val" id="vRingStep">8°</span></div>
+  
+  <label class="toggle-row">
+    <span class="lbl">显示已播放歌词</span>
+    <input type="checkbox" id="showPast"><div class="switch"></div>
+  </label>
+  <label class="toggle-row">
+    <span class="lbl">显示未播放歌词</span>
+    <input type="checkbox" id="showFuture"><div class="switch"></div>
+  </label>
+  <label class="toggle-row">
+    <span class="lbl">显示歌词翻译</span>
+    <input type="checkbox" id="showTranslation" checked><div class="switch"></div>
+  </label>
+
+  <div class="group">磨砂与雨滴</div>
+  <label class="toggle-row">
+    <span class="lbl">雨滴</span>
+    <input type="checkbox" id="rainOn" checked><div class="switch"></div>
+  </label>
+  <div class="range-row"><span>磨砂强度</span><input type="range" id="frost"   min="0" max="1"    step="0.01" value="1"><span class="val" id="vFrost">1.00</span></div>
+  <div class="range-row"><span>雨滴密度</span><input type="range" id="density" min="0" max="1"    step="0.01" value="1"><span class="val" id="vDen">1.00</span></div>
+  <div class="range-row"><span>全局倍率</span><input type="range" id="gspeed"  min="0.2" max="3"  step="0.01" value="3"><span class="val" id="vGspd">3.00x</span></div>
+  <div class="range-row"><span>汇聚强度</span><input type="range" id="merge"   min="0" max="1"    step="0.01" value="0.73"><span class="val" id="vMerge">0.73</span></div>
+  <div class="range-row"><span>最大雨滴数</span><input type="range" id="maxdrops" min="20" max="400" step="5" value="400"><span class="val" id="vMaxDrops">400</span></div>
+  <div class="range-row"><span>小雨点上限</span><input type="range" id="smallmax" min="0" max="200" step="5" value="200"><span class="val" id="vSmallMax">200</span></div>
+
+  <div class="group">路径控制</div>
+  <div class="range-row"><span>摆动幅度</span><input type="range" id="pathamp"  min="0" max="2"   step="0.05" value="2"><span class="val" id="vPathAmp">2.00</span></div>
+  <div class="range-row"><span>摆动频率</span><input type="range" id="pathfreq" min="0" max="2"   step="0.05" value="1.6"><span class="val" id="vPathFreq">1.60</span></div>
+
+  <div class="group">雨痕控制 (速度联动)</div>
+  <div class="range-row"><span>雨痕概率</span><input type="range" id="trailprob" min="0" max="1"  step="0.01" value="0.21"><span class="val" id="vTrailProb">0.21</span></div>
+  <div class="range-row"><span>雨痕折射</span><input type="range" id="trailref"  min="0" max="1"  step="0.01" value="0.26"><span class="val" id="vTrailRef">0.26</span></div>
+  <div class="range-row"><span>静态上限</span><input type="range" id="trailmax"  min="0" max="300" step="10"  value="130"><span class="val" id="vTrailMax">130</span></div>
+  <div class="range-row"><span>拖尾尺寸小</span><input type="range" id="trailsmin" min="0.5" max="10" step="0.5" value="0.5"><span class="val" id="vTrailSmin">0.5</span></div>
+  <div class="range-row"><span>拖尾尺寸大</span><input type="range" id="trailsmax" min="1"  max="15" step="0.5" value="4.0"><span class="val" id="vTrailSmax">4.0</span></div>
+
+  <div class="group">基础速度范围 (px/s)</div>
+  <div class="range-row"><span>最小速度</span><input type="range" id="vmin" min="5"   max="200" step="1"   value="200"><span class="val" id="vVmin">200</span></div>
+  <div class="range-row"><span>最大速度</span><input type="range" id="vmax" min="20"  max="500" step="1"   value="500"><span class="val" id="vVmax">500</span></div>
+
+  <div class="group">停留时间范围 (s)</div>
+  <div class="range-row"><span>最短停留</span><input type="range" id="pmin" min="0.05" max="2"  step="0.05" value="2.00"><span class="val" id="vPmin">2.00</span></div>
+  <div class="range-row"><span>最长停留</span><input type="range" id="pmax" min="0.5"  max="6"  step="0.1"  value="6.0"><span class="val" id="vPmax">6.0</span></div>
+
+  <div class="group">雨滴尺寸范围 (px)</div>
+  <div class="range-row"><span>最小尺寸</span><input type="range" id="smin" min="1"  max="8"    step="0.5"  value="1.0"><span class="val" id="vSmin">1.0</span></div>
+  <div class="range-row"><span>最大尺寸</span><input type="range" id="smax" min="3"  max="20"   step="0.5"  value="9.5"><span class="val" id="vSmax">9.5</span></div>
+
+  <div class="group">雨痕恢复速度</div>
+  <div class="range-row"><span>最慢恢复</span><input type="range" id="recslow" min="0.001" max="0.02" step="0.001" value="0.002"><span class="val" id="vRecSlow">0.002</span></div>
+  <div class="range-row"><span>最快恢复</span><input type="range" id="recfast" min="0.002" max="0.05" step="0.001" value="0.050"><span class="val" id="vRecFast">0.050</span></div>
+
+  <div class="group">折射强度范围</div>
+  <div class="range-row"><span>最小折射</span><input type="range" id="refmin" min="0" max="0.15" step="0.005" value="0.135"><span class="val" id="vRefMin">0.135</span></div>
+  <div class="range-row"><span>最大折射</span><input type="range" id="refmax" min="0" max="0.15" step="0.005" value="0.100"><span class="val" id="vRefMax">0.100</span></div>
+
+  <div class="group">倒像微调</div>
+  <div class="range-row"><span>倒像强度</span><input type="range" id="invert"      min="0"    max="0.20" step="0.005" value="0.170"><span class="val" id="vInvert">0.170</span></div>
+  <div class="range-row"><span>倒像范围</span><input type="range" id="invertradius" min="0.1"  max="1.0"  step="0.01"  value="0.85"><span class="val" id="vInvertRadius">0.85</span></div>
+  <div class="range-row"><span>倒像缩放</span><input type="range" id="invertscale"  min="0.3"  max="2.5"  step="0.05"  value="1.0"><span class="val" id="vInvertScale">1.00</span></div>
+  <div class="range-row"><span>倒像中心X</span><input type="range" id="invertcx"    min="-0.04" max="0.04" step="0.001" value="0"><span class="val" id="vInvertCX">0.000</span></div>
+  <div class="range-row"><span>倒像中心Y</span><input type="range" id="invertcy"    min="-0.04" max="0.04" step="0.001" value="0"><span class="val" id="vInvertCY">0.000</span></div>
+
+  <div class="group">擦窗控制 (按住滑动擦除)</div>
+  <div class="range-row"><span>擦除半径</span><input type="range" id="wiperadius" min="10" max="160" step="1" value="60"><span class="val" id="vWipeRadius">60</span></div>
+  <div class="range-row"><span>擦除恢复</span><input type="range" id="wiperecover" min="0.02" max="1.2" step="0.01" value="0.44"><span class="val" id="vWipeRecover">0.44</span></div>
+
+  <div class="group">雨滴边缘颜色</div>
+  <div class="range-row"><span>边缘颜色</span><input type="color" id="edgecolor" value="#d9eaff"></div>
+  <div class="range-row"><span>边缘强度</span><input type="range" id="edgestrength" min="0" max="3" step="0.05" value="0.05"><span class="val" id="vEdgeStrength">0.05</span></div>
+</div>
+
+<button id="restoreBtn" title="展开设置" aria-label="展开设置">
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="6"  x2="14" y2="6"/><line x1="4" y1="9"  x2="14" y2="9"/><line x1="4" y1="12" x2="14" y2="12"/></svg>
+</button>
+
+<div id="player">
+  <div class="title">
+    <span>网易云音乐</span>
+    <button id="playerMinBtn" title="收起播放器" aria-label="收起播放器">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="6" x2="10" y2="6"/></svg>
+    </button>
+  </div>
+
+  <div id="userArea">
+    <div id="userProfile" class="user-info" style="display:none;">
+      <img id="userAvatar" class="user-avatar" src="" alt="avatar">
+      <div class="user-details">
+        <div id="userNickname" class="user-name">未登录</div>
+        <div id="userVip" class="user-status">普通用户</div>
       </div>
-    </section>
+      <button id="logoutBtn" class="logout-btn">退出</button>
+    </div>
+    <button id="openLoginBtn" class="login-btn">登录 / 游客模式</button>
+  </div>
 
-    <footer class="site-footer">
-      <a href="https://github.com/neteasecloudmusicapienhanced/api-enhanced" target="_blank">GitHub</a>
-    </footer>
-  </main>
+  <div class="search-row">
+    <input id="searchInput" type="text" placeholder="搜索歌曲 / 歌手" autocomplete="off">
+    <button id="searchBtn">搜索</button>
+  </div>
+  <div id="playerStatus"></div>
+  <div id="resultList"><div class="result-empty">输入关键词开始搜索</div></div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      var origin = window.location.origin;
-      document.getElementById('base-url').textContent = origin;
-      document.getElementById('current-url').textContent = window.location.href;
+  <div style="display:flex; gap:6px; margin-top: 4px;">
+    <button id="toggleLikedBtn" class="mini-btn" style="flex:1;">我喜欢的音乐</button>
+  </div>
+  <div id="likedPanel"></div>
 
-      fetch('/inner/version', { method: 'POST' })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var v = data && data.data && data.data.version;
-          if (v) document.getElementById('api-version').textContent = 'v' + v;
-          var pre = document.querySelector('pre code');
-          if (pre) pre.textContent = pre.textContent.replace(/\{origin\}/g, origin);
-        })
-        .catch(function () {});
+  <div class="now-playing">
+    <div class="name" id="nowName">未播放</div>
+    <div class="artist" id="nowArtist">—</div>
+  </div>
+  <div class="like-row">
+    <button id="likeBtn" class="like-btn" title="喜欢这首歌" aria-label="喜欢这首歌" disabled>
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9.5C1.5 7.5 4 4 7.5 4c2 0 3.5 1 4.5 2.5C13 5 14.5 4 16.5 4 20 4 22.5 7.5 21 11.5 19 16.5 12 21 12 21z"/></svg>
+      <span id="likeText">喜欢</span>
+    </button>
+  </div>
+  <div class="controls">
+    <button id="playPauseBtn" class="song-play-pause" title="播放 / 暂停" aria-label="播放或暂停" disabled>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="progress-bar song-progress" id="progressBar" title="点击跳转">
+      <div id="progressFill" class="song-progress-fill"></div>
+    </div>
+    <span class="time-label song-time" id="timeLabel">0:00 / 0:00</span>
+  </div>
+  
+  <div class="range-row" style="margin-top: 2px;">
+    <span>音量</span>
+    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8">
+    <span class="val" id="vVolume">80%</span>
+  </div>
+
+  <label class="toggle-row" style="margin-top:4px;">
+    <span class="lbl">显示歌词</span>
+    <input type="checkbox" id="lyricToggle" checked><div class="switch"></div>
+  </label>
+</div>
+
+<button id="playerRestoreBtn" title="展开播放器" aria-label="展开播放器">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+</button>
+
+<div id="lyricLayer">
+  <div id="lyricScroll"></div>
+</div>
+
+<div id="bottomBar">
+  <div id="bottomBarFull">
+    <button class="bar-btn" id="prevBtn" title="上一首" aria-label="上一首"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+    <button class="bar-btn bar-play song-play-pause" id="barPlayPause" title="播放 / 暂停" aria-label="播放或暂停" disabled><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+    <button class="bar-btn" id="nextBtn" title="下一首" aria-label="下一首"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+    <button class="bar-btn bar-mode" id="modeBtn" title="顺序播放" aria-label="切换播放模式">🔁</button>
+    <div class="song-progress" title="点击跳转"><div class="song-progress-fill"></div></div>
+    <span class="song-time">0:00 / 0:00</span>
+    <button class="bar-btn" id="collapseBarBtn" title="收起控制条" aria-label="收起控制条"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button>
+  </div>
+  <div id="bottomBarMini">
+    <div class="song-progress" title="点击跳转"><div class="song-progress-fill"></div></div>
+    <button class="bar-btn" id="expandBarBtn" title="展开控制条" aria-label="展开控制条"><svg viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg></button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const SMALL_REL = 0.35;
+const QUAD_SCALE = 1.2;
+const STORAGE_KEY = 'rainLyricSettings_v1';
+
+/* ------------------------------- Shader --------------------------------- */
+const VS_QUAD = `#version 300 es
+layout(location = 0) in vec2 a_pos;
+out vec2 v_uv;
+void main(){ v_uv = a_pos * 0.5 + 0.5; gl_Position = vec4(a_pos, 0.0, 1.0); }`;
+
+const FS_BLUR = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_tex;
+uniform vec2 u_dir;
+out vec4 o;
+void main(){
+  vec3 c  = texture(u_tex, v_uv).rgb * 0.2270270270;
+  c += texture(u_tex, v_uv + u_dir * 1.3846153846).rgb * 0.3162162162;
+  c += texture(u_tex, v_uv - u_dir * 1.3846153846).rgb * 0.3162162162;
+  c += texture(u_tex, v_uv + u_dir * 3.2307692308).rgb * 0.0702702703;
+  c += texture(u_tex, v_uv - u_dir * 3.2307692308).rgb * 0.0702702703;
+  o = vec4(c, 1.0);
+}`;
+
+const FS_DECAY = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_tex;
+uniform sampler2D u_wipe;
+uniform float u_slow;
+uniform float u_fast;
+uniform float u_wipeFade;
+out vec4 o;
+void main(){
+  vec4 s = texture(u_tex, v_uv);
+  float w   = s.r;
+  float ref = s.g;
+  float rec = s.a;
+  float wipe = texture(u_wipe, v_uv).r;
+  float baseAmt = mix(u_slow, u_fast, rec);
+  float wipeAmt = wipe * u_wipeFade;
+  w = max(0.0, w - baseAmt - wipeAmt);
+  if (w < 0.004) { w = 0.0; ref = 0.0; rec = 0.0; }
+  o = vec4(w, ref, 0.0, rec);
+}`;
+
+const FS_WIPE_DECAY = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_tex;
+uniform float u_amount;
+out vec4 o;
+void main(){
+  float w = texture(u_tex, v_uv).r;
+  w = max(0.0, w - u_amount);
+  o = vec4(w, 0.0, 0.0, 1.0);
+}`;
+
+const VS_DROP = `#version 300 es
+layout(location = 0) in vec2 a_pos;
+layout(location = 1) in vec2 a_local;
+layout(location = 2) in float a_alpha;
+layout(location = 3) in float a_rec;
+layout(location = 4) in float a_seed;
+layout(location = 5) in float a_ref;
+layout(location = 6) in float a_irr;
+uniform vec2 u_res;
+out vec2 v_local;
+out float v_alpha;
+out float v_rec;
+out float v_seed;
+out float v_ref;
+out float v_irr;
+void main(){
+  v_local = a_local;
+  v_alpha = a_alpha;
+  v_rec   = a_rec;
+  v_seed  = a_seed;
+  v_ref   = a_ref;
+  v_irr   = a_irr;
+  vec2 p = a_pos / u_res;
+  gl_Position = vec4(p.x * 2.0 - 1.0, 1.0 - p.y * 2.0, 0.0, 1.0);
+}`;
+
+const FS_DROP = `#version 300 es
+precision highp float;
+in vec2 v_local;
+in float v_alpha;
+in float v_rec;
+in float v_seed;
+in float v_ref;
+in float v_irr;
+out vec4 o;
+void main(){
+  vec2 p = v_local;
+  float narrow = smoothstep(-0.1, -1.15, p.y) * 0.30;
+  float widen  = smoothstep( 0.3,  1.15, p.y) * 0.08;
+  float xScale = 1.0 - narrow + widen;
+  p.x /= xScale;
+  float ang = atan(p.y + 1e-5, p.x + 1e-5);
+  float d1 = 0.040 + v_irr * 0.065;
+  float d2 = 0.025 + v_irr * 0.045;
+  float d3 = 0.015 + v_irr * 0.030;
+  float dist =
+      (0.5 + 0.5 * sin(ang * 3.0 + v_seed *  6.2831)) * d1 +
+      (0.5 + 0.5 * sin(ang * 5.0 + v_seed * 12.5663 + 1.3)) * d2 +
+      (0.5 + 0.5 * sin(ang * 8.0 - v_seed *  9.4248 + 2.1)) * d3;
+  if (v_irr > 0.30) {
+    float hf = (0.5 + 0.5 * sin(ang * 13.0 + v_seed * 20.0))
+             * (0.5 + 0.5 * sin(ang * 17.0 - v_seed * 15.0 + 3.7));
+    float strength = (v_irr - 0.30) / 0.70;
+    dist += hf * 0.038 * strength;
+  }
+  float d = length(p) / (1.0 - dist);
+  float h = max(0.0, 1.0 - d * d);
+  o = vec4(h * v_alpha, v_ref, 0.0, h * v_rec);
+}`;
+
+const VS_WIPE = `#version 300 es
+layout(location = 0) in vec2 a_pos;
+layout(location = 1) in vec2 a_local;
+layout(location = 2) in float a_strength;
+uniform vec2 u_res;
+out vec2 v_local;
+out float v_strength;
+void main(){
+  v_local = a_local;
+  v_strength = a_strength;
+  vec2 p = a_pos / u_res;
+  gl_Position = vec4(p.x * 2.0 - 1.0, 1.0 - p.y * 2.0, 0.0, 1.0);
+}`;
+
+const FS_WIPE_ERASE = `#version 300 es
+precision highp float;
+in vec2 v_local;
+in float v_strength;
+out vec4 o;
+void main(){
+  float d = length(v_local);
+  float a = 1.0 - smoothstep(0.55, 1.0, d);
+  float erase = 1.0 - a * v_strength;
+  o = vec4(erase, erase, erase, 1.0);
+}`;
+
+const FS_WIPE_MARK = `#version 300 es
+precision highp float;
+in vec2 v_local;
+in float v_strength;
+out vec4 o;
+void main(){
+  float d = length(v_local);
+  float a = 1.0 - smoothstep(0.55, 1.0, d);
+  float mark = a * v_strength;
+  o = vec4(mark, mark, mark, 1.0);
+}`;
+
+const FS_COMPOSITE = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_bg;
+uniform sampler2D u_bgPrev;
+uniform float u_bgMix;
+uniform sampler2D u_blur;
+uniform sampler2D u_wet;
+uniform sampler2D u_wipe;
+uniform vec2  u_res;
+uniform float u_frost;
+uniform float u_refractMin;
+uniform float u_refractMax;
+uniform float u_invert;
+uniform float u_invertRadius;
+uniform float u_invertScale;
+uniform float u_invertCenterX;
+uniform float u_invertCenterY;
+uniform vec3  u_edgeColor;
+uniform float u_edgeStrength;
+uniform float u_autoDim;
+out vec4 o;
+void main(){
+  vec2 uv    = v_uv;
+  vec2 texel = 1.0 / u_res;
+  float w  = texture(u_wet, uv).r;
+  float wl = texture(u_wet, uv - vec2(texel.x, 0.0)).r;
+  float wr = texture(u_wet, uv + vec2(texel.x, 0.0)).r;
+  float wd = texture(u_wet, uv - vec2(0.0, texel.y)).r;
+  float wu = texture(u_wet, uv + vec2(0.0, texel.y)).r;
+  vec2 grad = vec2(wr - wl, wu - wd) * 0.5;
+  float refStr    = texture(u_wet, uv).g;
+  float refAmount = mix(u_refractMin, u_refractMax, refStr);
+  float wipe = texture(u_wipe, uv).r;
+  float wipeFactor = 1.0 - wipe;
+  float wDisplay = w * wipeFactor;
+  float radial = clamp(1.0 - wDisplay, 0.0, 1.0);
+  float invertMask = 1.0 - smoothstep(u_invertRadius * 0.7, u_invertRadius, radial);
+  vec2 offsetNormal = grad * refAmount;
+  vec2 centerShift = vec2(u_invertCenterX, u_invertCenterY);
+  vec2 offsetInvert = (-grad * u_invertScale + centerShift) * u_invert * invertMask;
+  vec2 offset = (offsetNormal + offsetInvert) * wipeFactor;
+  vec3 sharp;
+  sharp.r = texture(u_bg, uv + offset * 0.90).r;
+  sharp.g = texture(u_bg, uv + offset * 1.00).g;
+  sharp.b = texture(u_bg, uv + offset * 1.12).b;
+  if (u_bgMix < 0.999) {
+    vec3 prev;
+    prev.r = texture(u_bgPrev, uv + offset * 0.90).r;
+    prev.g = texture(u_bgPrev, uv + offset * 1.00).g;
+    prev.b = texture(u_bgPrev, uv + offset * 1.12).b;
+    sharp = mix(prev, sharp, u_bgMix);
+  }
+  vec3 frost = texture(u_blur, uv).rgb;
+  float wetMask = clamp(wDisplay * 1.3, 0.0, 1.0);
+  float frostAmt = u_frost * (1.0 - wetMask) * wipeFactor;
+  vec3  col      = mix(sharp, frost, frostAmt);
+  col *= 1.0 - wDisplay * 0.10;
+  float edge = clamp(length(grad) * 3.0, 0.0, 1.0);
+  float hi   = edge * edge * (0.20 + refStr * 0.30) * wipeFactor;
+  col += u_edgeColor * hi * u_edgeStrength;
+
+  if (u_autoDim > 0.0) {
+    col *= mix(1.0, 0.3, u_autoDim);
+  }
+
+  o = vec4(col, 1.0);
+}`;
+
+/* 液体背景：用从当前画面取到的 5 个颜色，做域扭曲噪声，形成流动的液面 */
+const FS_LIQUID = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform float u_time;
+uniform vec2  u_res;
+uniform vec3  u_c0;
+uniform vec3  u_c1;
+uniform vec3  u_c2;
+uniform vec3  u_c3;
+uniform vec3  u_c4;
+uniform float u_warp;
+uniform vec4  u_bands;
+uniform float u_shareBias;
+out vec4 o;
+
+float hash21(vec2 p){
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = hash21(i);
+  float b = hash21(i + vec2(1.0, 0.0));
+  float c = hash21(i + vec2(0.0, 1.0));
+  float d = hash21(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+float fbm(vec2 p){
+  float v = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 4; i++) {
+    v += a * vnoise(p);
+    p = p * 2.03 + 17.3;
+    a *= 0.5;
+  }
+  return v;
+}
+
+void main(){
+  vec2 uv = v_uv;
+  float asp = u_res.x / max(1.0, u_res.y);
+  vec2 p = vec2(uv.x * asp, uv.y);
+  float t = u_time;
+
+  // 频率放低一点，色块更大更糊，接近 Apple Music 那种"封面化开"的氛围
+  vec2 q = vec2(
+    fbm(p * 1.15 + vec2(0.0, t * 0.13)),
+    fbm(p * 1.15 + vec2(5.2, 1.3) - t * 0.11)
+  );
+  vec2 r = vec2(
+    fbm(p * 1.15 + q * 1.9 + vec2(1.7, 9.2) + t * 0.10),
+    fbm(p * 1.15 + q * 1.9 + vec2(8.3, 2.8) - t * 0.09)
+  );
+  float f = fbm(p * 0.95 + r * (1.0 + u_warp * 1.1) + vec2(t * 0.05, -t * 0.04));
+  float f2 = fbm(p * 2.4 + r * 1.15 - t * 0.07);
+
+  // 按「画面里各颜色的面积占比」切段上色：
+  // 先把 fbm 的实际分布拉开到接近 0~1 均匀，再按累积占比边界分色，
+  // 这样封面上占 50% 的颜色在液面上也约占 50%，点缀色只占一小块。
+  float fq = clamp((f - 0.27) * 2.30, 0.0, 1.0);
+  fq = fq * fq * (3.0 - 2.0 * fq);
+  vec4 bands = mix(vec4(0.2, 0.4, 0.6, 0.8), u_bands, u_shareBias);
+  float w = 0.055;
+  vec3 col = u_c0;
+  col = mix(col, u_c1, smoothstep(bands.x - w, bands.x + w, fq));
+  col = mix(col, u_c2, smoothstep(bands.y - w, bands.y + w, fq));
+  col = mix(col, u_c3, smoothstep(bands.z - w, bands.z + w, fq));
+  col = mix(col, u_c4, smoothstep(bands.w - w, bands.w + w, fq));
+
+  // 液面明暗起伏（平缓一点，别抢颜色的戏）
+  float shade = 0.78 + 0.42 * f2 + 0.14 * q.x;
+  col *= shade;
+
+  // 轻微暗角
+  vec2 d = uv - 0.5;
+  col *= 1.0 - 0.22 * dot(d, d);
+  col *= 0.8;
+
+  o = vec4(clamp(col, 0.0, 1.0), 1.0);
+}`;
+
+/* ------------------------------ WebGL 基础 ------------------------------ */
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl2', { antialias:false, alpha:false, depth:false });
+if (!gl) { document.body.innerHTML = '当前浏览器不支持 WebGL2'; throw new Error('no webgl2'); }
+
+function compileShader(type, src) {
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); throw new Error('shader error'); }
+  return s;
+}
+function createProgram(vsSrc, fsSrc) {
+  const p = gl.createProgram();
+  gl.attachShader(p, compileShader(gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(p, compileShader(gl.FRAGMENT_SHADER, fsSrc));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(p)); throw new Error('link error'); }
+  return p;
+}
+function createTexture(w, h, filter) {
+  const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return t;
+}
+function createFBO(w, h) {
+  const tex = createTexture(w, h, gl.LINEAR);
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { tex, fbo, w, h };
+}
+function deleteFBO(f) { if (!f) return; gl.deleteFramebuffer(f.fbo); gl.deleteTexture(f.tex); }
+function clearFBO(f) {
+  if (!f) return;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, f.fbo);
+  gl.viewport(0, 0, f.w, f.h);
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+const progBlur       = createProgram(VS_QUAD, FS_BLUR);
+const progDecay      = createProgram(VS_QUAD, FS_DECAY);
+const progWipeDecay  = createProgram(VS_QUAD, FS_WIPE_DECAY);
+const progDrop       = createProgram(VS_DROP, FS_DROP);
+const progWipeErase  = createProgram(VS_WIPE, FS_WIPE_ERASE);
+const progWipeMark   = createProgram(VS_WIPE, FS_WIPE_MARK);
+const progComposite  = createProgram(VS_QUAD, FS_COMPOSITE);
+// 液体背景的着色器单独兜底：万一编译不过，只关掉这个功能，别把整页搞崩
+let progLiquid = null;
+try {
+  progLiquid = createProgram(VS_QUAD, FS_LIQUID);
+} catch (e) {
+  console.warn('液体背景着色器编译失败，该功能已禁用', e);
+}
+
+const U = {
+  blurTex: gl.getUniformLocation(progBlur, 'u_tex'), blurDir: gl.getUniformLocation(progBlur, 'u_dir'),
+  decayTex: gl.getUniformLocation(progDecay, 'u_tex'), decayWipe: gl.getUniformLocation(progDecay, 'u_wipe'),
+  decaySlow: gl.getUniformLocation(progDecay, 'u_slow'), decayFast: gl.getUniformLocation(progDecay, 'u_fast'),
+  decayWipeFade: gl.getUniformLocation(progDecay, 'u_wipeFade'),
+  wipeDecayTex: gl.getUniformLocation(progWipeDecay, 'u_tex'), wipeDecayAmt: gl.getUniformLocation(progWipeDecay, 'u_amount'),
+  dropRes: gl.getUniformLocation(progDrop, 'u_res'),
+  wipeEraseRes: gl.getUniformLocation(progWipeErase, 'u_res'), wipeMarkRes: gl.getUniformLocation(progWipeMark, 'u_res'),
+  compBg: gl.getUniformLocation(progComposite, 'u_bg'), compBgPrev: gl.getUniformLocation(progComposite, 'u_bgPrev'),
+  compBgMix: gl.getUniformLocation(progComposite, 'u_bgMix'), compBlur: gl.getUniformLocation(progComposite, 'u_blur'),
+  compWet: gl.getUniformLocation(progComposite, 'u_wet'), compWipe: gl.getUniformLocation(progComposite, 'u_wipe'),
+  compRes: gl.getUniformLocation(progComposite, 'u_res'), compFrost: gl.getUniformLocation(progComposite, 'u_frost'),
+  compRefMin: gl.getUniformLocation(progComposite, 'u_refractMin'), compRefMax: gl.getUniformLocation(progComposite, 'u_refractMax'),
+  compInvert: gl.getUniformLocation(progComposite, 'u_invert'), compInvertRadius: gl.getUniformLocation(progComposite, 'u_invertRadius'),
+  compInvertScale: gl.getUniformLocation(progComposite, 'u_invertScale'), compInvertCenterX: gl.getUniformLocation(progComposite, 'u_invertCenterX'),
+  compInvertCenterY: gl.getUniformLocation(progComposite, 'u_invertCenterY'), compEdgeColor: gl.getUniformLocation(progComposite, 'u_edgeColor'),
+  compEdgeStrength: gl.getUniformLocation(progComposite, 'u_edgeStrength'),
+  compAutoDim: gl.getUniformLocation(progComposite, 'u_autoDim'),
+};
+
+const UL = progLiquid ? {
+  time: gl.getUniformLocation(progLiquid, 'u_time'),
+  res: gl.getUniformLocation(progLiquid, 'u_res'),
+  warp: gl.getUniformLocation(progLiquid, 'u_warp'),
+  bands: gl.getUniformLocation(progLiquid, 'u_bands'),
+  shareBias: gl.getUniformLocation(progLiquid, 'u_shareBias'),
+  c: [0, 1, 2, 3, 4].map(i => gl.getUniformLocation(progLiquid, 'u_c' + i)),
+} : null;
+
+const quadVAO = gl.createVertexArray();
+gl.bindVertexArray(quadVAO);
+const quadBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+
+const DROP_STRIDE = 36;
+const dropVAO = gl.createVertexArray();
+gl.bindVertexArray(dropVAO);
+const dropBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, dropBuf);
+gl.bufferData(gl.ARRAY_BUFFER, 0, gl.DYNAMIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, DROP_STRIDE, 0);
+gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, DROP_STRIDE, 8);
+gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, DROP_STRIDE, 16);
+gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 1, gl.FLOAT, false, DROP_STRIDE, 20);
+gl.enableVertexAttribArray(4); gl.vertexAttribPointer(4, 1, gl.FLOAT, false, DROP_STRIDE, 24);
+gl.enableVertexAttribArray(5); gl.vertexAttribPointer(5, 1, gl.FLOAT, false, DROP_STRIDE, 28);
+gl.enableVertexAttribArray(6); gl.vertexAttribPointer(6, 1, gl.FLOAT, false, DROP_STRIDE, 32);
+gl.bindVertexArray(null);
+
+const WIPE_STRIDE = 20;
+const wipeVAO = gl.createVertexArray();
+gl.bindVertexArray(wipeVAO);
+const wipeBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, wipeBuf);
+gl.bufferData(gl.ARRAY_BUFFER, 0, gl.DYNAMIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, WIPE_STRIDE, 0);
+gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, WIPE_STRIDE, 8);
+gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, WIPE_STRIDE, 16);
+gl.bindVertexArray(null);
+
+function drawQuad() { gl.bindVertexArray(quadVAO); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); }
+
+/* ------------------------------- 全局状态 -------------------------------- */
+let W = 1, H = 1;
+const WET_SCALE = 0.5;
+let bgTex = null, bgTexPrev = null, bgMix = 1.0, bgFading = false;
+let blurA = null, blurB = null, wetA = null, wetB = null, wipeA = null, wipeB = null;
+let liqFBO = null;
+let liqBlurA = null, liqBlurB = null;
+let bgSource = null;
+
+let paramFrost = 1.0, paramDensity = 1.0, paramSpeed = 3.0;
+let paramRecoverSlow = 0.002, paramRecoverFast = 0.050;
+let paramRefractMin = 0.135, paramRefractMax = 0.100;
+let paramMerge = 0.73, paramSmallMax = 200, paramMaxDrops = 400;
+let paramPathAmp = 2.0, paramPathFreq = 1.6;
+let paramTrailProb = 0.21, paramTrailRefract = 0.26, paramTrailMax = 130;
+let paramTrailSizeMin = 0.5, paramTrailSizeMax = 4.0;
+let paramSpeedMin = 200, paramSpeedMax = 500, paramPauseMin = 2.0, paramPauseMax = 6.0, paramSizeMin = 1.0, paramSizeMax = 9.5;
+let paramInvert = 0.170, paramInvertRadius = 0.85, paramInvertScale = 1.0, paramInvertCenterX = 0.0, paramInvertCenterY = 0.0;
+let paramWipeRadius = 60, paramWipeRecover = 0.44;
+let paramEdgeR = 0.85, paramEdgeG = 0.92, paramEdgeB = 1.00, paramEdgeStrength = 0.05;
+let paramAutoDim = 0.8;
+let smallDropCount = 0;
+
+/* ----------------------- 设置面板控制 ----------------------- */
+const uiPanel = document.getElementById('ui');
+const minimizeBtn = document.getElementById('minimizeBtn');
+const restoreBtn = document.getElementById('restoreBtn');
+function collapsePanel() { uiPanel.classList.add('hidden'); restoreBtn.classList.add('visible'); }
+function expandPanel() { uiPanel.classList.remove('hidden'); restoreBtn.classList.remove('visible'); }
+minimizeBtn.addEventListener('click', (e) => { e.stopPropagation(); collapsePanel(); });
+restoreBtn.addEventListener('click', (e) => { e.stopPropagation(); expandPanel(); });
+
+const playerPanel = document.getElementById('player');
+const playerMinBtn = document.getElementById('playerMinBtn');
+const playerRestoreBtn = document.getElementById('playerRestoreBtn');
+playerMinBtn.addEventListener('click', () => { playerPanel.classList.add('hidden'); playerRestoreBtn.classList.add('visible'); });
+playerRestoreBtn.addEventListener('click', () => { playerPanel.classList.remove('hidden'); playerRestoreBtn.classList.remove('visible'); });
+
+/* ------------------------- 指针输入与擦除点收集 ------------------------- */
+let isWiping = false, lastPtrX = -1, lastPtrY = -1, wipePoints = [];
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  return { x: (e.clientX - rect.left) * dpr, y: (e.clientY - rect.top) * dpr };
+}
+function handlePointer(e) {
+  const { x, y } = getCanvasPos(e);
+  if (lastPtrX < 0) { wipePoints.push({ x, y, strength: 1.0 }); lastPtrX = x; lastPtrY = y; return; }
+  const dx = x - lastPtrX, dy = y - lastPtrY;
+  const dist = Math.hypot(dx, dy);
+  const step = Math.max(4, paramWipeRadius * 0.35);
+  const n = Math.max(1, Math.ceil(dist / step));
+  for (let i = 1; i <= n; i++) {
+    const t = i / n;
+    wipePoints.push({ x: lastPtrX + dx * t, y: lastPtrY + dy * t, strength: 1.0 });
+  }
+  lastPtrX = x; lastPtrY = y;
+  if (wipePoints.length > 2000) wipePoints = wipePoints.slice(-2000);
+}
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault(); isWiping = true; lastPtrX = -1; lastPtrY = -1; handlePointer(e);
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!isWiping) return;
+  if (e.pointerType === 'mouse' && e.buttons === 0) { isWiping = false; lastPtrX = -1; lastPtrY = -1; return; }
+  handlePointer(e);
+});
+function stopWiping() { isWiping = false; lastPtrX = -1; lastPtrY = -1; }
+canvas.addEventListener('pointerup', stopWiping);
+canvas.addEventListener('pointerleave', stopWiping);
+canvas.addEventListener('pointercancel', stopWiping);
+window.addEventListener('blur', stopWiping);
+
+/* ------------------------- 液体背景：取色 + 音频律动 ------------------------- */
+let liquidOn = false;
+let paramLiquidWarp = 1.0, paramLiquidSpeed = 0.4, paramLiquidBlur = 0.3;
+
+/* 雨滴总开关 */
+let rainOn = true;
+
+/* 歌词律动 */
+let lyricBeatOn = false, paramLyricBeat = 1.0;
+let soundPulseRaw = 0, lastBeatShown = -1;
+
+/* 液体背景联动：开液体前记住雨滴/压暗的状态，关掉时还原 */
+let liqSavedRain = true, liqSavedDim = true;
+
+function needsAudio() { return lyricBeatOn; }
+
+function setRain(on) {
+  rainOn = !!on;
+  if (!rainOn) {
+    if (drops.length) drops.length = 0;
+    spawnAcc = 0;
+    // 立刻把水膜/擦痕清掉，否则关掉后还会留几秒残影
+    clearFBO(wetA); clearFBO(wetB); clearFBO(wipeA); clearFBO(wipeB);
+  }
+}
+
+// 歌词律动：只负责开关节拍驱动（雨滴/压暗的联动在液体背景那边）
+function setLyricBeat(on, gesture) {
+  lyricBeatOn = !!on;
+  document.body.classList.toggle('lyric-beat', lyricBeatOn);
+  if (lyricBeatOn) {
+    if (gesture) { primeAudio(); reloadAudioForCors(); }
+  } else {
+    setBeatVar(0);
+  }
+}
+let liquidTime = 0;
+
+// 先从当前画面取 5 个颜色（暗 → 亮），并记下它们各自在画面里占的面积比例
+let palette = [
+  [0.02, 0.03, 0.05], [0.06, 0.10, 0.16], [0.10, 0.20, 0.30],
+  [0.20, 0.35, 0.45], [0.55, 0.75, 0.85]
+];
+let paletteBands = [0.2, 0.4, 0.6, 0.8];   // 5 个颜色的累积占比边界（4 个）
+let paramShareBias = 1.0;                  // 0 = 均匀分布，1 = 完全按画面占比
+
+function extractPalette() {
+  if (!bgSource) return;
+  try {
+    const s = 40;
+    const cv = document.createElement('canvas'); cv.width = s; cv.height = s;
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    const sw = bgSource.width || bgSource.naturalWidth || 1;
+    const sh = bgSource.height || bgSource.naturalHeight || 1;
+    const sc = Math.max(s / sw, s / sh);
+    const dw = sw * sc, dh = sh * sc;
+    ctx.drawImage(bgSource, (s - dw) / 2, (s - dh) / 2, dw, dh);
+    const data = ctx.getImageData(0, 0, s, s).data;
+
+    // 1) 粗分桶统计，挑 5 个代表色（占比大 + 够鲜艳 + 不太黑 优先）
+    const map = new Map();
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+      let e = map.get(key);
+      if (!e) { e = { n: 0, r: 0, g: 0, b: 0 }; map.set(key, e); }
+      e.n++; e.r += r; e.g += g; e.b += b;
+    }
+
+    const list = [];
+    map.forEach(e => {
+      const r = e.r / e.n, g = e.g / e.n, b = e.b / e.n;
+      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      const sat = mx > 0 ? (mx - mn) / mx : 0;
+      list.push({ r, g, b, lum, score: e.n * (0.35 + sat * 1.7) * (0.25 + lum / 255) });
     });
-  </script>
+    list.sort((a, b) => b.score - a.score);
+
+    const picked = [];
+    for (let i = 0; i < list.length && picked.length < 5; i++) {
+      const c = list[i];
+      let close = false;
+      for (let k = 0; k < picked.length; k++) {
+        const p = picked[k];
+        if (Math.abs(p.r - c.r) + Math.abs(p.g - c.g) + Math.abs(p.b - c.b) < 90) { close = true; break; }
+      }
+      if (!close) picked.push(c);
+    }
+    while (picked.length < 5) picked.push(picked[picked.length - 1] || { r: 18, g: 28, b: 42 });
+
+    // 2) 再扫一遍像素：每个像素归到最近的代表色，得到真实的面积占比
+    const counts = new Array(picked.length).fill(0);
+    let totalPx = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      let best = 0, bestD = 1e9;
+      for (let k = 0; k < picked.length; k++) {
+        const dr = r - picked[k].r, dg = g - picked[k].g, db = b - picked[k].b;
+        const d = dr * dr + dg * dg + db * db;
+        if (d < bestD) { bestD = d; best = k; }
+      }
+      counts[best]++; totalPx++;
+    }
+    let shares = counts.map(c => c / Math.max(1, totalPx));
+
+    // 占比太小（<5%）的点缀色给个下限，不然在液面上会完全看不见
+    const MIN = 0.05;
+    for (let pass = 0; pass < 3; pass++) {
+      let need = 0, pool = 0;
+      for (let k = 0; k < shares.length; k++) {
+        if (shares[k] < MIN) { need += MIN - shares[k]; shares[k] = MIN; }
+        else pool += shares[k];
+      }
+      if (need <= 1e-6 || pool <= 1e-6) break;
+      const scale = Math.max(0, (pool - need) / pool);
+      for (let k = 0; k < shares.length; k++) if (shares[k] > MIN) shares[k] *= scale;
+    }
+    const sum = shares.reduce((a, b) => a + b, 0) || 1;
+    shares = shares.map(v => v / sum);
+
+    // 3) 按亮度排序（暗 → 亮），占比跟着颜色一起排
+    const order = picked.map((c, i) => i).sort((a, b) => picked[a].lum - picked[b].lum);
+    // 像"封面糊成一片"那样往中间调抬一点，避免出现大面积死黑（Apple Music 那种背景不会有纯黑块）
+    const LIFT = 0.15, MIDV = 112;
+    const lift = v => Math.min(255, v * (1 - LIFT) + MIDV * LIFT);
+    palette = order.map((i, pos) => {
+      const c = picked[i];
+      const k = pos === 0 ? 0.8 : 1;   // 最暗那层略压，保留一点纵深
+      return [
+        Math.min(1, lift(c.r * k) / 255),
+        Math.min(1, lift(c.g * k) / 255),
+        Math.min(1, lift(c.b * k) / 255)
+      ];
+    });
+
+    const orderedShares = order.map(i => shares[i]);
+    let acc = 0;
+    const bands = [];
+    for (let i = 0; i < 4; i++) { acc += orderedShares[i]; bands.push(Math.min(0.98, acc)); }
+    paletteBands = bands;
+  } catch (e) {
+    console.warn('画面取色失败（可能是跨域图片受污染）', e);
+  }
+}
+
+/* ----- Web Audio：真实节奏检测 ----- */
+let audioCtx = null, analyser = null, freqData = null, mediaSource = null;
+let soundLevel = 0, soundPulse = 0, beatAvg = 0, lastBeatAt = 0;
+let analyserDead = false, silentFrames = 0;
+
+function primeAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { analyserDead = true; return; }
+    try {
+      audioCtx = new AC();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.65;
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+      mediaSource = audioCtx.createMediaElementSource(audio);
+      mediaSource.connect(analyser);
+      analyser.connect(audioCtx.destination);   // 分析的同时保持能出声
+    } catch (e) {
+      console.warn('音频分析初始化失败', e);
+      analyserDead = true;
+      return;
+    }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+}
+
+// 开了液体背景后，音源要带 CORS 才能读频谱；CDN 不给 CORS 时回退，别把播放搞哑
+function onAudioErrorCors() {
+  if (audio.crossOrigin !== 'anonymous') return;
+  const src = audio.currentSrc || audio.src;
+  const playing = !audio.paused;
+  analyserDead = true;
+  audio.crossOrigin = null;
+  if (src) {
+    audio.src = src;
+    if (playing) audio.play().catch(() => {});
+  }
+  setPlayerStatus('该音源不支持节奏检测，液体背景已切到模拟律动');
+}
+
+// 切换开关时若正在放歌，需要带着 CORS 重新加载一次当前音源
+function reloadAudioForCors() {
+  if (audio.crossOrigin === 'anonymous') return;
+  const src = audio.currentSrc || audio.src;
+  audio.crossOrigin = 'anonymous';
+  if (!src) return;
+  const t = audio.currentTime, playing = !audio.paused;
+  audio.addEventListener('loadedmetadata', function onMeta() {
+    audio.removeEventListener('loadedmetadata', onMeta);
+    if (t > 0) audio.currentTime = t;
+    if (playing) audio.play().catch(() => {});
+  });
+  audio.src = src;
+}
+
+function setLiquidBg(on, gesture, skipRestore) {
+  if (on && !progLiquid) {
+    liquidOn = false;
+    setPlayerStatus('液体背景不可用：着色器编译失败');
+    return;
+  }
+  liquidOn = !!on;
+  if (liquidOn) {
+    // 液体背景要干净的画面：记住并关掉雨滴 + 背景压暗
+    liqSavedRain = $('rainOn').checked;
+    liqSavedDim = $('autoDim').checked;
+    if (liqSavedRain) { $('rainOn').checked = false; setRain(false); }
+    if (liqSavedDim) { $('autoDim').checked = false; updateAutoDim(); }
+    extractPalette();
+  } else if (!skipRestore) {
+    // 用户主动关掉液体背景：还原雨滴/压暗
+    $('rainOn').checked = liqSavedRain; setRain(liqSavedRain);
+    $('autoDim').checked = liqSavedDim; updateAutoDim();
+  }
+}
+
+function setBeatVar(v) {
+  if (!lyricBeatOn) {
+    if (lastBeatShown !== 0) { rootStyle.setProperty('--beat', '0'); lastBeatShown = 0; }
+    return;
+  }
+  const val = Math.max(0, Math.min(1.5, v * paramLyricBeat));
+  if (Math.abs(val - lastBeatShown) < 0.01) return;
+  lastBeatShown = val;
+  rootStyle.setProperty('--beat', val.toFixed(3));
+}
+
+// 把生硬的脉冲包络再平滑一次：起音 ~140ms、回落 ~220ms，画面才柔和
+function smoothPulse(dt) {
+  const k = soundPulseRaw > soundPulse ? 7 : 4.5;
+  soundPulse += (soundPulseRaw - soundPulse) * Math.min(1, dt * k);
+  setBeatVar(soundPulse);
+}
+
+function updateSound(dt) {
+  if (!needsAudio()) {
+    soundLevel *= Math.max(0, 1 - dt * 4);
+    soundPulseRaw *= Math.max(0, 1 - dt * 5);
+    soundPulse *= Math.max(0, 1 - dt * 5);
+    setBeatVar(0);
+    return;
+  }
+  const now = performance.now();
+
+  if (!analyser || analyserDead || audio.paused) {
+    // 模拟律动：没有可用频谱时，画面也还在呼吸，不至于变成一张死图
+    soundLevel += ((0.16 + 0.05 * Math.sin(now * 0.0011)) - soundLevel) * Math.min(1, dt * 3);
+    soundPulseRaw = Math.max(0, soundPulseRaw - dt * 1.6);
+    if (now - lastBeatAt > 720) { lastBeatAt = now; soundPulseRaw = 0.40; }
+    smoothPulse(dt);
+    return;
+  }
+
+  analyser.getByteFrequencyData(freqData);
+  const n = freqData.length;
+  const lowBins = Math.max(2, Math.floor(n * 0.06));
+  let low = 0, all = 0;
+  for (let i = 0; i < lowBins; i++) low += freqData[i];
+  for (let i = 0; i < n; i++) all += freqData[i];
+  low /= lowBins * 255;
+  all /= n * 255;
+
+  if (all < 0.0005) { if (++silentFrames > 120) analyserDead = true; }
+  else silentFrames = 0;
+
+  soundLevel += (all - soundLevel) * Math.min(1, dt * 4);   // 整体能量慢慢跟，别一惊一乍
+
+  beatAvg += (low - beatAvg) * Math.min(1, dt * 2.0);
+  if (low > beatAvg * 1.30 + 0.015 && now - lastBeatAt > 220) {
+    lastBeatAt = now;
+    soundPulseRaw = Math.min(1, soundPulseRaw + 0.55);   // 触发幅度比原来收敛
+  }
+  soundPulseRaw = Math.max(0, soundPulseRaw - dt * 1.7);  // 衰减也放慢
+  smoothPulse(dt);
+}
+
+function renderLiquid(dt) {
+  if (!liqFBO || !progLiquid || !UL) return;
+  liquidTime += dt * (0.12 + paramLiquidSpeed * 1.10);   // 慢速漂移，不做节拍反应
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, liqFBO.fbo);
+  gl.viewport(0, 0, liqFBO.w, liqFBO.h);
+  gl.disable(gl.BLEND);
+  gl.useProgram(progLiquid);
+  gl.uniform1f(UL.time, liquidTime);
+  gl.uniform2f(UL.res, liqFBO.w, liqFBO.h);
+  gl.uniform1f(UL.warp, paramLiquidWarp);
+  gl.uniform4f(UL.bands, paletteBands[0], paletteBands[1], paletteBands[2], paletteBands[3]);
+  gl.uniform1f(UL.shareBias, paramShareBias);
+  for (let i = 0; i < 5; i++) gl.uniform3f(UL.c[i], palette[i][0], palette[i][1], palette[i][2]);
+  drawQuad();
+}
+
+/* ------------------------------ 背景与模糊 ------------------------------- */
+function applyBackground(instant) {
+  if (!bgSource || W < 2 || H < 2) return;
+  const sw = bgSource.width || bgSource.naturalWidth || 1;
+  const sh = bgSource.height || bgSource.naturalHeight || 1;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const scale = Math.max(W / sw, H / sh);
+  const dw = sw * scale, dh = sh * scale;
+  ctx.drawImage(bgSource, (W - dw) * 0.5, (H - dh) * 0.5, dw, dh);
+
+  const newTex = createTexture(W, H, gl.LINEAR);
+  gl.bindTexture(gl.TEXTURE_2D, newTex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+
+  if (!bgTex || instant) {
+    if (bgTex && bgTex !== bgTexPrev) gl.deleteTexture(bgTex);
+    if (bgTexPrev && bgTexPrev !== bgTex) gl.deleteTexture(bgTexPrev);
+    bgTex = newTex; bgTexPrev = newTex; bgMix = 1.0; bgFading = false;
+  } else {
+    if (bgFading && bgTexPrev && bgTexPrev !== bgTex) gl.deleteTexture(bgTexPrev);
+    bgTexPrev = bgTex; bgTex = newTex; bgMix = 0.0; bgFading = true;
+  }
+  buildBlur();
+  extractPalette();   // 换了背景就重新取一遍液体颜色
+}
+
+function buildBlur() {
+  const bs = 4;
+  const bw = Math.max(2, Math.floor(W / bs));
+  const bh = Math.max(2, Math.floor(H / bs));
+  deleteFBO(blurA); deleteFBO(blurB);
+  blurA = createFBO(bw, bh); blurB = createFBO(bw, bh);
+
+  gl.disable(gl.BLEND); gl.useProgram(progBlur);
+  gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U.blurTex, 0);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, blurA.fbo); gl.viewport(0, 0, bw, bh);
+  gl.bindTexture(gl.TEXTURE_2D, bgTex); gl.uniform2f(U.blurDir, 0, 0); drawQuad();
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, blurB.fbo);
+  gl.bindTexture(gl.TEXTURE_2D, blurA.tex); gl.uniform2f(U.blurDir, 2.0 / bw, 0); drawQuad();
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, blurA.fbo);
+  gl.bindTexture(gl.TEXTURE_2D, blurB.tex); gl.uniform2f(U.blurDir, 0, 2.0 / bh); drawQuad();
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+/* ------------------------------- 雨滴系统 -------------------------------- */
+const drops = [];
+let spawnAcc = 0;
+function rangeMin(a, b) { return Math.min(a, b); }
+function rangeMax(a, b) { return Math.max(a, b); }
+function computeRecFactor(r) {
+  const smin = rangeMin(paramSizeMin, paramSizeMax);
+  const smax = rangeMax(paramSizeMin, paramSizeMax);
+  let rel = (r - smin) / Math.max(0.1, smax - smin);
+  if (rel < 0) rel = 0; if (rel > 1) rel = 1;
+  return Math.pow(1 - rel, 1.5);
+}
+function speedToDynamicMix(speed) { return Math.max(0, Math.min(1, (speed - 30) / 120)); }
+
+function spawnDrop() {
+  const smin = rangeMin(paramSizeMin, paramSizeMax);
+  const smax = rangeMax(paramSizeMin, paramSizeMax);
+  const srange = Math.max(0.1, smax - smin);
+  let relRaw = Math.pow(Math.random(), 2.0);
+  if (relRaw < SMALL_REL && smallDropCount >= paramSmallMax) relRaw = SMALL_REL + Math.random() * (1.0 - SMALL_REL);
+  const r = smin + relRaw * srange;
+  const rel = relRaw;
+  if (relRaw < SMALL_REL) smallDropCount++;
+
+  const vmin = rangeMin(paramSpeedMin, paramSpeedMax);
+  const vmax = rangeMax(paramSpeedMin, paramSpeedMax);
+  const baseVy = vmin + Math.random() * (vmax - vmin);
+
+  let willPause;
+  if (rel < 0.35) willPause = Math.random() < 0.90;
+  else if (rel < 0.65) willPause = Math.random() < 0.55;
+  else willPause = Math.random() < 0.15;
+
+  let pauseChanceBase = rel < 0.35 ? 0.70 : (rel < 0.65 ? 0.42 : 0.12);
+  const pauseChance = Math.min(0.95, pauseChanceBase + Math.random() * 0.2);
+  let directPauseProb = rel < 0.35 ? 0.65 : (rel < 0.65 ? 0.32 : 0.05);
+  const directPause = Math.random() < directPauseProb;
+  const pauseScale = 1.9 - rel * 1.6;
+  const pmin = rangeMin(paramPauseMin, paramPauseMax);
+  const pmax = rangeMax(paramPauseMin, paramPauseMax);
+
+  let state, stateTimer, y;
+  if (directPause) {
+    state = 'pause'; stateTimer = (pmin + Math.random() * (pmax - pmin)) * pauseScale;
+    y = Math.random() * H * 0.85;
+  } else {
+    state = 'flow'; stateTimer = 0.4 + Math.random() * 1.8;
+    y = -r - Math.random() * H * 0.4;
+  }
+  drops.push({
+    x: Math.random() * W, y, r, baseVy,
+    curSpeed: directPause ? 0 : baseVy * (0.4 + Math.random() * 1.0) * paramSpeed,
+    state, stateTimer, willPause, pauseChance, pauseScale,
+    recFactor: computeRecFactor(r), shapeSeed: Math.random(), refStrength: Math.random(),
+    wob: Math.random() * Math.PI * 2, wobAmp: 5 + Math.random() * 15, wobSpd: 1.0 + Math.random() * 2.5,
+    noisePhase: Math.random() * 100, noiseSpd: 0.6 + Math.random() * 1.8,
+    fade: 1.0, fadeSpeed: 0, vanishTimer: 0.4 + Math.random() * 1.2, growRate: 1.0 + Math.random() * 3.0,
+    isTrail: false, vx: 0, trailProgress: 0,
+  });
+}
+
+function spawnStaticTrail(d) {
+  let trailR = 0.15 + Math.random() * 0.35;
+  if (Math.random() < 0.3) trailR = 0.4 + Math.random() * 0.45;
+  else if (Math.random() < 0.1) trailR = 0.8 + Math.random() * 0.8;
+
+  let ox, oy;
+  const spreadRoll = Math.random();
+  if (spreadRoll < 0.55) { ox = (Math.random() - 0.5) * d.r * 1.4; oy = -d.r * (0.2 + Math.random() * 0.8); }
+  else if (spreadRoll < 0.85) { ox = (Math.random() - 0.5) * d.r * 2.6; oy = -d.r * (0.1 + Math.random() * 1.4); }
+  else { const ang = Math.PI * (0.15 + Math.random() * 0.70); const dist = d.r * (1.2 + Math.random() * 1.8); ox = Math.cos(ang) * dist; oy = -Math.sin(ang) * dist; }
+
+  const vx = (Math.random() - 0.5) * (d.r * 3.5 + 4);
+  const fadeStart = 0.50 + Math.random() * 0.50;
+  const fadeSpd = 0.25 + Math.random() * 1.10;
+  const trailRef = d.refStrength * paramTrailRefract * (0.70 + Math.random() * 0.30);
+
+  drops.push({
+    x: d.x + ox, y: d.y + oy, r: trailR, baseVy: 0, curSpeed: 0, state: 'pause', stateTimer: 999,
+    willPause: false, pauseChance: 0, pauseScale: 1, recFactor: computeRecFactor(trailR),
+    shapeSeed: Math.random(), refStrength: trailRef, wob: 0, wobAmp: 0, wobSpd: 0, noisePhase: 0, noiseSpd: 0,
+    fade: fadeStart, fadeSpeed: fadeSpd, vanishTimer: 999, growRate: 0, isTrail: true, vx: vx, trailProgress: 0,
+  });
+}
+
+function spawnDynamicTrailDrop(d) {
+  const smin = Math.min(paramTrailSizeMin, paramTrailSizeMax);
+  const smax = Math.max(paramTrailSizeMin, paramTrailSizeMax);
+  const progress = d.trailProgress;
+  const randFactor = 0.75 + Math.random() * 0.35;
+  let r = Math.max(0.4, smax - progress * (smax - smin) * randFactor);
+
+  const psMin = rangeMin(paramSizeMin, paramSizeMax);
+  const psMax = rangeMax(paramSizeMin, paramSizeMax);
+  let relMain = (r - psMin) / Math.max(0.1, psMax - psMin);
+  if (relMain < SMALL_REL && smallDropCount >= paramSmallMax) {
+    const targetRel = SMALL_REL + Math.random() * (1.0 - SMALL_REL);
+    r = psMin + targetRel * (psMax - psMin); relMain = targetRel;
+  }
+  if (relMain < SMALL_REL) smallDropCount++;
+
+  const ox = (Math.random() - 0.5) * d.r * (0.5 + progress * 2.4);
+  const oy = -d.r * (0.25 + progress * 1.6);
+  const baseVy = d.baseVy * (0.75 - progress * 0.35);
+  const relClamped = Math.max(0, Math.min(1, relMain));
+
+  let willPause;
+  if (relClamped < 0.35) willPause = Math.random() < 0.90;
+  else if (relClamped < 0.65) willPause = Math.random() < 0.55;
+  else willPause = Math.random() < 0.15;
+
+  let pauseChanceBase = relClamped < 0.35 ? 0.70 : (relClamped < 0.65 ? 0.42 : 0.12);
+  const pauseChance = Math.min(0.95, pauseChanceBase + Math.random() * 0.2);
+  let directPauseProb = relClamped < 0.35 ? 0.45 : (relClamped < 0.65 ? 0.25 : 0.05);
+  const directPause = Math.random() < directPauseProb;
+  const pauseScale = 1.9 - relClamped * 1.6;
+  const pmin = rangeMin(paramPauseMin, paramPauseMax);
+  const pmax = rangeMax(paramPauseMin, paramPauseMax);
+  const trailRef = d.refStrength * paramTrailRefract * (0.60 + Math.random() * 0.35);
+
+  drops.push({
+    x: d.x + ox, y: d.y + oy, r, baseVy,
+    curSpeed: directPause ? 0 : baseVy * (0.4 + Math.random() * 1.0) * paramSpeed,
+    state: directPause ? 'pause' : 'flow',
+    stateTimer: directPause ? (pmin + Math.random() * (pmax - pmin)) * pauseScale : 0.4 + Math.random() * 1.8,
+    willPause, pauseChance, pauseScale, recFactor: computeRecFactor(r), shapeSeed: Math.random(), refStrength: trailRef,
+    wob: Math.random() * Math.PI * 2, wobAmp: 3 + Math.random() * 8, wobSpd: 1.0 + Math.random() * 2.0,
+    noisePhase: Math.random() * 100, noiseSpd: 0.6 + Math.random() * 1.8,
+    fade: 1.0, fadeSpeed: 0, vanishTimer: 0.4 + Math.random() * 1.2, growRate: 1.0 + Math.random() * 3.0,
+    isTrail: false, vx: 0, fromTrail: true, trailProgress: 0,
+  });
+  d.trailProgress = Math.min(1, d.trailProgress + 0.07 + Math.random() * 0.10);
+}
+
+function mergeDrops() {
+  if (paramMerge < 0.01 || drops.length < 2) return;
+  const mergeFactor = 0.55 + paramMerge * 0.25;
+  const smin = rangeMin(paramSizeMin, paramSizeMax);
+  const smax = rangeMax(paramSizeMin, paramSizeMax);
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const a = drops[i];
+    if (!a) continue;
+    if (a.fade < 1 || a.isTrail) continue;
+    for (let j = i - 1; j >= 0; j--) {
+      const b = drops[j];
+      if (!b) continue;
+      if (b.fade < 1 || b.isTrail) continue;
+      const dx = a.x - b.x, dy = a.y - b.y, rr = (a.r + b.r) * mergeFactor;
+      if (dx * dx + dy * dy < rr * rr) {
+        const areaA = a.r * a.r, areaB = b.r * b.r, total = areaA + areaB;
+        a.x = (a.x * areaA + b.x * areaB) / total;
+        a.y = (a.y * areaA + b.y * areaB) / total;
+        a.r = Math.sqrt(total);
+        if (b.curSpeed > a.curSpeed) { a.curSpeed = b.curSpeed; a.baseVy = b.baseVy; }
+        if (b.state === 'pause' && a.state === 'flow') { a.state = 'pause'; a.stateTimer = b.stateTimer; }
+        let newRel = (a.r - smin) / Math.max(0.1, smax - smin);
+        if (newRel < 0) newRel = 0; if (newRel > 1) newRel = 1;
+        a.pauseScale = 1.9 - newRel * 1.6; a.recFactor = computeRecFactor(a.r);
+        drops.splice(j, 1);
+      }
+    }
+  }
+}
+
+function updateDrops(dt) {
+  if (!rainOn) {
+    if (drops.length) drops.length = 0;
+    spawnAcc = 0;
+    return;
+  }
+  let trailCount = 0, normalCount = 0;
+  {
+    const smin = rangeMin(paramSizeMin, paramSizeMax), smax = rangeMax(paramSizeMin, paramSizeMax);
+    const srange = Math.max(0.1, smax - smin); let cntSmall = 0;
+    for (let k = 0; k < drops.length; k++) {
+      const d = drops[k];
+      if (d.isTrail) { trailCount++; continue; }
+      if (d.fade < 1) continue;
+      normalCount++;
+      const rel = (d.r - smin) / srange; if (rel < SMALL_REL) cntSmall++;
+    }
+    smallDropCount = cntSmall;
+  }
+
+  spawnAcc += dt * (8 + paramDensity * 60);
+  while (spawnAcc >= 1) {
+    spawnAcc -= 1;
+    if (normalCount < paramMaxDrops) { spawnDrop(); normalCount++; }
+  }
+
+  const pmin = rangeMin(paramPauseMin, paramPauseMax), pmax = rangeMax(paramPauseMin, paramPauseMax);
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const d = drops[i];
+    if (!d) continue;
+    if (d.isTrail) {
+      if (d.vx !== 0) {
+        d.x += d.vx * dt; d.vx *= Math.exp(-dt * 4.5);
+        if (Math.abs(d.vx) < 0.3) d.vx = 0;
+        if (d.x < 0) { d.x = 0; d.vx = 0; } if (d.x > W) { d.x = W; d.vx = 0; }
+      }
+      d.fade -= d.fadeSpeed * dt;
+      if (d.fade <= 0) drops.splice(i, 1);
+      continue;
+    }
+
+    if (d.trailProgress > 0 && d.state === 'flow') d.trailProgress = Math.max(0, d.trailProgress - dt * 0.12);
+
+    if (d.fade < 1) {
+      d.fade -= d.fadeSpeed * dt;
+      if (d.fade <= 0) { drops.splice(i, 1); continue; }
+    } else if (d.state === 'flow') {
+      d.vanishTimer -= dt;
+      if (d.vanishTimer <= 0) {
+        d.vanishTimer = 0.4 + Math.random() * 1.2;
+        const smin = rangeMin(paramSizeMin, paramSizeMax), smax = rangeMax(paramSizeMin, paramSizeMax);
+        let rel = (d.r - smin) / Math.max(0.1, smax - smin);
+        if (rel < 0) rel = 0; if (rel > 1) rel = 1;
+        let vanishChance = rel < 0.35 ? 0.45 : (rel < 0.65 ? 0.22 : 0.06);
+        if (Math.random() < vanishChance) d.fadeSpeed = 1.2 + Math.random() * 1.8;
+      }
+    }
+
+    if (paramMerge > 0.01 && d.fade >= 1) {
+      const maxR = Math.max(paramSizeMin, paramSizeMax) * 2.0;
+      if (d.r < maxR) {
+        const growRatio = 1 - d.r / maxR;
+        const growFactor = (d.state === 'flow') ? 1.0 : 0.5;
+        d.r = Math.min(maxR, d.r + d.growRate * paramMerge * growFactor * growRatio * dt);
+        d.recFactor = computeRecFactor(d.r);
+      }
+    }
+
+    d.noisePhase += d.noiseSpd * dt;
+    const n = 0.72 + 0.28 * Math.sin(d.noisePhase) + 0.14 * Math.sin(d.noisePhase * 2.7 + 1.3);
+    const targetSpeed = d.baseVy * Math.max(0.12, n) * paramSpeed;
+
+    d.stateTimer -= dt;
+    if (d.stateTimer <= 0) {
+      if (d.state === 'flow') {
+        if (d.willPause && Math.random() < d.pauseChance) {
+          d.state = 'pause'; d.stateTimer = (pmin + Math.random() * (pmax - pmin)) * d.pauseScale;
+        } else d.stateTimer = 0.4 + Math.random() * 1.8;
+      } else {
+        d.state = 'flow'; d.stateTimer = 0.4 + Math.random() * 1.8;
+        d.curSpeed = d.baseVy * (0.4 + Math.random() * 1.0) * paramSpeed;
+      }
+    }
+
+    const desired = (d.state === 'flow') ? targetSpeed : 0;
+    const k = 1 - Math.exp(-dt * 6);
+    d.curSpeed += (desired - d.curSpeed) * k;
+    if (d.state === 'pause' && d.curSpeed < 1.5) d.curSpeed = 0;
+    d.y += d.curSpeed * dt;
+
+    const wobFactor = Math.min(1, d.curSpeed / 45);
+    d.wob += d.wobSpd * paramPathFreq * dt;
+    d.x += Math.sin(d.wob) * d.wobAmp * paramPathAmp * dt * wobFactor;
+    if (d.x < 0) d.x = 0; if (d.x > W) d.x = W;
+
+    if (d.fade >= 1 && d.state === 'flow' && d.curSpeed > 18 && paramTrailProb > 0.01) {
+      const rate = paramTrailProb * 14 * Math.min(2.0, d.r / 4.0);
+      if (Math.random() < rate * dt) {
+        const dynamicMix = speedToDynamicMix(d.curSpeed);
+        if (Math.random() < dynamicMix) {
+          if (normalCount < paramMaxDrops) { spawnDynamicTrailDrop(d); normalCount++; }
+        } else {
+          if (trailCount < paramTrailMax) { spawnStaticTrail(d); trailCount++; }
+        }
+      }
+    }
+    if (d.y - d.r > H + 30) drops.splice(i, 1);
+  }
+  mergeDrops();
+}
+
+const vertScratch = [];
+function renderDropsToWet(wetW, wetH) {
+  const verts = vertScratch; verts.length = 0;
+  const s = WET_SCALE;
+  const psMin = rangeMin(paramSizeMin, paramSizeMax), psMax = rangeMax(paramSizeMin, paramSizeMax);
+  const psRange = Math.max(0.1, psMax - psMin);
+  for (let i = 0; i < drops.length; i++) {
+    const d = drops[i];
+    if (!d) continue;
+    let rel = (d.r - psMin) / psRange;
+    if (rel < 0) rel = 0; if (rel > 1) rel = 1;
+    const irregularity = Math.pow(1 - rel, 1.3);
+    const speedPx = d.curSpeed / 60;
+    const stretch = 1 + speedPx / (2 * d.r);
+    const shrink = 0.55 + 0.45 * d.fade;
+    const cx = d.x * s, cy = d.y * s;
+    const rx = d.r * s * shrink, ry = d.r * s * stretch * shrink;
+    const c = [[-1,-1], [1,-1], [-1,1], [1,-1], [1,1], [-1,1]];
+    for (let k = 0; k < 6; k++) {
+      const lx = c[k][0], ly = c[k][1];
+      verts.push(cx + lx * rx * QUAD_SCALE, cy + ly * ry * QUAD_SCALE, lx * QUAD_SCALE, ly * QUAD_SCALE, d.fade, d.recFactor, d.shapeSeed, d.refStrength, irregularity);
+    }
+  }
+  if (verts.length === 0) return;
+  gl.bindVertexArray(dropVAO); gl.bindBuffer(gl.ARRAY_BUFFER, dropBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
+  gl.drawArrays(gl.TRIANGLES, 0, verts.length / 9);
+  gl.bindVertexArray(null);
+}
+
+const wipeVertScratch = [];
+function buildWipeVerts(ww, wh) {
+  const verts = wipeVertScratch; verts.length = 0;
+  const s = WET_SCALE, rPix = paramWipeRadius * s;
+  for (let i = 0; i < wipePoints.length; i++) {
+    const p = wipePoints[i], cx = p.x * s, cy = p.y * s;
+    const c = [[-1,-1], [1,-1], [-1,1], [1,-1], [1,1], [-1,1]];
+    for (let k = 0; k < 6; k++) {
+      const lx = c[k][0], ly = c[k][1];
+      verts.push(cx + lx * rPix, cy + ly * rPix, lx, ly, p.strength);
+    }
+  }
+  if (verts.length === 0) return null;
+  gl.bindVertexArray(wipeVAO); gl.bindBuffer(gl.ARRAY_BUFFER, wipeBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
+  return verts.length / 5;
+}
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const nw = Math.max(2, Math.floor(canvas.clientWidth * dpr));
+  const nh = Math.max(2, Math.floor(canvas.clientHeight * dpr));
+  if (nw === W && nh === H) return;
+  W = nw; H = nh; canvas.width = W; canvas.height = H;
+  deleteFBO(wetA); deleteFBO(wetB); deleteFBO(wipeA); deleteFBO(wipeB);
+  const ww = Math.max(2, Math.floor(W * WET_SCALE)), wh = Math.max(2, Math.floor(H * WET_SCALE));
+  wetA = createFBO(ww, wh); wetB = createFBO(ww, wh); wipeA = createFBO(ww, wh); wipeB = createFBO(ww, wh);
+  deleteFBO(liqFBO); deleteFBO(liqBlurA); deleteFBO(liqBlurB);
+  const lw = Math.max(2, Math.floor(W / 4)), lh = Math.max(2, Math.floor(H / 4));
+  liqFBO = createFBO(lw, lh);
+  liqBlurA = createFBO(lw, lh); liqBlurB = createFBO(lw, lh);
+  applyBackground(true);
+}
+
+function render(dt) {
+  gl.disable(gl.BLEND);
+  updateSound(dt);
+  if (liquidOn) {
+    renderLiquid(dt);
+    // 「模糊程度」：对液面做一次可分离高斯（横向 + 纵向），半径由滑杆决定
+    if (paramLiquidBlur > 0.01 && liqFBO && liqBlurA && liqBlurB) {
+      const bw = liqFBO.w, bh = liqFBO.h;
+      const rad = paramLiquidBlur * 7;      // 每档最多约 7 像素
+      gl.useProgram(progBlur);
+      gl.activeTexture(gl.TEXTURE0); gl.uniform1i(U.blurTex, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, liqBlurA.fbo); gl.viewport(0, 0, bw, bh);
+      gl.bindTexture(gl.TEXTURE_2D, liqFBO.tex); gl.uniform2f(U.blurDir, rad / bw, 0); drawQuad();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, liqBlurB.fbo);
+      gl.bindTexture(gl.TEXTURE_2D, liqBlurA.tex); gl.uniform2f(U.blurDir, 0, rad / bh); drawQuad();
+    }
+  }
+  const ww = wetA.w, wh = wetA.h;
+  const slow = Math.min(paramRecoverSlow, paramRecoverFast), fast = Math.max(paramRecoverSlow, paramRecoverFast);
+  const rmin = Math.min(paramRefractMin, paramRefractMax), rmax = Math.max(paramRefractMin, paramRefractMax);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, wipeB.fbo); gl.viewport(0, 0, ww, wh);
+  gl.useProgram(progWipeDecay); gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, wipeA.tex); gl.uniform1i(U.wipeDecayTex, 0);
+  gl.uniform1f(U.wipeDecayAmt, paramWipeRecover * dt); drawQuad();
+
+  let wipeVC = null;
+  if (wipePoints.length > 0) {
+    wipeVC = buildWipeVerts(ww, wh);
+    if (wipeVC !== null) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, wipeB.fbo); gl.viewport(0, 0, ww, wh);
+      gl.enable(gl.BLEND); gl.blendEquation(gl.MAX); gl.blendFunc(gl.ONE, gl.ONE);
+      gl.useProgram(progWipeMark); gl.uniform2f(U.wipeMarkRes, ww, wh);
+      gl.bindVertexArray(wipeVAO); gl.drawArrays(gl.TRIANGLES, 0, wipeVC);
+      gl.disable(gl.BLEND); gl.bindVertexArray(null);
+    }
+  }
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, wetB.fbo); gl.viewport(0, 0, ww, wh);
+  gl.useProgram(progDecay); gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, wetA.tex); gl.uniform1i(U.decayTex, 0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, wipeB.tex); gl.uniform1i(U.decayWipe, 1);
+  gl.uniform1f(U.decaySlow, slow); gl.uniform1f(U.decayFast, fast); gl.uniform1f(U.decayWipeFade, 5.0); drawQuad();
+
+  if (wipeVC !== null) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, wetB.fbo); gl.viewport(0, 0, ww, wh);
+    gl.enable(gl.BLEND); gl.blendEquation(gl.MIN); gl.blendFunc(gl.ONE, gl.ONE);
+    gl.useProgram(progWipeErase); gl.uniform2f(U.wipeEraseRes, ww, wh);
+    gl.bindVertexArray(wipeVAO); gl.drawArrays(gl.TRIANGLES, 0, wipeVC);
+    gl.disable(gl.BLEND); gl.bindVertexArray(null);
+  }
+  wipePoints = [];
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, wetB.fbo); gl.viewport(0, 0, ww, wh);
+  gl.enable(gl.BLEND); gl.blendEquation(gl.MAX); gl.blendFunc(gl.ONE, gl.ONE);
+  gl.useProgram(progDrop); gl.uniform2f(U.dropRes, ww, wh);
+  renderDropsToWet(ww, wh); gl.disable(gl.BLEND);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, H);
+  gl.useProgram(progComposite);
+  // 液体背景开启时，整个管线都改吃液面纹理（雨水/磨砂/反射照旧作用在它上面）
+  const useLiquid = liquidOn && liqFBO;
+  let bgSrcTex = useLiquid ? liqFBO.tex : bgTex;
+  if (useLiquid && paramLiquidBlur > 0.01 && liqBlurB) bgSrcTex = liqBlurB.tex;
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, bgSrcTex); gl.uniform1i(U.compBg, 0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, useLiquid ? bgSrcTex : blurA.tex); gl.uniform1i(U.compBlur, 1);
+  gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, wetB.tex); gl.uniform1i(U.compWet, 2);
+  gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, wipeB.tex); gl.uniform1i(U.compWipe, 3);
+  gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, useLiquid ? bgSrcTex : (bgTexPrev || bgTex)); gl.uniform1i(U.compBgPrev, 4);
+
+  gl.uniform1f(U.compBgMix, useLiquid ? 1.0 : bgMix);
+  gl.uniform2f(U.compRes, ww, wh); gl.uniform1f(U.compFrost, paramFrost);
+  gl.uniform1f(U.compRefMin, rmin); gl.uniform1f(U.compRefMax, rmax);
+  gl.uniform1f(U.compInvert, paramInvert); gl.uniform1f(U.compInvertRadius, paramInvertRadius);
+  gl.uniform1f(U.compInvertScale, paramInvertScale); gl.uniform1f(U.compInvertCenterX, paramInvertCenterX);
+  gl.uniform1f(U.compInvertCenterY, paramInvertCenterY);
+  gl.uniform3f(U.compEdgeColor, paramEdgeR, paramEdgeG, paramEdgeB); gl.uniform1f(U.compEdgeStrength, paramEdgeStrength);
+  gl.uniform1f(U.compAutoDim, paramAutoDim);
+  drawQuad();
+
+  let tmp = wetA; wetA = wetB; wetB = tmp;
+  tmp = wipeA; wipeA = wipeB; wipeB = tmp;
+}
+
+/* ==================== 预设与登录态存储 ==================== */
+function savePresets() {
+  const data = {};
+  document.querySelectorAll('#ui input[type=range], #ui input[type=color], #ui input[type=checkbox], #player input[type=range]').forEach(el => {
+    if (el.id) data[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+  });
+  const easingEl = document.getElementById('charEasing');
+  if (easingEl) data['charEasing'] = easingEl.value;
+  const anchorEl = document.getElementById('twAnchor');
+  if (anchorEl) data['twAnchor'] = anchorEl.value;
+  const layoutEl = document.getElementById('lyricLayout');
+  if (layoutEl) data['lyricLayout'] = layoutEl.value;
+  const ringDirSave = document.getElementById('ringDir');
+  if (ringDirSave) data['ringDir'] = ringDirSave.value;
+  data['lyricToggle'] = document.getElementById('lyricToggle').checked;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function loadPresets() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) return;
+  try {
+    const data = JSON.parse(saved);
+    Object.keys(data).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (el.type === 'checkbox') el.checked = data[id];
+        else el.value = data[id];
+        el.dispatchEvent(new Event('input'));
+        el.dispatchEvent(new Event('change'));
+      }
+    });
+  } catch (e) { console.warn('读取预设失败', e); }
+}
+
+/* ==================== 网易云音乐播放器核心 ==================== */
+// 同源部署（把本文件放进 API 的 public 目录，用 http://localhost:3000/player.html 打开）时走相对路径；
+// 直接双击打开时退回 http://localhost:3000。两种都能用，推荐同源。
+// API 地址：优先顺序 = URL 参数 ?api= → localStorage['ncm_api_base'] → window.NCM_API_BASE → 自动判断
+// 同源部署（前端就在 API 的 public 目录里）时留空即可，跨域部署时才需要填。
+const API_BASE = (function () {
+  const norm = s => String(s).replace(/\/+$/, '');
+  try {
+    const q = new URLSearchParams(location.search).get('api');
+    if (q) return norm(q);
+    const saved = localStorage.getItem('ncm_api_base');
+    if (saved) return norm(saved);
+  } catch (e) { /* 忽略 */ }
+  if (window.NCM_API_BASE) return norm(window.NCM_API_BASE);
+  // 只要是 http(s) 打开的就默认同源——不写死端口，改 PORT / 换域名 / 走隧道都不用动代码。
+  // 只有双击本地文件（file://）打开时才回落到本机 3000。
+  return location.protocol.indexOf('http') === 0 ? '' : 'http://localhost:3000';
+})();
+// 前后端不同源时不能用 credentials:'include'（后端回 ACAO:* 会被浏览器拦），
+// 何况我们的 cookie 是走 URL 参数传的，本来也不需要浏览器凭据。
+const API_SAME_ORIGIN = !API_BASE || API_BASE.indexOf(location.origin) === 0;
+const API_FETCH_INIT = API_SAME_ORIGIN ? { credentials: 'include' } : {};
+const audio = new Audio(); audio.preload = 'auto';
+
+let currentSong = null, currentLyrics = [], currentLyricIndex = -99, triedFallback = false;
+let userBackground = false, lastCoverUrl = '';
+let playlist = [], currentPlayIndex = -1, playMode = 'list';
+
+// 登录状态
+let currentCookie = localStorage.getItem('ncm_cookie') || '';
+let currentUser = JSON.parse(localStorage.getItem('ncm_user') || 'null');
+let qrTimer = null;
+let likedIds = new Set();
+let likedSongs = [];
+let likedLoaded = false;
+
+const $ = (id) => document.getElementById(id);
+const searchInput = $('searchInput'), searchBtn = $('searchBtn'), resultList = $('resultList');
+const nowName = $('nowName'), nowArtist = $('nowArtist'), playerStatus = $('playerStatus');
+const coverBgBtn = $('coverBgBtn'), bottomBar = $('bottomBar');
+const collapseBarBtn = $('collapseBarBtn'), expandBarBtn = $('expandBarBtn');
+const prevBtn = $('prevBtn'), nextBtn = $('nextBtn'), modeBtn = $('modeBtn');
+const rootStyle = document.documentElement.style;
+
+const PLAY_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+const PAUSE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
+const MODE_CONFIG = { list: { label: '🔁', title: '顺序播放' }, single: { label: '🔂', title: '单曲循环' }, shuffle: { label: '🔀', title: '随机播放' } };
+
+let statusTimer = null;
+function setPlayerStatus(msg) {
+  playerStatus.textContent = msg || '';
+  if (statusTimer) clearTimeout(statusTimer);
+  if (msg) statusTimer = setTimeout(() => { playerStatus.textContent = ''; }, 4500);
+}
+
+// 极致精简 Cookie：只保留 MUSIC_U 与 __csrf，彻底防止 URL 过长被截断
+function sanitizeCookie(rawCookie) {
+  if (!rawCookie) return '';
+  const parts = [];
+  const musicU = rawCookie.match(/MUSIC_U=([^;]+)/);
+  const csrf = rawCookie.match(/__csrf=([^;]+)/);
+  if (musicU) parts.push(`MUSIC_U=${musicU[1]}`);
+  if (csrf) parts.push(`__csrf=${csrf[1]}`);
+  return parts.join('; ');
+}
+
+/* ---------------- 风控提示识别与冷却 ---------------- */
+// 网易对登录的风控提示都长这样，命中后必须立刻停手，否则「操作频繁」的 24h 计时会被不断重置
+const RISK_RE = /频繁|不稳定|风险|稍后再试|异常环境|环境异常|24\s*小时|风控|被限制/;
+const RISK_LOCK_KEY = 'ncm_login_lock_until';
+
+function riskLockedUntil() { return Number(localStorage.getItem(RISK_LOCK_KEY) || 0); }
+function lockLogin(hours = 24) {
+  localStorage.setItem(RISK_LOCK_KEY, String(Date.now() + hours * 3600 * 1000));
+}
+function isRiskText(t) { return RISK_RE.test(String(t || '')); }
+function lockRemainText() {
+  const ms = riskLockedUntil() - Date.now();
+  if (ms <= 0) return '';
+  const h = Math.floor(ms / 3600000), m = Math.ceil((ms % 3600000) / 60000);
+  return `${h} 小时 ${m} 分`;
+}
+
+/* 统一封装 API 请求。两个关键点：
+   1) 只带 randomCNIP=true，绝对不要带 realIP。
+      本机跑 API 时真实出口 IP 就是你家宽带，再伪造 X-Real-IP / X-Forwarded-For，
+      网易看到「请求头里的 IP ≠ 实际连接的 IP」，这就是典型代理特征，扫码确认时会报
+      「设备网络不稳定」；反复重试就升级成「操作频繁，24h 后再试」。
+      （randomCNIP=true 在这里的真实作用是「让服务端不要注入伪造 IP 头」，
+        不是「每次随机换 IP」——它只影响那一行 if (!options.randomCNIP) 的判断。）
+   2) 登录相关接口和其它接口全部走这里，保证同一个会话自始至终同一个出口 IP、同一套 Cookie。
+*/
+async function requestAPI(endpoint, params = {}, opt = {}) {
+  const retries = opt.retry === undefined ? 1 : opt.retry;
+  let lastErr = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const url = new URL(endpoint, API_BASE || location.origin);
+    url.searchParams.append('timestamp', Date.now());
+    url.searchParams.append('randomCNIP', 'true'); // 只用来关掉服务端注入的伪造 IP 头
+
+    if (currentCookie) {
+      const clean = sanitizeCookie(currentCookie);
+      // 注意：不要手动 encodeURIComponent，URLSearchParams 会处理
+      if (clean) url.searchParams.append('cookie', clean);
+    }
+    Object.keys(params).forEach(k => {
+      if (params[k] !== undefined && params[k] !== null) url.searchParams.append(k, params[k]);
+    });
+
+    try {
+      const res = await fetch(url.toString(), API_FETCH_INIT);
+      const text = await res.text();
+      if (!res.ok || !text) {
+        // 网易对 /song/url 这类接口会偶发 HTTP 400 空响应，值得重试
+        lastErr = new Error(`HTTP ${res.status} @ ${endpoint}`);
+        throw lastErr;
+      }
+      return JSON.parse(text);
+    } catch (e) {
+      lastErr = e;
+      if (attempt < retries) await new Promise(r => setTimeout(r, 400 + attempt * 700));
+    }
+  }
+  throw lastErr || new Error('request failed');
+}
+
+/* ----------------------- 登录逻辑 ----------------------- */
+function updateUserUI() {
+  const loginBtn = $('openLoginBtn');
+  const profile = $('userProfile');
+
+  if (currentCookie && currentUser) {
+    loginBtn.style.display = 'none';
+    profile.style.display = 'flex';
+    $('userAvatar').src = currentUser.avatarUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23555"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    $('userNickname').textContent = currentUser.nickname || '已登录';
+    $('userVip').textContent = currentUser.vipType > 0 ? 'VIP 用户' : '普通用户';
+  } else {
+    loginBtn.style.display = 'block';
+    profile.style.display = 'none';
+  }
+}
+
+// 只打一次 /login/status，必要时补一次 /user/detail。
+// 旧版登录成功后连发 3 个请求、还延迟再发一遍，一个扫码动作就是 6~8 次带 Cookie 的请求，
+// 这本身就会喂大风控信号。
+async function fetchUserInfo() {
+  if (!currentCookie) return false;
+
+  let accountId = null, profile = null, anon = false, statusMsg = '', statusFailed = false;
+
+  try {
+    const st = await requestAPI('/login/status', {}, { retry: 0 });
+    const d = st.data || st;
+    if (d && d.account) {
+      accountId = d.account.id || null;
+      anon = !!d.account.anonimousUser;
+    }
+    profile = (d && d.profile) || null;
+    statusMsg = st.message || st.msg || (st.data && st.data.message) || '';
+  } catch (e) {
+    console.warn('/login/status 失败', e);
+    statusFailed = true;
+  }
+
+  if (isRiskText(statusMsg)) {
+    lockLogin(24);
+    setPlayerStatus('网易风控：' + statusMsg + '（已自动停止请求）');
+    return false;
+  }
+
+  // 只是连不上 API（服务没开 / 网络抖动），不要因此把登录态清掉
+  if (statusFailed) {
+    setPlayerStatus('连不上 API 服务，请确认 node app.js 在运行');
+    return false;
+  }
+
+  // 匿名账号（没登录）不算登录成功
+  if (!accountId || anon) {
+    currentCookie = '';
+    currentUser = null;
+    localStorage.removeItem('ncm_cookie');
+    localStorage.removeItem('ncm_user');
+    updateUserUI();
+    setPlayerStatus('登录已失效，请重新扫码');
+    return false;
+  }
+
+  if (!profile || !profile.nickname) {
+    try {
+      const det = await requestAPI('/user/detail', { uid: accountId }, { retry: 0 });
+      profile = det.profile || (det.nickname ? det : null);
+    } catch (e) { console.warn('/user/detail 失败', e); }
+  }
+
+  currentUser = {
+    nickname: (profile && profile.nickname) || '已登录',
+    avatarUrl: (profile && profile.avatarUrl) || '',
+    vipType: (profile && profile.vipType) || 0,
+    uid: accountId
+  };
+  localStorage.setItem('ncm_user', JSON.stringify(currentUser));
+  updateUserUI();
+  setPlayerStatus('已登录：' + currentUser.nickname);
+  loadLikedIds();
+  return true;
+}
+
+/* ----------------------- 喜欢歌曲 ----------------------- */
+async function loadLikedIds() {
+  if (!currentCookie || !currentUser || !currentUser.uid) {
+    likedIds.clear();
+    updateLikeBtn();
+    return;
+  }
+  try {
+    const data = await requestAPI('/likelist', { uid: currentUser.uid });
+    const ids = (data && (data.ids || (data.data && data.data.ids))) || [];
+    likedIds = new Set(ids.map(String));
+    updateLikeBtn();
+  } catch (e) {
+    console.warn('获取喜欢列表失败', e);
+    likedIds.clear();
+    updateLikeBtn();
+  }
+}
+
+async function loadLikedSongs() {
+  if (!currentCookie || !currentUser || !currentUser.uid) return [];
+  if (likedLoaded && likedSongs.length) return likedSongs;
+
+  const panel = $('likedPanel');
+  if (panel) panel.innerHTML = '<div class="result-loading">加载中…</div>';
+
+  try {
+    let ids = [...likedIds];
+    if (!ids.length) {
+      const data = await requestAPI('/likelist', { uid: currentUser.uid });
+      const arr = (data && (data.ids || (data.data && data.data.ids))) || [];
+      likedIds = new Set(arr.map(String));
+      ids = arr;
+    }
+    if (!ids.length) {
+      likedSongs = [];
+      likedLoaded = true;
+      return likedSongs;
+    }
+
+    const all = [];
+    const batch = 200;
+    for (let i = 0; i < ids.length; i += batch) {
+      const chunk = ids.slice(i, i + batch);
+      try {
+        const detail = await requestAPI('/song/detail', { ids: chunk.join(',') });
+        if (detail.songs) all.push(...detail.songs);
+      } catch (e) {
+        console.warn('获取歌曲详情失败', e);
+      }
+    }
+    likedSongs = all.map(song => {
+      const ar = song.ar || song.artists || [];
+      const artist = ar.map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+      const cover = buildCoverUrl((song.al && song.al.picUrl) || (song.album && song.album.picUrl) || '');
+      return { id: song.id, name: song.name || '未知歌曲', artist, cover };
+    });
+    likedLoaded = true;
+    updateLikeBtn();
+    return likedSongs;
+  } catch (e) {
+    console.warn('加载喜欢列表失败', e);
+    if (panel) panel.innerHTML = '<div class="result-empty">加载失败，请稍后重试</div>';
+    return [];
+  }
+}
+
+function renderLikedList() {
+  const panel = $('likedPanel');
+  if (!panel) return;
+  panel.innerHTML = '';
+  if (!likedSongs.length) {
+    panel.innerHTML = '<div class="result-empty">还没有喜欢的歌曲</div>';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  likedSongs.forEach((song, index) => {
+    const item = document.createElement('div');
+    item.className = 'result-item';
+    item.dataset.id = String(song.id);
+    if (currentSong && String(currentSong.id) === String(song.id)) item.classList.add('active');
+    item.innerHTML = `<div class="t">${song.name}</div><div class="a">${song.artist}</div>`;
+    item.addEventListener('click', () => playLikedAt(index));
+    frag.appendChild(item);
+  });
+  panel.appendChild(frag);
+}
+
+function updateLikedPanelHighlight() {
+  const panel = $('likedPanel');
+  if (!panel || !currentSong) return;
+  Array.prototype.forEach.call(panel.children, el => {
+    if (!el.dataset || !el.dataset.id) return;
+    el.classList.toggle('active', el.dataset.id === String(currentSong.id));
+  });
+}
+
+async function toggleLikedPanel() {
+  const panel = $('likedPanel');
+  const btn = $('toggleLikedBtn');
+  if (!panel) return;
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    if (btn) btn.textContent = '我喜欢的音乐';
+    return;
+  }
+  if (!currentCookie || !currentUser || !currentUser.uid) {
+    setPlayerStatus('请先登录后再查看喜欢列表');
+    return;
+  }
+  panel.classList.add('open');
+  if (btn) btn.textContent = '收起喜欢列表';
+  await loadLikedSongs();
+  renderLikedList();
+}
+
+function playLikedAt(index) {
+  if (index < 0 || index >= likedSongs.length) return;
+  playlist = likedSongs.slice();
+  currentPlayIndex = index;
+  const song = likedSongs[index];
+  playSong({ id: song.id, name: song.name, artist: song.artist, cover: song.cover });
+}
+
+function updateLikeBtn() {
+  const btn = $('likeBtn');
+  if (!btn) return;
+  const song = currentSong;
+  const canClick = !!song;
+  btn.disabled = !canClick;
+  const liked = !!(song && currentCookie && currentUser && currentUser.uid && likedIds.has(String(song.id)));
+  btn.classList.toggle('liked', liked);
+  const txt = $('likeText');
+  if (txt) txt.textContent = liked ? '已喜欢' : '喜欢';
+  btn.title = liked ? '取消喜欢' : '喜欢这首歌';
+}
+
+async function toggleLike() {
+  if (!currentSong) return;
+  if (!currentCookie || !currentUser || !currentUser.uid) {
+    setPlayerStatus('请先登录后再喜欢歌曲');
+    return;
+  }
+  const id = currentSong.id;
+  const uid = currentUser.uid;
+  const willLike = !likedIds.has(String(id));
+  const btn = $('likeBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const data = await requestAPI('/song/like', { id, uid, like: willLike });
+    console.log('喜欢操作返回:', data);
+    if (data.code === 200) {
+      if (willLike) likedIds.add(String(id));
+      else likedIds.delete(String(id));
+      likedLoaded = false; // 下次展开喜欢列表时重新拉取
+      setPlayerStatus(willLike ? '已添加到「我喜欢」' : '已取消喜欢');
+    } else {
+      setPlayerStatus('操作失败：' + (data.message || data.code));
+    }
+  } catch (e) {
+    console.warn('喜欢操作失败', e);
+    setPlayerStatus('喜欢操作失败，请检查网络或登录状态');
+  } finally {
+    updateLikeBtn();
+  }
+}
+
+$('logoutBtn').addEventListener('click', () => {
+  currentCookie = '';
+  currentUser = null;
+  localStorage.removeItem('ncm_cookie');
+  localStorage.removeItem('ncm_user');
+  likedIds.clear();
+  likedSongs = [];
+  likedLoaded = false;
+  const panel = $('likedPanel');
+  if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
+  const btn = $('toggleLikedBtn');
+  if (btn) btn.textContent = '我喜欢的音乐';
+  updateUserUI();
+  updateLikeBtn();
+  setPlayerStatus('已退出登录');
+});
+
+/* ---------- 风控提示框 ---------- */
+function showRiskBox(text) {
+  const box = $('riskBox');
+  if (!box) return;
+  const remain = lockRemainText();
+  box.style.display = 'block';
+  box.innerHTML = (text ? text + '<br>' : '') +
+    (remain ? `网易登录风控生效中，剩 <b>${remain}</b>。这段时间<b>每次扫码都会失败并重新计时</b>，先别试了。`
+            : '');
+  const qc = $('qrContainer');
+  if (qc) qc.innerHTML = '<div style="color:#333;font-size:12px;text-align:center;">暂停扫码</div>';
+}
+
+$('openLoginBtn').addEventListener('click', () => {
+  $('loginModal').classList.add('visible');
+  if (currentCookie && currentUser) { $('qrStatus').textContent = '当前已登录：' + currentUser.nickname; return; }
+  if (riskLockedUntil() > Date.now()) { $('qrStatus').textContent = '风控冷却中'; showRiskBox(''); return; }
+  startQrLogin();
+});
+
+$('closeLoginBtn').addEventListener('click', () => {
+  $('loginModal').classList.remove('visible');
+  clearInterval(qrTimer);
+});
+
+let loginBusy = false;
+
+async function startQrLogin() {
+  clearInterval(qrTimer);
+  if (loginBusy) return;
+  if (riskLockedUntil() > Date.now()) { showRiskBox(''); return; }
+  loginBusy = true;
+
+  // 隔离会话：先摘掉旧 Cookie，避免扫码 key 绑到旧账号上
+  const savedCookie = currentCookie;
+  currentCookie = '';
+
+  const qrContainer = $('qrContainer');
+  const qrStatus = $('qrStatus');
+  const riskBox = $('riskBox');
+  if (riskBox) riskBox.style.display = 'none';
+  qrContainer.innerHTML = '<div style="color:#333; font-size:12px; text-align:center;">正在加载...</div>';
+  qrStatus.textContent = '正在获取二维码...';
+
+  try {
+    const keyData = await requestAPI('/login/qr/key', {}, { retry: 1 });
+    const key = keyData && keyData.data && keyData.data.unikey;
+    if (!key) throw new Error('没有拿到 unikey');
+
+    const qrData = await requestAPI('/login/qr/create', { key, qrimg: 'true' }, { retry: 1 });
+    const qrimg = qrData && qrData.data && qrData.data.qrimg;
+    if (!qrimg) throw new Error('没有拿到二维码');
+
+    qrContainer.innerHTML = `<img src="${qrimg}" alt="QR Code">`;
+    qrStatus.textContent = '请使用网易云音乐App扫码';
+    loginBusy = false;
+
+    let failCount = 0;
+    qrTimer = setInterval(async () => {
+      try {
+        const check = await requestAPI('/login/qr/check', { key, noCookie: 'true' }, { retry: 0 });
+        failCount = 0;
+        const code = check && check.code;
+        const msg = (check && (check.message || check.msg)) || '';
+
+        // 关键：一旦网易返回风控提示就彻底停手，别把它喂成 24 小时
+        if (isRiskText(msg)) {
+          clearInterval(qrTimer);
+          lockLogin(24);
+          currentCookie = savedCookie;
+          qrStatus.textContent = '网易已拦截本次登录';
+          showRiskBox('接口返回：' + msg);
+          setPlayerStatus('网易风控：' + msg);
+          return;
+        }
+
+        if (code === 800) {
+          clearInterval(qrTimer);
+          currentCookie = savedCookie;
+          qrStatus.textContent = '二维码已过期';
+          qrContainer.innerHTML = '<div style="color:#333; cursor:pointer;" onclick="startQrLogin()">点击刷新</div>';
+        } else if (code === 801) {
+          qrStatus.textContent = '等待扫码...';
+        } else if (code === 802) {
+          qrStatus.textContent = '已扫码，请在手机上确认';
+        } else if (code === 803) {
+          clearInterval(qrTimer);
+          const raw = check.cookie || (check.body && check.body.cookie) || (check.data && check.data.cookie) || '';
+          if (!/MUSIC_U=/.test(raw)) {
+            currentCookie = savedCookie;
+            qrStatus.textContent = '登录成功但没拿到 MUSIC_U，请重新扫码';
+            console.warn('803 但 cookie 不含 MUSIC_U', check);
+            return;
+          }
+          currentCookie = raw;
+          localStorage.setItem('ncm_cookie', currentCookie);
+          qrStatus.textContent = '登录成功，正在读取账号…';
+          // 只查一次；真的没拿到才补一次（旧版是无条件连打两轮）
+          let ok = await fetchUserInfo();
+          if (!ok && riskLockedUntil() <= Date.now()) {
+            await new Promise(r => setTimeout(r, 1200));
+            ok = await fetchUserInfo();
+          }
+          if (ok) setTimeout(() => $('loginModal').classList.remove('visible'), 600);
+        } else if (msg) {
+          qrStatus.textContent = msg + '（code ' + code + '）';
+        }
+      } catch (e) {
+        if (++failCount >= 5) {
+          clearInterval(qrTimer);
+          currentCookie = savedCookie;
+          qrStatus.textContent = '轮询失败，请确认 API 服务（node app.js）还在运行';
+        }
+      }
+    }, 3000);
+  } catch (e) {
+    currentCookie = savedCookie;
+    loginBusy = false;
+    qrStatus.textContent = '获取二维码失败：' + (e.message || e);
+  }
+}
+
+$('guestLoginBtn').addEventListener('click', async () => {
+  const qrStatus = $('qrStatus');
+  qrStatus.textContent = '正在申请匿名 Cookie…';
+  try {
+    const data = await requestAPI('/register/anonimous', {}, { retry: 0 });
+    if (data && data.code === 200 && data.cookie) {
+      currentCookie = data.cookie;
+      currentUser = { nickname: '游客', avatarUrl: '', vipType: 0, uid: 0 };
+      localStorage.setItem('ncm_cookie', currentCookie);
+      localStorage.setItem('ncm_user', JSON.stringify(currentUser));
+      updateUserUI();
+      $('loginModal').classList.remove('visible');
+      setPlayerStatus('已通过游客身份登录');
+    } else {
+      // 实测：这个接口现在稳定返回 {"code":400}，网易已经关掉了匿名注册
+      qrStatus.textContent = '游客登录已不可用（接口返回 code ' + (data && data.code) + '），请用扫码或 Cookie';
+      $('guestLoginBtn').disabled = true;
+      $('guestLoginBtn').style.opacity = '.4';
+    }
+  } catch (e) {
+    qrStatus.textContent = '游客登录请求失败';
+    $('guestLoginBtn').disabled = true;
+    $('guestLoginBtn').style.opacity = '.4';
+  }
+});
+
+/* ---------- 兜底方案：直接粘贴浏览器里的 Cookie ---------- */
+$('cookieLoginBtn').addEventListener('click', async () => {
+  const qrStatus = $('qrStatus');
+  const raw = ($('cookieInput').value || '').trim();
+  if (!/MUSIC_U=/.test(raw)) { qrStatus.textContent = 'Cookie 里至少要包含 MUSIC_U=…'; return; }
+  currentCookie = raw;
+  localStorage.setItem('ncm_cookie', raw);
+  qrStatus.textContent = '正在验证 Cookie…';
+  const ok = await fetchUserInfo();
+  if (ok) {
+    $('cookieInput').value = '';
+    $('loginModal').classList.remove('visible');
+    setPlayerStatus('已用 Cookie 登录');
+  } else {
+    qrStatus.textContent = 'Cookie 无效或已过期';
+  }
+});
+
+/* ----------------------- 播放器核心逻辑 ----------------------- */
+function buildCoverUrl(picUrl) {
+  if (!picUrl) return '';
+  const sep = picUrl.includes('?') ? '&' : '?';
+  return picUrl + sep + 'param=1280y720';
+}
+
+function loadCoverAsBackground(url) {
+  if (!url || url === lastCoverUrl) return;
+  lastCoverUrl = url;
+  const img = new Image(); img.crossOrigin = 'anonymous';
+  img.onload = () => { bgSource = img; applyBackground(false); };
+  img.onerror = () => { console.warn('封面加载失败', url); lastCoverUrl = ''; };
+  img.src = url;
+}
+
+async function fetchSongCover(id) {
+  try {
+    const data = await requestAPI('/song/detail', { ids: id });
+    const s = data.songs && data.songs[0];
+    if (s) {
+      const pic = (s.al && s.al.picUrl) || (s.album && s.album.picUrl) || '';
+      return buildCoverUrl(pic);
+    }
+  } catch (e) { console.warn('获取歌曲封面失败', e); }
+  return '';
+}
+
+async function searchSongs(keyword) {
+  const kw = (keyword || '').trim();
+  if (!kw) return;
+  searchBtn.disabled = true; resultList.innerHTML = '<div class="result-loading">搜索中…</div>'; setPlayerStatus('');
+  try {
+    const data = await requestAPI('/cloudsearch', { keywords: kw, limit: 20 });
+    let songs = data.result && data.result.songs ? data.result.songs : [];
+    if (!Array.isArray(songs)) songs = Object.values(songs);
+    songs.forEach(song => {
+      if (!song._cover) song._cover = buildCoverUrl((song.al && song.al.picUrl) || (song.album && song.album.picUrl) || '');
+    });
+    playlist = songs; renderSearchResults(songs);
+    if (!songs.length) setPlayerStatus('没有找到匹配的歌曲');
+  } catch (err) {
+    resultList.innerHTML = '<div class="result-empty">搜索失败</div>';
+    setPlayerStatus('无法连接 API，请确认已运行 node app.js');
+  } finally { searchBtn.disabled = false; }
+}
+
+function renderSearchResults(songs) {
+  resultList.innerHTML = '';
+  if (!songs.length) { resultList.innerHTML = '<div class="result-empty">没有找到结果</div>'; return; }
+  const frag = document.createDocumentFragment();
+  songs.forEach((song, index) => {
+    const ar = song.ar || song.artists || [];
+    const artistName = ar.map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+    const item = document.createElement('div');
+    item.className = 'result-item'; item.dataset.id = String(song.id); item.dataset.index = String(index);
+    if (currentSong && String(currentSong.id) === String(song.id)) item.classList.add('active');
+    item.innerHTML = `<div class="t">${song.name || '未知歌曲'}</div><div class="a">${artistName}</div>`;
+    item.addEventListener('click', () => playSongAt(index));
+    frag.appendChild(item);
+  });
+  resultList.appendChild(frag);
+}
+
+function playSongAt(index) {
+  if (index < 0 || index >= playlist.length) return;
+  currentPlayIndex = index;
+  const raw = playlist[index];
+  const ar = raw.ar || raw.artists || [];
+  const artistName = ar.map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+  const cover = raw._cover || buildCoverUrl((raw.al && raw.al.picUrl) || (raw.album && raw.album.picUrl) || '');
+  playSong({ id: raw.id, name: raw.name, artist: artistName, cover });
+}
+
+function playNext(auto) {
+  if (!playlist.length) return;
+  if (playMode === 'single' && auto) {
+    if (audio.src) { audio.currentTime = 0; audio.play().catch(() => {}); }
+    else if (currentPlayIndex >= 0) playSongAt(currentPlayIndex);
+    return;
+  }
+  if (playMode === 'shuffle') {
+    if (playlist.length === 1) { audio.currentTime = 0; audio.play().catch(() => {}); return; }
+    let idx = currentPlayIndex;
+    while (idx === currentPlayIndex) idx = Math.floor(Math.random() * playlist.length);
+    playSongAt(idx); return;
+  }
+  let next = currentPlayIndex + 1;
+  if (next >= playlist.length) next = 0;
+  playSongAt(next);
+}
+
+function playPrev() {
+  if (!playlist.length) return;
+  if (playMode === 'shuffle') {
+    if (playlist.length === 1) { audio.currentTime = 0; audio.play().catch(() => {}); return; }
+    let idx = currentPlayIndex;
+    while (idx === currentPlayIndex) idx = Math.floor(Math.random() * playlist.length);
+    playSongAt(idx); return;
+  }
+  let prev = currentPlayIndex - 1;
+  if (prev < 0) prev = playlist.length - 1;
+  playSongAt(prev);
+}
+
+function cyclePlayMode() {
+  if (playMode === 'list') playMode = 'shuffle';
+  else if (playMode === 'shuffle') playMode = 'single';
+  else playMode = 'list';
+  const cfg = MODE_CONFIG[playMode];
+  modeBtn.textContent = cfg.label; modeBtn.title = cfg.title;
+}
+
+async function playSong(song) {
+  currentSong = song; triedFallback = false;
+  nowName.textContent = song.name || '未知歌曲'; nowArtist.textContent = song.artist || '未知歌手';
+  setPlayerStatus('加载中…'); renderLyrics([]);
+  updateLikeBtn();
+  updateLikedPanelHighlight();
+  Array.prototype.forEach.call(resultList.children, el => el.classList.toggle('active', el.dataset.id === String(song.id)));
+
+  if (!userBackground) {
+    (async () => {
+      let cover = song.cover || '';
+      if (!cover) cover = await fetchSongCover(song.id);
+      if (cover && !userBackground && currentSong && String(currentSong.id) === String(song.id)) {
+        song.cover = cover; loadCoverAsBackground(cover);
+      }
+    })();
+  }
+
+  let url = '';
+  try {
+    // /song/url/v1 是网易限得最狠的接口，实测约 40% 概率直接返回 HTTP 400 空响应，
+    // 所以这里必须重试，不能一次 400 就退回 outer/url（那样付费/无版权歌会直接放不出）
+    const data = await requestAPI('/song/url/v1', { id: song.id, level: 'exhigh' }, { retry: 3 });
+    url = (data.data && data.data[0] && data.data[0].url) || '';
+  } catch (err) {
+    console.warn('获取音频 URL 失败', err);
+    setPlayerStatus('获取播放地址失败，已尝试 4 次');
+  }
+
+  if (!url) url = `https://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
+  // 液体背景 / 歌词律动要读频谱，音源必须带 CORS 加载；都不开就保持原样
+  audio.crossOrigin = needsAudio() ? 'anonymous' : null;
+  audio.src = url;
+  const playPromise = audio.play();
+  if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => setPlayerStatus('点击播放按钮开始'));
+  updateAllPlayButtons();
+
+  try {
+    let data = null;
+    try {
+      data = await requestAPI('/lyric/new', { id: song.id });
+    } catch (e) {}
+    if (!(data && data.yrc && data.yrc.lyric)) {
+      try {
+        const data2 = await requestAPI('/lyric', { id: song.id, lv: -1, yv: -1, tv: -1 });
+        if (data2 && data2.yrc && data2.yrc.lyric) data = data2;
+        else if (!data) data = data2;
+      } catch (e) {}
+    }
+
+    let lyrics = [], trans = [];
+    if (data) {
+      const yrcText = (data.yrc && data.yrc.lyric) || '';
+      const lrcText = (data.lrc && data.lrc.lyric) || '';
+      const tlyricText = (data.tlyric && data.tlyric.lyric) || '';
+
+      if (yrcText) lyrics = parseYRC(yrcText);
+      if (!lyrics.length && lrcText) lyrics = parseLRC(lrcText);
+      if (tlyricText) trans = parseLRC(tlyricText);
+
+      if (trans.length > 0) {
+        lyrics.forEach(line => {
+          const match = trans.find(t => Math.abs(t.time - line.time) < 0.3);
+          if (match) line.translation = match.text;
+        });
+      }
+    }
+    if (currentSong && String(currentSong.id) === String(song.id)) renderLyrics(lyrics);
+  } catch (err) {
+    console.warn('获取歌词失败', err);
+    if (currentSong && String(currentSong.id) === String(song.id)) renderLyrics([]);
+  }
+}
+
+function handleAudioError() {
+  if (!currentSong) return;
+  if (triedFallback) { setPlayerStatus('播放失败：可能无版权'); return; }
+  triedFallback = true;
+  audio.src = `https://music.163.com/song/media/outer/url?id=${currentSong.id}.mp3`;
+  audio.play().catch(() => setPlayerStatus('播放失败：可能无版权'));
+}
+
+function handleEnded() {
+  updateAllPlayButtons();
+  if (!playlist.length) return;
+  if (playMode === 'single') { audio.currentTime = 0; audio.play().catch(() => {}); return; }
+  if (playMode === 'shuffle') {
+    if (playlist.length === 1) { audio.currentTime = 0; audio.play().catch(() => {}); return; }
+    let idx = currentPlayIndex;
+    while (idx === currentPlayIndex) idx = Math.floor(Math.random() * playlist.length);
+    playSongAt(idx); return;
+  }
+  let next = currentPlayIndex + 1;
+  if (next >= playlist.length) next = 0;
+  playSongAt(next);
+}
+
+function parseLRC(text) {
+  const result = []; if (!text) return result;
+  const lines = text.split('\n');
+  const matchReg = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+  const stripReg = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]; if (!line) continue;
+    matchReg.lastIndex = 0; const matches = []; let m;
+    while ((m = matchReg.exec(line)) !== null) matches.push({ min: m[1], sec: m[2], ms: m[3] });
+    if (!matches.length) continue;
+    const content = line.replace(stripReg, '').trim(); if (!content) continue;
+    for (let k = 0; k < matches.length; k++) {
+      const mm = matches[k], msStr = mm.ms || '0';
+      const time = parseInt(mm.min, 10) * 60 + parseInt(mm.sec, 10) + parseInt(msStr.length < 3 ? msStr.padEnd(3, '0') : msStr, 10) / 1000;
+      result.push({ time, text: content });
+    }
+  }
+  result.sort((a, b) => a.time - b.time); return result;
+}
+
+function parseYRC(text) {
+  const result = []; if (!text) return result;
+  const lines = text.replace(/\r/g, '').split('\n');
+  const headReg = /^\[(\d+),(\d+)\]/;
+  const markReg = /\((\d+),(\d+),(\d+)\)/g;
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i].trim(); if (!raw || raw.charAt(0) === '{') continue;
+    const head = headReg.exec(raw); if (!head) continue;
+    const lineTime = parseInt(head[1], 10) / 1000, lineDur = parseInt(head[2], 10) / 1000;
+    const rest = raw.slice(head[0].length);
+    const marks = []; markReg.lastIndex = 0; let m;
+    while ((m = markReg.exec(rest)) !== null) marks.push({ time: parseInt(m[1], 10) / 1000, duration: parseInt(m[2], 10) / 1000, start: m.index, end: m.index + m[0].length });
+    if (!marks.length) continue;
+
+    let rawChars = [];
+    for (let k = 0; k < marks.length; k++) {
+      const mk = marks[k], textEnd = (k + 1 < marks.length) ? marks[k + 1].start : rest.length;
+      const chText = rest.slice(mk.end, textEnd); if (!chText) continue;
+      rawChars.push({ time: mk.time, duration: mk.duration, text: chText });
+    }
+    if (!rawChars.length) continue;
+
+    const processedChars = [];
+    for (let k = 0; k < rawChars.length; k++) {
+      const ch = rawChars[k];
+      const hasEnglish = /[a-zA-Z]/.test(ch.text);
+      const hasChinese = /[\u4e00-\u9fa5]/.test(ch.text);
+
+      if (hasEnglish && !hasChinese && ch.text.length > 1) {
+        const letters = Array.from(ch.text);
+        const visualDur = Math.max(ch.duration / letters.length, 0.25);
+        for (let j = 0; j < letters.length; j++) {
+          processedChars.push({
+            time: ch.time + j * (ch.duration / letters.length),
+            duration: visualDur,
+            text: letters[j],
+            isEn: true
+          });
+        }
+      } else {
+        processedChars.push(ch);
+      }
+    }
+
+    result.push({
+      time: lineTime,
+      duration: lineDur,
+      text: processedChars.map(c => c.text).join(''),
+      chars: processedChars
+    });
+  }
+  result.sort((a, b) => a.time - b.time); return result;
+}
+
+const LYRIC_LINE_HEIGHT = 52;
+
+/* ---------------- 歌词滚动 / 打字机 ---------------- */
+let lyricStatic = false;   // true = 不滚动，当前句固定显示在屏幕中间
+let typewriter = false;    // true = 逐字展开
+let typeSpeed = 90;        // 纯 LRC（没有逐字时间）时每字间隔，单位 ms
+let twAnchor = 'center';   // center = 向两侧展开；head = 行头钉在屏幕中央向右展开
+
+let lyricRing = false;     // true = 半圆环排版
+let ringRadius = 700;      // 弧半径 px
+let ringStep = 8;          // 相邻两行的圆心角（度）
+let ringDir = 'right';     // right = 向右弯；left = 向左弯
+const RING_MAX_DEG = 84;   // 圆弧上最多排到 ±84°，再远就藏掉
+
+function setLyricStatic(on) {
+  lyricStatic = !!on;
+  document.body.classList.toggle('lyric-static', lyricStatic);
+  if (lyricStatic) lyricScroll.style.transform = '';  // 交给 CSS 的 translateY(-50%)
+  applyLyricIndex(currentLyricIndex);
+}
+
+function setTypewriter(on) {
+  typewriter = !!on;
+  document.body.classList.toggle('typewriter', typewriter);
+  if (!typewriter) {
+    const hidden = lyricScroll.querySelectorAll('.lyric-char.tw-hidden');
+    for (let i = 0; i < hidden.length; i++) hidden[i].classList.remove('tw-hidden');
+  }
+  // 逐字 span 一直都在（纯 LRC 也会拆字），这里不用重建，只把当前句的展开状态刷新一次
+  if (typewriter && currentLyricIndex >= 0) {
+    const el = lyricScroll.children[currentLyricIndex];
+    if (el) prepareLineReveal(el, currentLyricIndex);
+  }
+  updateLyric(true);
+}
+
+function setTwAnchor(mode) {
+  twAnchor = mode === 'center' ? 'center' : 'head';
+  document.body.classList.toggle('tw-anchor-head', twAnchor === 'head');
+  if (lyricStatic) applyLyricIndex(currentLyricIndex);
+}
+
+/* ---------------- 半圆环排版 ---------------- */
+/* 切换排版时先掐掉 transform 过渡：否则每行要跑 0.55s 的过渡，
+   期间（或帧率不稳时）整片会挤在中间、看起来像"偏移到屏幕外"。
+   用内联 transition 压制，比加 body class 更可靠（不受同优先级规则影响）。 */
+let lyricSnapPending = false;
+function snapLyricTransition(after) {
+  if (lyricSnapPending) return;
+  lyricSnapPending = true;
+  const kids = lyricScroll.children;
+  for (let i = 0; i < kids.length; i++) kids[i].style.transition = 'none';
+  lyricScroll.style.transition = 'none';
+  requestAnimationFrame(() => {
+    if (after) after();
+    requestAnimationFrame(() => {
+      for (let i = 0; i < kids.length; i++) kids[i].style.transition = '';
+      lyricScroll.style.transition = '';
+      lyricSnapPending = false;
+    });
+  });
+}
+
+function setLyricLayout(mode) {
+  const nextRing = (mode === 'ring');
+  const changed = (nextRing !== lyricRing);
+  if (changed) snapLyricTransition(() => {
+    // 过渡恢复后再确认一次，防止切换瞬间浏览器还没完成布局
+    if (lyricRing) loadRingLayout(); else applyLyricIndex(currentLyricIndex);
+  });
+  lyricRing = nextRing;
+  document.body.classList.toggle('lyric-ring', lyricRing);
+  if (lyricRing) {
+    // 圆环要看到前后句才有意义，默认把两个「显示」开关一起打开
+    const sp = document.getElementById('showPast'), sf = document.getElementById('showFuture');
+    if (sp && sf && (!sp.checked || !sf.checked)) {
+      sp.checked = true; sf.checked = true;
+      document.body.classList.remove('hide-past', 'hide-future');
+      savePresets();
+    }
+    loadRingLayout();
+  }
+  applyLyricIndex(currentLyricIndex);
+}
+
+/* 把一行摆到圆弧上：d = 这一行相对当前句的偏移（负数是已播，正数是未播） */
+function layoutRingLine(el, d) {
+  const step = Math.max(1, ringStep);
+  const dir = ringDir === 'left' ? -1 : 1;
+  const phi = d * step * Math.PI / 180;                 // 相对当前句的圆心角
+  const x = -dir * ringRadius * (1 - Math.cos(phi));    // 水平往弧内收
+  const y = ringRadius * Math.sin(phi);                 // 垂直排开
+
+  const maxD = Math.max(1, Math.floor(RING_MAX_DEG / step));
+  const offscreen = Math.abs(y) > window.innerHeight * 0.56;
+  const far = Math.abs(d) > maxD || offscreen;
+  if (far) {
+    if (!el.classList.contains('ring-far')) el.classList.add('ring-far');
+    return;
+  }
+  if (el.classList.contains('ring-far')) el.classList.remove('ring-far');
+
+  const rot = dir * d * step;                          // 文字贴着圆的切线转
+  const scale = el.classList.contains('active') ? 1.12 : 1;
+
+  el.style.transform =
+    'translate(-50%,-50%) translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px)' +
+    ' rotate(' + rot.toFixed(2) + 'deg) scale(' + scale + ')';
+}
+
+/* 参数变了就把整圈重摆一次（只算弧上看得见的那几行） */
+function loadRingLayout() {
+  if (!lyricRing) return;
+  const target = currentLyricIndex < 0 ? 0 : currentLyricIndex;
+  const children = lyricScroll.children;
+  for (let i = 0; i < children.length; i++) layoutRingLine(children[i], i - target);
+  recalculateLyricScales();
+}
+
+/* 当前句可用宽度：行头固定时只有右半边可用，向两侧展开时按「最大占据宽度」算 */
+function lyricAvailWidth() {
+  const el = document.getElementById('maxWidthRatio');
+  const ratio = el ? parseFloat(el.value) / 100 : 0.85;
+  if (lyricRing) return window.innerWidth * Math.min(0.62, ratio);   // 斜着排，可用宽度要留窄
+  if (lyricStatic && twAnchor === 'head') return window.innerWidth * 0.5 - window.innerWidth * 0.08;
+  return window.innerWidth * ratio - window.innerWidth * 0.16;
+}
+
+/* 按可用宽度给单行算自适应字号 */
+function fitLineEl(lineEl, avail) {
+  if (!lineEl || lineEl.classList.contains('lyric-empty')) return;
+  const autoFit = document.getElementById('enableAutoFit');
+  const availW = avail === undefined ? lyricAvailWidth() : avail;
+
+  lineEl.style.setProperty('--adaptive-scale', '1');
+  if (!autoFit || !autoFit.checked) return;
+
+  // 打字机模式下这行只露出了几个字，直接量会量小，先临时全部显示再量
+  const temp = [];
+  if (typewriter && lineEl.classList.contains('active')) {
+    const hs = lineEl.querySelectorAll('.lyric-char.tw-hidden');
+    for (let i = 0; i < hs.length; i++) { hs[i].classList.remove('tw-hidden'); temp.push(hs[i]); }
+  }
+
+  let maxW = 0;
+  const children = lineEl.children;
+  for (let j = 0; j < children.length; j++) {
+    if (children[j].scrollWidth > maxW) maxW = children[j].scrollWidth;
+  }
+  if (maxW > availW && availW > 0) {
+    lineEl.style.setProperty('--adaptive-scale', Math.max(0.4, availW / maxW).toFixed(3));
+  }
+
+  for (let i = 0; i < temp.length; i++) temp[i].classList.add('tw-hidden');
+}
+
+/* 某一行成为当前句时：重置逐字高亮，并按打字机模式把它收回到「只剩行头」 */
+function prepareLineReveal(lineEl, idx) {
+  const spans = lineEl._chars;
+  if (!spans) return;
+  const line = currentLyrics[idx] || {};
+  const next = currentLyrics[idx + 1];
+  const n = spans.length;
+  if (!n) return;
+  const t0 = line.time || 0;
+  const dur = line.duration > 0
+    ? line.duration
+    : Math.max(0.6, (next ? next.time : t0 + 4) - t0);
+
+  for (let k = 0; k < n; k++) {
+    const span = spans[k];
+    if (span._synth) {           // 纯 LRC：按平均速度铺时间轴（打字机和高亮都用得上）
+      span._time = t0 + (k / n) * dur;
+      span._end = t0 + ((k + 1) / n) * dur;
+      span._reveal = span._time;
+    }
+    if (typewriter) span.classList.add('tw-hidden');
+    span.classList.remove('sung', 'singing');
+  }
+}
+
+function renderLyrics(lyrics) {
+  currentLyrics = lyrics || []; currentLyricIndex = -99; lyricScroll.innerHTML = '';
+  if (!currentLyrics.length) {
+    const div = document.createElement('div');
+    div.className = 'lyric-line lyric-empty'; div.textContent = '♪ 暂无歌词';
+    lyricScroll.appendChild(div); lyricScroll.style.transform = 'translateY(-26px)'; return;
+  }
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < currentLyrics.length; i++) {
+    const line = currentLyrics[i], div = document.createElement('div');
+    div.className = 'lyric-line';
+
+    const textWrap = document.createElement('div');
+    if (line.chars && line.chars.length) {
+      const spans = [];
+      let enDelayCount = 0;
+      for (let k = 0; k < line.chars.length; k++) {
+        const ch = line.chars[k], span = document.createElement('span');
+        span.className = 'lyric-char' + (ch.isEn ? ' en-char' : '');
+        span.textContent = ch.text === ' ' ? '\u00A0' : ch.text;
+        span._time = ch.time; span._end = ch.time + ch.duration;
+        span._reveal = ch.time;
+
+        if (ch.isEn) {
+          span.style.setProperty('--char-delay', `calc(${enDelayCount} * var(--char-stagger))`);
+          enDelayCount++;
+        } else {
+          enDelayCount = 0;
+          span.style.setProperty('--char-delay', '0ms');
+        }
+
+        textWrap.appendChild(span); spans.push(span);
+      }
+      div._chars = spans;
+    } else if (line.text) {
+      // 纯 LRC 没有逐字时间：也按字拆开，这样逐字高亮和歌词律动对所有歌都生效
+      const chars = Array.from(line.text);
+      const spans = [];
+      for (let k = 0; k < chars.length; k++) {
+        const span = document.createElement('span');
+        span.className = 'lyric-char';
+        span.textContent = chars[k] === ' ' ? '\u00A0' : chars[k];
+        span._synth = true;
+        spans.push(span);
+        textWrap.appendChild(span);
+      }
+      div._chars = spans;
+    } else {
+      textWrap.textContent = line.text;
+    }
+    div.appendChild(textWrap);
+
+    if (line.translation) {
+      const transDiv = document.createElement('div');
+      transDiv.className = 'lyric-translation';
+      transDiv.textContent = line.translation;
+      div.appendChild(transDiv);
+    }
+
+    frag.appendChild(div);
+  }
+  lyricScroll.appendChild(frag);
+  updateLyric(true);
+
+  recalculateLyricScales();
+}
+
+function applyLyricIndex(idx) {
+  const children = lyricScroll.children;
+  if (!children.length || !currentLyrics.length) return;
+  const target = idx < 0 ? 0 : idx;
+
+  if (lyricRing) {
+    lyricScroll.style.transform = '';   // 圆环模式下每一行自己定位
+  } else if (lyricStatic) {
+    lyricScroll.style.transform = '';   // 静止模式由 CSS 居中，不再整块位移
+  } else {
+    const offset = -(target * LYRIC_LINE_HEIGHT + LYRIC_LINE_HEIGHT / 2);
+    lyricScroll.style.transform = 'translateY(' + offset + 'px)';
+  }
+
+  const avail = lyricAvailWidth();
+  for (let i = 0; i < children.length; i++) {
+    const el = children[i];
+    if (i === idx) {
+      el.classList.add('active'); el.classList.remove('past');
+      prepareLineReveal(el, i);   // 打字机：回到行头重新展开
+      fitLineEl(el, avail);
+    } else {
+      if (el._chars) for (let k = 0; k < el._chars.length; k++) el._chars[k].classList.remove('sung', 'singing', 'tw-hidden');
+      if (i < idx) { el.classList.remove('active'); el.classList.add('past'); }
+      else { el.classList.remove('active'); el.classList.remove('past'); }
+    }
+    if (lyricRing) {
+      layoutRingLine(el, i - target);
+    } else {
+      // 非环形模式必须清掉环形留下的内联 transform / ring-far，
+      // 否则切回竖排会残留旋转和位移，整片歌词就"飞到屏幕外"了
+      if (el.style.transform) el.style.transform = '';
+      if (el.classList.contains('ring-far')) el.classList.remove('ring-far');
+    }
+  }
+}
+
+function updateLineChars(lineEl, t) {
+  const spans = lineEl._chars; if (!spans) return;
+  for (let i = 0; i < spans.length; i++) {
+    const span = spans[i], st = span._time, en = span._end;
+    if (typewriter) {
+      // 打字机：到点才把这个字放出来（未到点的字不占位，整行才会从行头长出来）
+      if (span._reveal === undefined || t + 0.02 >= span._reveal) span.classList.remove('tw-hidden');
+      else span.classList.add('tw-hidden');
+    }
+    if (t >= en) {
+      if (!span.classList.contains('sung')) { span.classList.add('sung'); span.classList.remove('singing'); }
+    } else if (t >= st) {
+      if (!span.classList.contains('singing')) { span.classList.add('singing'); span.classList.remove('sung'); }
+    } else {
+      if (span.classList.contains('sung') || span.classList.contains('singing')) span.classList.remove('sung', 'singing');
+    }
+  }
+}
+
+function updateLyric(force) {
+  if (!currentLyrics.length) return;
+  const t = audio.currentTime || 0; let idx = -1;
+  for (let i = 0; i < currentLyrics.length; i++) {
+    if (currentLyrics[i].time <= t + 0.12) idx = i; else break;
+  }
+  if (idx !== currentLyricIndex || force) { currentLyricIndex = idx; applyLyricIndex(idx); }
+  if (idx >= 0 && idx < currentLyrics.length) {
+    const lineEl = lyricScroll.children[idx];
+    if (lineEl) updateLineChars(lineEl, t);
+  }
+}
+
+function updateAllPlayButtons() {
+  const disabled = !currentSong, icon = audio.paused ? PLAY_ICON : PAUSE_ICON;
+  document.querySelectorAll('.song-play-pause').forEach(btn => { btn.disabled = disabled; btn.innerHTML = icon; });
+}
+
+let lastTimeText = '';
+function formatTime(s) { return isFinite(s) && s >= 0 ? Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0') : '0:00'; }
+
+function updateAllProgress() {
+  if (!currentSong) return;
+  const dur = audio.duration;
+  if (dur && isFinite(dur) && dur > 0) {
+    const p = Math.max(0, Math.min(1, audio.currentTime / dur)), w = (p * 100).toFixed(2) + '%';
+    document.querySelectorAll('.song-progress-fill').forEach(f => f.style.width = w);
+    const txt = formatTime(audio.currentTime) + ' / ' + formatTime(dur);
+    if (txt !== lastTimeText) {
+      document.querySelectorAll('.song-time').forEach(t => t.textContent = txt);
+      lastTimeText = txt;
+    }
+  }
+}
+
+/* ----- 长句自适应计算 ----- */
+function recalculateLyricScales() {
+  const avail = lyricAvailWidth();
+  for (let i = 0; i < lyricScroll.children.length; i++) {
+    const lineEl = lyricScroll.children[i];
+    if (lineEl.classList.contains('lyric-empty')) continue;
+    // 静止模式下非当前句是 display:none，量不到宽度，等它成为当前句时再算
+    if (lineEl.offsetParent === null) { lineEl.style.setProperty('--adaptive-scale', '1'); continue; }
+    fitLineEl(lineEl, avail);
+  }
+}
+
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(recalculateLyricScales, 200);
+});
+
+/* ----- 事件绑定 ----- */
+searchBtn.addEventListener('click', () => searchSongs(searchInput.value));
+searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchSongs(searchInput.value); });
+
+document.querySelectorAll('.song-play-pause').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!currentSong) return;
+    if (audio.paused) audio.play().catch(() => setPlayerStatus('播放失败，可能无版权')); else audio.pause();
+  });
+});
+
+document.querySelectorAll('.song-progress').forEach(bar => {
+  bar.addEventListener('click', (e) => {
+    if (!audio.duration || !isFinite(audio.duration)) return;
+    const rect = bar.getBoundingClientRect();
+    audio.currentTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * audio.duration;
+    updateLyric(true); updateAllProgress();
+  });
+});
+
+prevBtn.addEventListener('click', playPrev);
+nextBtn.addEventListener('click', () => playNext(false));
+modeBtn.addEventListener('click', cyclePlayMode);
+collapseBarBtn.addEventListener('click', () => bottomBar.classList.add('collapsed'));
+expandBarBtn.addEventListener('click', () => bottomBar.classList.remove('collapsed'));
+$('likeBtn').addEventListener('click', toggleLike);
+$('toggleLikedBtn').addEventListener('click', toggleLikedPanel);
+
+$('lyricToggle').addEventListener('change', (e) => {
+  $('lyricLayer').classList.toggle('hidden', !e.target.checked);
+  savePresets();
+});
+
+$('showPast').addEventListener('change', (e) => { document.body.classList.toggle('hide-past', !e.target.checked); savePresets(); });
+$('showFuture').addEventListener('change', (e) => { document.body.classList.toggle('hide-future', !e.target.checked); savePresets(); });
+$('showTranslation').addEventListener('change', (e) => { document.body.classList.toggle('hide-translation', !e.target.checked); savePresets(); });
+
+/* 歌词滚动 / 打字机 绑定 */
+$('lyricScrollOn').addEventListener('change', (e) => { setLyricStatic(!e.target.checked); savePresets(); });
+$('typewriter').addEventListener('change', (e) => { setTypewriter(e.target.checked); savePresets(); });
+
+const typeSpeedEl = $('typeSpeed');
+typeSpeedEl.addEventListener('input', () => {
+  typeSpeed = parseFloat(typeSpeedEl.value);
+  $('vTypeSpeed').textContent = typeSpeed + 'ms';
+});
+typeSpeedEl.addEventListener('change', () => {
+  savePresets();
+  if (typewriter) updateLyric(true);   // 按新速度重铺时间轴
+});
+
+const twAnchorEl = $('twAnchor');
+twAnchorEl.addEventListener('change', () => { setTwAnchor(twAnchorEl.value); savePresets(); });
+
+const lyricLayoutEl = $('lyricLayout');
+lyricLayoutEl.addEventListener('change', () => { setLyricLayout(lyricLayoutEl.value); savePresets(); });
+
+const ringDirEl = $('ringDir');
+ringDirEl.addEventListener('change', () => { ringDir = ringDirEl.value; loadRingLayout(); savePresets(); });
+
+bindRange('ringRadius', 'vRingRadius', v => { ringRadius = v; loadRingLayout(); }, v => v.toFixed(0) + 'px');
+bindRange('ringStep', 'vRingStep', v => { ringStep = v; loadRingLayout(); }, v => v.toFixed(0) + '°');
+
+coverBgBtn.addEventListener('click', (e) => {
+  e.preventDefault(); e.stopPropagation(); userBackground = false; lastCoverUrl = '';
+  if (currentSong && currentSong.cover) loadCoverAsBackground(currentSong.cover);
+  else if (currentSong) fetchSongCover(currentSong.id).then(c => { if (c && !userBackground) { currentSong.cover = c; loadCoverAsBackground(c); } });
+});
+
+audio.addEventListener('play', updateAllPlayButtons);
+audio.addEventListener('pause', updateAllPlayButtons);
+audio.addEventListener('ended', handleEnded);
+audio.addEventListener('error', onAudioErrorCors);   // 先处理 CORS 失败，别把播放搞哑
+audio.addEventListener('error', handleAudioError);
+
+updateAllPlayButtons();
+updateLikeBtn();
+cyclePlayMode(); cyclePlayMode(); cyclePlayMode(); // 初始化模式文案
+
+/* ==================== 主循环 ==================== */
+let lastTime = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (!lastTime) lastTime = now;
+  let dt = (now - lastTime) / 1000; lastTime = now;
+  if (dt > 0.05) dt = 0.05; if (dt <= 0) dt = 1 / 60;
+
+  if (bgFading) {
+    bgMix = Math.min(1, bgMix + dt * 0.7);
+    if (bgMix >= 1) { bgFading = false; if (bgTexPrev && bgTexPrev !== bgTex) gl.deleteTexture(bgTexPrev); bgTexPrev = bgTex; }
+  }
+
+  resize(); updateDrops(dt); render(dt);
+  updateLyric(); updateAllProgress();
+}
+
+function makeDefaultBackground() {
+  const cv = document.createElement('canvas'); cv.width = 1600; cv.height = 1000;
+  const x = cv.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 1600, 1000);
+  g.addColorStop(0.0, '#0f2027'); g.addColorStop(0.45, '#203a43'); g.addColorStop(1.0, '#2c5364');
+  x.fillStyle = g; x.fillRect(0, 0, 1600, 1000);
+  const palette = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#a29bfe', '#fd79a8', '#74b9ff'];
+  for (let i = 0; i < 16; i++) {
+    const cx = Math.random() * 1600, cy = Math.random() * 1000, rr = 120 + Math.random() * 380;
+    const col = palette[i % palette.length];
+    const rg = x.createRadialGradient(cx, cy, 0, cx, cy, rr);
+    rg.addColorStop(0, col + 'cc'); rg.addColorStop(1, col + '00');
+    x.fillStyle = rg; x.beginPath(); x.arc(cx, cy, rr, 0, Math.PI * 2); x.fill();
+  }
+  return cv;
+}
+
+function bindRange(id, valId, onChange, fmt) {
+  const el = document.getElementById(id), val = document.getElementById(valId);
+  if (!el) return;
+  const update = () => {
+    const v = parseFloat(el.value); onChange(v);
+    if (val) val.textContent = fmt ? fmt(v) : String(v);
+  };
+  el.addEventListener('input', update);
+  el.addEventListener('change', savePresets);
+  update();
+}
+
+function hexToRgb(hex) {
+  return [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
+}
+
+document.getElementById('file').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f);
+  const img = new Image();
+  img.onload = () => { userBackground = true; lastCoverUrl = ''; bgSource = img; applyBackground(false); URL.revokeObjectURL(url); };
+  img.onerror = () => URL.revokeObjectURL(url);
+  img.src = url;
+});
+
+const edgeColorInput = document.getElementById('edgecolor');
+edgeColorInput.addEventListener('input', () => {
+  const rgb = hexToRgb(edgeColorInput.value); paramEdgeR = rgb[0]; paramEdgeG = rgb[1]; paramEdgeB = rgb[2];
+});
+edgeColorInput.addEventListener('change', savePresets);
+
+/* 背景压暗控制绑定 */
+const autoDimCheck = $('autoDim');
+const autoDimStrength = $('autoDimStrength');
+
+function updateAutoDim() {
+  paramAutoDim = autoDimCheck.checked ? parseFloat(autoDimStrength.value) : 0;
+}
+
+autoDimCheck.addEventListener('change', () => { updateAutoDim(); savePresets(); });
+
+bindRange('autoDimStrength', 'vAutoDimStrength', v => { updateAutoDim(); }, v => v.toFixed(2));
+
+/* 液体背景绑定：只在用户点击开关（手势）时初始化 AudioContext，避免被浏览器挂起导致没声音 */
+$('liquidBg').addEventListener('change', (e) => {
+  setLiquidBg(e.target.checked, true);
+  savePresets();
+});
+bindRange('liquidWarp', 'vLiquidWarp', v => paramLiquidWarp = v, v => v.toFixed(2));
+bindRange('liquidSpeed', 'vLiquidSpeed', v => paramLiquidSpeed = v, v => v.toFixed(2));
+bindRange('liquidBlur', 'vLiquidBlur', v => paramLiquidBlur = v, v => v.toFixed(2));
+bindRange('liquidShare', 'vLiquidShare', v => paramShareBias = v, v => v.toFixed(2));
+
+/* 雨滴总开关（和液体背景互斥：开雨滴会自动关液体并打开压暗） */
+$('rainOn').addEventListener('change', (e) => {
+  const on = e.target.checked;
+  setRain(on);
+  if (on) {
+    if (liquidOn) { $('liquidBg').checked = false; setLiquidBg(false, false, true); }
+    if (!$('autoDim').checked) { $('autoDim').checked = true; updateAutoDim(); }
+  }
+  savePresets();
+});
+$('lyricBeat').addEventListener('change', (e) => { setLyricBeat(e.target.checked, true); savePresets(); });
+bindRange('lyricBeatAmp', 'vLyricBeatAmp', v => { paramLyricBeat = v; lastBeatShown = -1; }, v => v.toFixed(2));
+
+// 预设里存着「液体背景开」时，页面加载后没有手势，等用户第一次操作再把音频接上
+['pointerdown', 'keydown'].forEach(ev => {
+  window.addEventListener(ev, () => { if (needsAudio()) primeAudio(); }, { once: true });
+});
+
+/* 歌词自适应控制绑定 */
+$('enableAutoFit').addEventListener('change', () => {
+  recalculateLyricScales();
+  savePresets();
+});
+bindRange('maxWidthRatio', 'vMaxWidthRatio', v => {
+  recalculateLyricScales();
+}, v => v.toFixed(0) + '%');
+
+/* 歌词控制绑定 */
+bindRange('fsFuture', 'vFsFuture', v => { rootStyle.setProperty('--fs-future', v + 'px'); recalculateLyricScales(); }, v => String(v));
+bindRange('fsPast', 'vFsPast', v => { rootStyle.setProperty('--fs-past', v + 'px'); recalculateLyricScales(); }, v => String(v));
+bindRange('fsActive', 'vFsActive', v => { rootStyle.setProperty('--fs-active', v + 'px'); recalculateLyricScales(); }, v => String(v));
+bindRange('scaleSung', 'vScaleSung', v => rootStyle.setProperty('--scale-sung', String(v)), v => v.toFixed(2));
+bindRange('scaleSinging', 'vScaleSinging', v => rootStyle.setProperty('--scale-singing', String(v)), v => v.toFixed(2));
+bindRange('charBounce', 'vCharBounce', v => rootStyle.setProperty('--char-bounce', v + 'px'), v => v.toFixed(0) + 'px');
+bindRange('charStagger', 'vCharStagger', v => rootStyle.setProperty('--char-stagger', v + 'ms'), v => v.toFixed(0) + 'ms');
+bindRange('lyricTrans', 'vLyricTrans', v => rootStyle.setProperty('--lyric-trans', v + 's'), v => v.toFixed(2) + 's');
+bindRange('hlStrength', 'vHlStrength', v => rootStyle.setProperty('--hl-a', String(v)), v => v.toFixed(2));
+
+/* 下拉框控制绑定 */
+const easingSelect = document.getElementById('charEasing');
+easingSelect.addEventListener('change', () => {
+  rootStyle.setProperty('--char-easing', easingSelect.value);
+  savePresets();
+});
+rootStyle.setProperty('--char-easing', easingSelect.value);
+
+/* 音量控制绑定 */
+bindRange('volumeSlider', 'vVolume', v => { audio.volume = v; }, v => Math.round(v * 100) + '%');
+
+/* 雨滴控制绑定 */
+bindRange('frost', 'vFrost', v => paramFrost = v, v => v.toFixed(2));
+bindRange('density', 'vDen', v => paramDensity = v, v => v.toFixed(2));
+bindRange('gspeed', 'vGspd', v => paramSpeed = v, v => v.toFixed(2) + 'x');
+bindRange('merge', 'vMerge', v => paramMerge = v, v => v.toFixed(2));
+bindRange('maxdrops', 'vMaxDrops', v => paramMaxDrops = v, v => v.toFixed(0));
+bindRange('smallmax', 'vSmallMax', v => paramSmallMax = v, v => v.toFixed(0));
+
+bindRange('pathamp', 'vPathAmp', v => paramPathAmp = v, v => v.toFixed(2));
+bindRange('pathfreq', 'vPathFreq', v => paramPathFreq = v, v => v.toFixed(2));
+
+bindRange('trailprob', 'vTrailProb', v => paramTrailProb = v, v => v.toFixed(2));
+bindRange('trailref', 'vTrailRef', v => paramTrailRefract = v, v => v.toFixed(2));
+bindRange('trailmax', 'vTrailMax', v => paramTrailMax = v, v => v.toFixed(0));
+bindRange('trailsmin', 'vTrailSmin', v => paramTrailSizeMin = v, v => v.toFixed(1));
+bindRange('trailsmax', 'vTrailSmax', v => paramTrailSizeMax = v, v => v.toFixed(1));
+
+bindRange('vmin', 'vVmin', v => paramSpeedMin = v, v => v.toFixed(0));
+bindRange('vmax', 'vVmax', v => paramSpeedMax = v, v => v.toFixed(0));
+bindRange('pmin', 'vPmin', v => paramPauseMin = v, v => v.toFixed(2));
+bindRange('pmax', 'vPmax', v => paramPauseMax = v, v => v.toFixed(1));
+bindRange('smin', 'vSmin', v => paramSizeMin = v, v => v.toFixed(1));
+bindRange('smax', 'vSmax', v => paramSizeMax = v, v => v.toFixed(1));
+
+bindRange('recslow', 'vRecSlow', v => paramRecoverSlow = v, v => v.toFixed(3));
+bindRange('recfast', 'vRecFast', v => paramRecoverFast = v, v => v.toFixed(3));
+bindRange('refmin', 'vRefMin', v => paramRefractMin = v, v => v.toFixed(3));
+bindRange('refmax', 'vRefMax', v => paramRefractMax = v, v => v.toFixed(3));
+
+bindRange('invert', 'vInvert', v => paramInvert = v, v => v.toFixed(3));
+bindRange('invertradius', 'vInvertRadius', v => paramInvertRadius = v, v => v.toFixed(2));
+bindRange('invertscale', 'vInvertScale', v => paramInvertScale = v, v => v.toFixed(2));
+bindRange('invertcx', 'vInvertCX', v => paramInvertCenterX = v, v => v.toFixed(3));
+bindRange('invertcy', 'vInvertCY', v => paramInvertCenterY = v, v => v.toFixed(3));
+
+bindRange('wiperadius', 'vWipeRadius', v => paramWipeRadius = v, v => v.toFixed(0));
+bindRange('wiperecover', 'vWipeRecover', v => paramWipeRecover = v, v => v.toFixed(2));
+bindRange('edgestrength', 'vEdgeStrength', v => paramEdgeStrength = v, v => v.toFixed(2));
+
+function init() {
+  bgSource = makeDefaultBackground();
+  const rgb = hexToRgb(edgeColorInput.value);
+  paramEdgeR = rgb[0]; paramEdgeG = rgb[1]; paramEdgeB = rgb[2];
+  W = 1; H = 1; resize();
+
+  // 初始设置关闭已播放/未播放歌词
+  $('showPast').checked = false;
+  $('showFuture').checked = false;
+  document.body.classList.add('hide-past');
+  document.body.classList.add('hide-future');
+  $('showTranslation').checked = true;
+  document.body.classList.remove('hide-translation');
+
+  loadPresets(); // 加载本地预设，如果存在则覆盖上面的默认值
+
+  // 旧版预设里没有 lyricLayout 字段，说明是「打字机默认行头固定居中」那一版存的，
+  // 这里按新默认（向两侧展开）覆盖掉
+  let savedPreset = null;
+  try { savedPreset = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch (e) { savedPreset = null; }
+  if (!savedPreset || !('lyricLayout' in savedPreset)) twAnchorEl.value = 'center';
+
+  // 让运行状态和控件对齐（首次运行也要生效）
+  typeSpeed = parseFloat(typeSpeedEl.value);
+  $('vTypeSpeed').textContent = typeSpeed + 'ms';
+  ringRadius = parseFloat($('ringRadius').value);
+  ringStep = parseFloat($('ringStep').value);
+  ringDir = ringDirEl.value;
+  setLyricLayout(lyricLayoutEl.value);
+  setLyricStatic(!$('lyricScrollOn').checked);
+  setTypewriter($('typewriter').checked);
+  setTwAnchor(twAnchorEl.value);
+
+  updateAutoDim(); // 初始化自动压暗状态
+  updateLikeBtn();
+  setLiquidBg($('liquidBg').checked, false, true);   // 加载时只应用开关，不触发还原/联动
+  setRain($('rainOn').checked);
+  setLyricBeat($('lyricBeat').checked, false);
+
+  // 初始化登录状态 UI
+  if (currentCookie && currentUser) {
+    fetchUserInfo(); // 刷新最新头像信息，同时会加载喜欢列表
+  } else {
+    updateUserUI();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+init();
+</script>
 </body>
 </html>
