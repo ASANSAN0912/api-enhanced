@@ -2094,9 +2094,10 @@ const API_BASE = (function () {
     if (saved) return norm(saved);
   } catch (e) { /* 忽略 */ }
   if (window.NCM_API_BASE) return norm(window.NCM_API_BASE);
-  // 只要是 http(s) 打开的就默认同源——不写死端口，改 PORT / 换域名 / 走隧道都不用动代码。
-  // 只有双击本地文件（file://）打开时才回落到本机 3000。
-  return location.protocol.indexOf('http') === 0 ? '' : 'http://localhost:3000';
+  if (location.protocol.indexOf('http') !== 0) return 'http://localhost:3000';
+  // 同源：连同当前页面的目录前缀一起带上。
+  // 这样部署在子路径下也能用（例如腾讯云 API 网关的 https://xxx.gz.apigw.tencentcs.com/release/）
+  return norm(location.origin + location.pathname.replace(/[^/]*$/, ''));
 })();
 // 前后端不同源时不能用 credentials:'include'（后端回 ACAO:* 会被浏览器拦），
 // 何况我们的 cookie 是走 URL 参数传的，本来也不需要浏览器凭据。
@@ -2177,7 +2178,10 @@ async function requestAPI(endpoint, params = {}, opt = {}) {
   let lastErr = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const url = new URL(endpoint, API_BASE || location.origin);
+    // API_BASE 可能是"源 + 路径前缀"（如 https://x.com/release），这里手动拼接再解析
+    const base = API_BASE ? API_BASE.replace(/\/+$/, '') : '';
+    const pathPart = endpoint.charAt(0) === '/' ? endpoint : '/' + endpoint;
+    const url = base ? new URL(base + pathPart) : new URL(pathPart, location.href);
     url.searchParams.append('timestamp', Date.now());
     url.searchParams.append('randomCNIP', 'true'); // 只用来关掉服务端注入的伪造 IP 头
 
@@ -2772,16 +2776,30 @@ async function playSong(song) {
 
   let url = '';
   try {
-    // /song/url/v1 是网易限得最狠的接口，实测约 40% 概率直接返回 HTTP 400 空响应，
-    // 所以这里必须重试，不能一次 400 就退回 outer/url（那样付费/无版权歌会直接放不出）
-    const data = await requestAPI('/song/url/v1', { id: song.id, level: 'exhigh' }, { retry: 3 });
+    // /song/url/v1 音质控制更细，但有些部署环境（例如腾讯云函数）缺少解锁模块，
+    // 这个接口会直接 404，所以下面还有一层老接口兜底。
+    const data = await requestAPI('/song/url/v1', { id: song.id, level: 'exhigh' }, { retry: 2 });
     url = (data.data && data.data[0] && data.data[0].url) || '';
   } catch (err) {
-    console.warn('获取音频 URL 失败', err);
-    setPlayerStatus('获取播放地址失败，已尝试 4 次');
+    console.warn('/song/url/v1 取地址失败，改用老接口', err);
   }
 
-  if (!url) url = `https://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
+  if (!url) {
+    try {
+      const d2 = await requestAPI('/song/url', { id: song.id, br: 320000 }, { retry: 2 });
+      url = (d2.data && d2.data[0] && d2.data[0].url) || '';
+    } catch (e) { console.warn('/song/url 兜底也失败', e); }
+  }
+
+  // 页面是 HTTPS 时音频地址也必须是 HTTPS，否则浏览器会按"混合内容"直接拦掉
+  if (url && location.protocol === 'https:' && url.indexOf('http://') === 0) {
+    url = 'https:' + url.slice(5);
+  }
+
+  if (!url) {
+    setPlayerStatus('获取播放地址失败（已尝试备用接口）');
+    url = `https://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
+  }
   // 液体背景 / 歌词律动要读频谱，音源必须带 CORS 加载；都不开就保持原样
   audio.crossOrigin = needsAudio() ? 'anonymous' : null;
   audio.src = url;
