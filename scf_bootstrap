@@ -1,3 +1,18 @@
 #!/bin/bash
 export PORT=9000
-/var/lang/node16/bin/node app.js
+export HOST=0.0.0.0
+cd /var/user 2>/dev/null || true
+# GitHub 下载的 zip 会多套一层目录，这里自动进去
+if [ ! -f server-entry.js ]; then
+  for d in /var/user/*/; do
+    if [ -f "$d/server-entry.js" ]; then cd "$d"; break; fi
+  done
+fi
+for v in 20 18 22 16; do
+  if [ -x "/var/lang/node$v/bin/node" ]; then
+    echo "[bootstrap] node$v"
+    exec "/var/lang/node$v/bin/node" server-entry.js
+  fi
+done
+echo "[bootstrap] fallback: $(command -v node)"
+exec node server-entry.js
