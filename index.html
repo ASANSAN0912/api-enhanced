@@ -2084,7 +2084,11 @@ function loadPresets() {
 // 同源部署（把本文件放进 API 的 public 目录，用 http://localhost:3000/player.html 打开）时走相对路径；
 // 直接双击打开时退回 http://localhost:3000。两种都能用，推荐同源。
 // API 地址：优先顺序 = URL 参数 ?api= → localStorage['ncm_api_base'] → window.NCM_API_BASE → 自动判断
-// 同源部署（前端就在 API 的 public 目录里）时留空即可，跨域部署时才需要填。
+// 自动判断的规则：
+//   1) 页面由 API 自己提供（同源，例如放进 public/ 目录，或直接在服务器/IP 上打开）→ 用同源地址
+//   2) 页面托管在别处（静态托管、GitHub Pages、直接双击打开）→ 用下面这个远程 API
+// 部署到新的后端时，只需要改这一行。
+const DEFAULT_REMOTE_API = 'https://1383779458-jihe9wytcr.ap-guangzhou.tencentscf.com';
 const API_BASE = (function () {
   const norm = s => String(s).replace(/\/+$/, '');
   try {
@@ -2094,14 +2098,25 @@ const API_BASE = (function () {
     if (saved) return norm(saved);
   } catch (e) { /* 忽略 */ }
   if (window.NCM_API_BASE) return norm(window.NCM_API_BASE);
-  // 只要是 http(s) 打开的就默认同源——不写死端口，改 PORT / 换域名 / 走隧道都不用动代码。
-  // 只有双击本地文件（file://）打开时才回落到本机 3000。
-  return location.protocol.indexOf('http') === 0 ? '' : 'http://localhost:3000';
+  // 静态托管类域名：页面自己不带后端，直接用远程 API
+  const host = location.hostname;
+  if (/(^|\.)tcloudbaseapp\.com$|(^|\.)tcloudbase\.com$|(^|\.)github\.io$|(^|\.)gitee\.io$|(^|\.)vercel\.app$|(^|\.)pages\.dev$/.test(host)) {
+    return DEFAULT_REMOTE_API;
+  }
+  if (location.protocol.indexOf('http') !== 0) return DEFAULT_REMOTE_API; // 双击本地文件打开
+  // 同源：连同当前页面的目录前缀一起带上，这样部署在子路径下也能用
+  return norm(location.origin + location.pathname.replace(/[^/]*$/, ''));
 })();
 // 前后端不同源时不能用 credentials:'include'（后端回 ACAO:* 会被浏览器拦），
 // 何况我们的 cookie 是走 URL 参数传的，本来也不需要浏览器凭据。
 const API_SAME_ORIGIN = !API_BASE || API_BASE.indexOf(location.origin) === 0;
-const API_FETCH_INIT = API_SAME_ORIGIN ? { credentials: 'include' } : {};
+// 注意：这里刻意不带 credentials。
+// 我们的 Cookie 是通过 URL 参数传的，不需要浏览器凭据；而一旦带上 credentials:'include'，
+// 只要请求被浏览器算成跨域（比如页面带 ?api= 参数、或经代理访问），后端回的 ACAO:* 就会被判成
+// CORS 失败，表现是 Failed to fetch，同时服务端日志出现 499 客户端断开。
+const API_FETCH_INIT = {};
+// 记录最后一次请求的完整地址，出错时显示在界面上，方便定位
+let lastRequestUrl = '';
 const audio = new Audio(); audio.preload = 'auto';
 
 let currentSong = null, currentLyrics = [], currentLyricIndex = -99, triedFallback = false;
@@ -2177,7 +2192,10 @@ async function requestAPI(endpoint, params = {}, opt = {}) {
   let lastErr = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const url = new URL(endpoint, API_BASE || location.origin);
+    // API_BASE 可能是"源 + 路径前缀"（如 https://x.com/release），这里手动拼接再解析
+    const base = API_BASE ? API_BASE.replace(/\/+$/, '') : '';
+    const pathPart = endpoint.charAt(0) === '/' ? endpoint : '/' + endpoint;
+    const url = base ? new URL(base + pathPart) : new URL(pathPart, location.href);
     url.searchParams.append('timestamp', Date.now());
     url.searchParams.append('randomCNIP', 'true'); // 只用来关掉服务端注入的伪造 IP 头
 
@@ -2191,7 +2209,8 @@ async function requestAPI(endpoint, params = {}, opt = {}) {
     });
 
     try {
-      const res = await fetch(url.toString(), API_FETCH_INIT);
+      lastRequestUrl = url.toString();
+      const res = await fetch(lastRequestUrl, API_FETCH_INIT);
       const text = await res.text();
       if (!res.ok || !text) {
         // 网易对 /song/url 这类接口会偶发 HTTP 400 空响应，值得重试
@@ -2584,14 +2603,17 @@ async function startQrLogin() {
         if (++failCount >= 5) {
           clearInterval(qrTimer);
           currentCookie = savedCookie;
-          qrStatus.textContent = '轮询失败，请确认 API 服务（node app.js）还在运行';
+          qrStatus.textContent = '轮询失败（连不上接口 ' + (API_BASE || '同源') + '）';
         }
       }
     }, 3000);
   } catch (e) {
     currentCookie = savedCookie;
     loginBusy = false;
-    qrStatus.textContent = '获取二维码失败：' + (e.message || e);
+    // 失败时把实际请求的完整地址显示出来，方便判断是"页面开错了"还是"接口真的连不上"
+    const shortUrl = (lastRequestUrl || '').replace(/^https?:\/\//, '').split('?')[0];
+    qrStatus.textContent = '获取二维码失败：' + (e.message || e) + '｜请求：' + (shortUrl || (API_BASE || '同源'));
+    console.warn('[NCM] 二维码请求失败', { API_BASE, page: location.href, url: lastRequestUrl, err: e });
   }
 }
 
@@ -2772,16 +2794,30 @@ async function playSong(song) {
 
   let url = '';
   try {
-    // /song/url/v1 是网易限得最狠的接口，实测约 40% 概率直接返回 HTTP 400 空响应，
-    // 所以这里必须重试，不能一次 400 就退回 outer/url（那样付费/无版权歌会直接放不出）
-    const data = await requestAPI('/song/url/v1', { id: song.id, level: 'exhigh' }, { retry: 3 });
+    // /song/url/v1 音质控制更细，但有些部署环境（例如腾讯云函数）缺少解锁模块，
+    // 这个接口会直接 404，所以下面还有一层老接口兜底。
+    const data = await requestAPI('/song/url/v1', { id: song.id, level: 'exhigh' }, { retry: 2 });
     url = (data.data && data.data[0] && data.data[0].url) || '';
   } catch (err) {
-    console.warn('获取音频 URL 失败', err);
-    setPlayerStatus('获取播放地址失败，已尝试 4 次');
+    console.warn('/song/url/v1 取地址失败，改用老接口', err);
   }
 
-  if (!url) url = `https://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
+  if (!url) {
+    try {
+      const d2 = await requestAPI('/song/url', { id: song.id, br: 320000 }, { retry: 2 });
+      url = (d2.data && d2.data[0] && d2.data[0].url) || '';
+    } catch (e) { console.warn('/song/url 兜底也失败', e); }
+  }
+
+  // 页面是 HTTPS 时音频地址也必须是 HTTPS，否则浏览器会按"混合内容"直接拦掉
+  if (url && location.protocol === 'https:' && url.indexOf('http://') === 0) {
+    url = 'https:' + url.slice(5);
+  }
+
+  if (!url) {
+    setPlayerStatus('获取播放地址失败（已尝试备用接口）');
+    url = `https://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
+  }
   // 液体背景 / 歌词律动要读频谱，音源必须带 CORS 加载；都不开就保持原样
   audio.crossOrigin = needsAudio() ? 'anonymous' : null;
   audio.src = url;
