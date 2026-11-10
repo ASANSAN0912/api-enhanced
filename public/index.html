@@ -2102,7 +2102,13 @@ const API_BASE = (function () {
 // 前后端不同源时不能用 credentials:'include'（后端回 ACAO:* 会被浏览器拦），
 // 何况我们的 cookie 是走 URL 参数传的，本来也不需要浏览器凭据。
 const API_SAME_ORIGIN = !API_BASE || API_BASE.indexOf(location.origin) === 0;
-const API_FETCH_INIT = API_SAME_ORIGIN ? { credentials: 'include' } : {};
+// 注意：这里刻意不带 credentials。
+// 我们的 Cookie 是通过 URL 参数传的，不需要浏览器凭据；而一旦带上 credentials:'include'，
+// 只要请求被浏览器算成跨域（比如页面带 ?api= 参数、或经代理访问），后端回的 ACAO:* 就会被判成
+// CORS 失败，表现是 Failed to fetch，同时服务端日志出现 499 客户端断开。
+const API_FETCH_INIT = {};
+// 记录最后一次请求的完整地址，出错时显示在界面上，方便定位
+let lastRequestUrl = '';
 const audio = new Audio(); audio.preload = 'auto';
 
 let currentSong = null, currentLyrics = [], currentLyricIndex = -99, triedFallback = false;
@@ -2195,7 +2201,8 @@ async function requestAPI(endpoint, params = {}, opt = {}) {
     });
 
     try {
-      const res = await fetch(url.toString(), API_FETCH_INIT);
+      lastRequestUrl = url.toString();
+      const res = await fetch(lastRequestUrl, API_FETCH_INIT);
       const text = await res.text();
       if (!res.ok || !text) {
         // 网易对 /song/url 这类接口会偶发 HTTP 400 空响应，值得重试
@@ -2595,9 +2602,10 @@ async function startQrLogin() {
   } catch (e) {
     currentCookie = savedCookie;
     loginBusy = false;
-    // 失败时把实际使用的接口地址也显示出来，方便判断是"页面开错了"还是"接口真的连不上"
-    qrStatus.textContent = '获取二维码失败：' + (e.message || e) + '｜接口：' + (API_BASE || '（同源）');
-    console.warn('[NCM] 二维码请求失败', { API_BASE, page: location.href, err: e });
+    // 失败时把实际请求的完整地址显示出来，方便判断是"页面开错了"还是"接口真的连不上"
+    const shortUrl = (lastRequestUrl || '').replace(/^https?:\/\//, '').split('?')[0];
+    qrStatus.textContent = '获取二维码失败：' + (e.message || e) + '｜请求：' + (shortUrl || (API_BASE || '同源'));
+    console.warn('[NCM] 二维码请求失败', { API_BASE, page: location.href, url: lastRequestUrl, err: e });
   }
 }
 
