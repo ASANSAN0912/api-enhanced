@@ -457,6 +457,139 @@
     .bar-btn.bar-play{width:32px;height:32px}
     .bar-btn.bar-play svg{width:16px;height:16px}
   }
+
+  /* ==================== 设置面板：分区折叠 ==================== */
+  #ui{width:302px}
+  #ui details.sec{border:1px solid rgba(255,255,255,.07);border-radius:10px;
+    background:rgba(255,255,255,.028);overflow:hidden;margin:0}
+  #ui details.sec>summary{list-style:none;cursor:pointer;padding:9px 11px;font-size:12px;
+    font-weight:600;color:#cfe3ff;display:flex;align-items:center;gap:6px;user-select:none;
+    transition:background .15s}
+  #ui details.sec>summary::-webkit-details-marker{display:none}
+  #ui details.sec>summary::after{content:'\25BE';margin-left:auto;color:#6fb0ff;font-size:10px;
+    transition:transform .18s}
+  #ui details.sec[open]>summary::after{transform:rotate(180deg)}
+  #ui details.sec>summary:hover{background:rgba(79,155,255,.1)}
+  .sec-body{padding:2px 11px 11px;display:flex;flex-direction:column;gap:7px}
+  #ui details.sub{border-top:1px solid rgba(255,255,255,.06)}
+  #ui details.sub>summary{list-style:none;cursor:pointer;padding:7px 2px;font-size:11px;
+    color:#9db0cc;display:flex;align-items:center;user-select:none}
+  #ui details.sub>summary::-webkit-details-marker{display:none}
+  #ui details.sub>summary::after{content:'\25BE';margin-left:auto;color:#5f7fae;font-size:9px}
+  #ui details.sub[open]>summary::after{transform:rotate(180deg)}
+  #ui details.sub>summary:hover{color:#e6f0ff}
+  .sub-body{display:flex;flex-direction:column;gap:6px;padding-bottom:7px}
+
+  /* 分段选择器 */
+  .seg{display:flex;gap:4px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.08);
+    border-radius:9px;padding:3px}
+  .seg button{flex:1;background:transparent;border:0;color:#9db0cc;font-size:11px;padding:7px 2px;
+    border-radius:7px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;
+    font-family:inherit}
+  .seg button:hover{color:#fff;background:rgba(255,255,255,.07)}
+  .seg button.on{background:rgba(79,155,255,.3);color:#fff;
+    box-shadow:inset 0 0 0 1px rgba(79,155,255,.45)}
+
+  /* 歌词预览小窗 */
+  #lyricPreview{position:relative;height:106px;border-radius:9px;background:rgba(0,0,0,.32);
+    border:1px solid rgba(255,255,255,.08);overflow:hidden;display:flex;flex-direction:column;
+    justify-content:center;gap:4px;padding:6px 4px}
+  #lpTag{position:absolute;right:7px;top:5px;font-size:9px;color:#5f7391;letter-spacing:.5px}
+  #lyricPreview .lp-line{text-align:center;white-space:nowrap;overflow:hidden;line-height:1.3}
+  #lyricPreview .lp-past{color:rgba(255,255,255,.4)}
+  #lyricPreview .lp-active{color:#fff}
+  #lyricPreview .lp-future{color:rgba(255,255,255,.58)}
+  #lyricPreview .lp-ch{display:inline-block;transform-origin:50% 70%}
+
+  /* ==================== 大视口 ==================== */
+  #bigView{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;
+    color:#eaeaea;font-size:13px;opacity:0;pointer-events:none;
+    background:rgba(8,10,15,.44);
+    backdrop-filter:blur(20px) saturate(1.15);-webkit-backdrop-filter:blur(20px) saturate(1.15);
+    transition:opacity .25s ease;font-family:inherit}
+  #bigView.show{opacity:1;pointer-events:auto}
+  body.big-view #player,body.big-view #bottomBar,body.big-view #playerRestoreBtn{display:none!important}
+  body.big-view #lyricLayer{opacity:0!important}
+
+  .bv-head{display:flex;align-items:center;gap:18px;padding:13px 22px;
+    border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.2);flex:0 0 auto}
+  .bv-logo{font-size:15px;font-weight:700;color:#8ec5ff;letter-spacing:1px;flex:0 0 auto}
+  .bv-search{flex:1;max-width:560px;display:flex;gap:8px}
+  .bv-search input{flex:1;min-width:0;background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:7px 15px;color:#fff;
+    font-size:13px;outline:none;transition:border-color .15s,background .15s;font-family:inherit}
+  .bv-search input:focus{border-color:rgba(79,155,255,.6);background:rgba(255,255,255,.13)}
+  .bv-search input::placeholder{color:#7f8ea8}
+  .bv-search button{background:#2f6fe0;border:0;color:#fff;border-radius:20px;padding:7px 18px;
+    cursor:pointer;font-size:13px;font-family:inherit;transition:background .15s}
+  .bv-search button:hover{background:#3d7ce8}
+  .bv-user{margin-left:auto;display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  .bv-user .user-info{padding:4px 10px 4px 4px}
+  .bv-user .user-avatar{width:30px;height:30px}
+
+  .bv-body{flex:1;display:flex;min-height:0}
+  .bv-side{width:212px;flex:0 0 auto;padding:14px 10px;overflow-y:auto;
+    border-right:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.14);scrollbar-width:thin}
+  .bv-side::-webkit-scrollbar{width:5px}
+  .bv-side::-webkit-scrollbar-thumb{background:rgba(120,160,255,.3);border-radius:3px}
+  .bv-side-title{font-size:10px;color:#6f84a3;letter-spacing:1.2px;margin:14px 8px 6px}
+  .bv-side-title:first-child{margin-top:0}
+  .bv-nav{display:block;width:100%;text-align:left;background:transparent;border:0;
+    color:#c3d2e6;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;
+    margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-family:inherit;transition:background .15s,color .15s}
+  .bv-nav:hover{background:rgba(255,255,255,.08);color:#fff}
+  .bv-nav.on{background:rgba(79,155,255,.24);color:#fff}
+
+  .bv-main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .bv-main-head{padding:16px 22px 10px;display:flex;align-items:baseline;gap:10px;flex:0 0 auto}
+  #bvMainTitle{font-size:18px;font-weight:700;color:#fff}
+  #bvMainSub{font-size:12px;color:#7f93b0}
+  .bv-list{flex:1;overflow-y:auto;padding:0 14px 16px;min-height:0;scrollbar-width:thin}
+  .bv-list::-webkit-scrollbar{width:7px}
+  .bv-list::-webkit-scrollbar-thumb{background:rgba(120,160,255,.3);border-radius:4px}
+  .bv-row{display:flex;align-items:center;gap:12px;padding:7px 10px;border-radius:9px;
+    cursor:pointer;transition:background .13s}
+  .bv-row:hover{background:rgba(255,255,255,.07)}
+  .bv-row.on{background:rgba(79,155,255,.2)}
+  .bv-row .idx{width:26px;color:#6f84a3;font-size:12px;text-align:right;flex:0 0 auto;
+    font-variant-numeric:tabular-nums}
+  .bv-row img{width:42px;height:42px;border-radius:7px;object-fit:cover;background:#1b2029;flex:0 0 auto}
+  .bv-row .meta{flex:1;min-width:0}
+  .bv-row .name{color:#fff;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bv-row .ar{color:#8ea4c8;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bv-row .al{color:#7f93b0;font-size:11px;width:170px;flex:0 0 auto;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;text-align:right}
+  .bv-hint{color:#7f8ea8;font-size:12px;padding:22px 10px;text-align:center;line-height:1.8}
+  .bv-hint button{background:rgba(79,155,255,.2);border:1px solid rgba(79,155,255,.45);
+    color:#cfe3ff;border-radius:7px;padding:5px 14px;cursor:pointer;font-size:12px;
+    font-family:inherit;margin-top:8px}
+
+  .bv-foot{display:flex;align-items:center;gap:16px;padding:10px 20px;flex:0 0 auto;
+    border-top:1px solid rgba(255,255,255,.09);background:rgba(0,0,0,.32)}
+  .bv-fcover img{width:46px;height:46px;border-radius:8px;object-fit:cover;background:#1b2029;display:block}
+  .bv-fmeta{width:150px;flex:0 0 auto;overflow:hidden}
+  #bvFName{font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #bvFArtist{font-size:11px;color:#8ea4c8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #bvLyric{flex:0 0 auto;max-width:22%;font-size:11px;color:rgba(255,255,255,.62);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+  .bv-fctrl{flex:1;display:flex;align-items:center;gap:10px;min-width:0}
+  .bv-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+    color:#dbe8ff;width:32px;height:32px;border-radius:50%;cursor:pointer;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;
+    transition:background .15s,border-color .15s}
+  .bv-btn:hover{background:rgba(79,155,255,.3);border-color:rgba(79,155,255,.55);color:#fff}
+  .bv-btn:disabled{opacity:.4;cursor:not-allowed}
+  .bv-prog{flex:1;min-width:70px}
+  .bv-btn.heart.liked{color:#ff4d6d;border-color:rgba(255,77,109,.55);background:rgba(255,77,109,.18)}
+
+  @media (max-width:900px){
+    .bv-side{width:148px}
+    .bv-row .al{display:none}
+    #bvLyric{display:none}
+    .bv-fmeta{width:104px}
+    #ui{width:270px}
+  }
 </style>
 </head>
 <body class="hide-past hide-future">
@@ -494,7 +627,7 @@
 
 <div id="ui">
   <div class="title">
-    <span>设置面板</span>
+    <span>设置</span>
     <button id="minimizeBtn" title="收起面板" aria-label="收起面板">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="6" x2="10" y2="6"/></svg>
     </button>
@@ -508,163 +641,211 @@
     </div>
   </div>
 
-  <div class="group">背景调节</div>
-  <label class="toggle-row">
-    <span class="lbl">背景压暗</span>
-    <input type="checkbox" id="autoDim" checked><div class="switch"></div>
-  </label>
-  <div class="range-row"><span>压暗强度</span><input type="range" id="autoDimStrength" min="0" max="1" step="0.01" value="0.8"><span class="val" id="vAutoDimStrength">0.80</span></div>
+  <details class="sec" open>
+    <summary>背景效果</summary>
+    <div class="sec-body">
+      <div class="seg" id="bgSeg">
+        <button type="button" data-mode="rain">雨滴磨砂</button>
+        <button type="button" data-mode="liquid">液体流动</button>
+        <button type="button" data-mode="none">纯封面</button>
+      </div>
 
-  <div class="group">液体背景（取自封面配色）</div>
-  <label class="toggle-row">
-    <span class="lbl">液体背景</span>
-    <input type="checkbox" id="liquidBg"><div class="switch"></div>
-  </label>
-  <div class="range-row"><span>扭曲强度</span><input type="range" id="liquidWarp" min="0" max="2.5" step="0.05" value="1"><span class="val" id="vLiquidWarp">1.00</span></div>
-  <div class="range-row"><span>流动速度</span><input type="range" id="liquidSpeed" min="0" max="2" step="0.05" value="0.4"><span class="val" id="vLiquidSpeed">0.40</span></div>
-  <div class="range-row"><span>模糊程度</span><input type="range" id="liquidBlur" min="0" max="1" step="0.02" value="0.3"><span class="val" id="vLiquidBlur">0.30</span></div>
-  <div class="range-row"><span>颜色占比</span><input type="range" id="liquidShare" min="0" max="1" step="0.05" value="1"><span class="val" id="vLiquidShare">1.00</span></div>
+      <label class="toggle-row" style="display:none">
+        <span class="lbl">雨滴</span>
+        <input type="checkbox" id="rainOn" checked><div class="switch"></div>
+      </label>
+      <label class="toggle-row" style="display:none">
+        <span class="lbl">液体背景</span>
+        <input type="checkbox" id="liquidBg"><div class="switch"></div>
+      </label>
 
-  <div class="group">歌词律动（随节奏）</div>
-  <label class="toggle-row">
-    <span class="lbl">歌词律动</span>
-    <input type="checkbox" id="lyricBeat"><div class="switch"></div>
-  </label>
-  <div class="range-row"><span>律动幅度</span><input type="range" id="lyricBeatAmp" min="0" max="2" step="0.05" value="1"><span class="val" id="vLyricBeatAmp">1.00</span></div>
+      <div id="rainPane" style="display:none; flex-direction:column; gap:7px;">
+        <div class="range-row"><span>磨砂强度</span><input type="range" id="frost"   min="0" max="1"    step="0.01" value="1"><span class="val" id="vFrost">1.00</span></div>
+        <div class="range-row"><span>雨滴密度</span><input type="range" id="density" min="0" max="1"    step="0.01" value="1"><span class="val" id="vDen">1.00</span></div>
+        <div class="range-row"><span>全局倍率</span><input type="range" id="gspeed"  min="0.2" max="3"  step="0.01" value="3"><span class="val" id="vGspd">3.00x</span></div>
+        <div class="range-row"><span>汇聚强度</span><input type="range" id="merge"   min="0" max="1"    step="0.01" value="0.73"><span class="val" id="vMerge">0.73</span></div>
 
-  <div class="group">歌词控制</div>
-  <label class="toggle-row">
-    <span class="lbl">长句自适应字号</span>
-    <input type="checkbox" id="enableAutoFit" checked><div class="switch"></div>
-  </label>
-  <div class="range-row"><span>最大占据宽度</span><input type="range" id="maxWidthRatio" min="50" max="100" step="1" value="85"><span class="val" id="vMaxWidthRatio">85%</span></div>
+        <label class="toggle-row" style="margin-top:2px;">
+          <span class="lbl">高级设置</span>
+          <input type="checkbox" id="rainAdv"><div class="switch"></div>
+        </label>
+        <div id="rainAdvBox" style="display:none; flex-direction:column; gap:7px;">
+          <div class="range-row"><span>最大雨滴数</span><input type="range" id="maxdrops" min="20" max="400" step="5" value="400"><span class="val" id="vMaxDrops">400</span></div>
+          <div class="range-row"><span>小雨点上限</span><input type="range" id="smallmax" min="0" max="200" step="5" value="200"><span class="val" id="vSmallMax">200</span></div>
+          <div class="range-row"><span>摆动幅度</span><input type="range" id="pathamp"  min="0" max="2"   step="0.05" value="2"><span class="val" id="vPathAmp">2.00</span></div>
+          <div class="range-row"><span>摆动频率</span><input type="range" id="pathfreq" min="0" max="2"   step="0.05" value="1.6"><span class="val" id="vPathFreq">1.60</span></div>
+          <div class="range-row"><span>雨痕概率</span><input type="range" id="trailprob" min="0" max="1"  step="0.01" value="0.21"><span class="val" id="vTrailProb">0.21</span></div>
+          <div class="range-row"><span>雨痕折射</span><input type="range" id="trailref"  min="0" max="1"  step="0.01" value="0.26"><span class="val" id="vTrailRef">0.26</span></div>
+          <div class="range-row"><span>雨痕上限</span><input type="range" id="trailmax"  min="0" max="300" step="10"  value="130"><span class="val" id="vTrailMax">130</span></div>
+          <div class="range-row"><span>拖尾尺寸小</span><input type="range" id="trailsmin" min="0.5" max="10" step="0.5" value="0.5"><span class="val" id="vTrailSmin">0.5</span></div>
+          <div class="range-row"><span>拖尾尺寸大</span><input type="range" id="trailsmax" min="1"  max="15" step="0.5" value="4.0"><span class="val" id="vTrailSmax">4.0</span></div>
+          <div class="range-row"><span>最小速度</span><input type="range" id="vmin" min="5"   max="200" step="1"   value="200"><span class="val" id="vVmin">200</span></div>
+          <div class="range-row"><span>最大速度</span><input type="range" id="vmax" min="20"  max="500" step="1"   value="500"><span class="val" id="vVmax">500</span></div>
+          <div class="range-row"><span>最短停留</span><input type="range" id="pmin" min="0.05" max="2"  step="0.05" value="2.00"><span class="val" id="vPmin">2.00</span></div>
+          <div class="range-row"><span>最长停留</span><input type="range" id="pmax" min="0.5"  max="6"  step="0.1"  value="6.0"><span class="val" id="vPmax">6.0</span></div>
+          <div class="range-row"><span>最小尺寸</span><input type="range" id="smin" min="1"  max="8"    step="0.5"  value="1.0"><span class="val" id="vSmin">1.0</span></div>
+          <div class="range-row"><span>最大尺寸</span><input type="range" id="smax" min="3"  max="20"   step="0.5"  value="9.5"><span class="val" id="vSmax">9.5</span></div>
+          <div class="range-row"><span>最慢恢复</span><input type="range" id="recslow" min="0.001" max="0.02" step="0.001" value="0.002"><span class="val" id="vRecSlow">0.002</span></div>
+          <div class="range-row"><span>最快恢复</span><input type="range" id="recfast" min="0.002" max="0.05" step="0.001" value="0.050"><span class="val" id="vRecFast">0.050</span></div>
+          <div class="range-row"><span>最小折射</span><input type="range" id="refmin" min="0" max="0.15" step="0.005" value="0.135"><span class="val" id="vRefMin">0.135</span></div>
+          <div class="range-row"><span>最大折射</span><input type="range" id="refmax" min="0" max="0.15" step="0.005" value="0.100"><span class="val" id="vRefMax">0.100</span></div>
+          <div class="range-row"><span>倒像强度</span><input type="range" id="invert"      min="0"    max="0.20" step="0.005" value="0.170"><span class="val" id="vInvert">0.170</span></div>
+          <div class="range-row"><span>倒像范围</span><input type="range" id="invertradius" min="0.1"  max="1.0"  step="0.01"  value="0.85"><span class="val" id="vInvertRadius">0.85</span></div>
+          <div class="range-row"><span>倒像缩放</span><input type="range" id="invertscale"  min="0.3"  max="2.5"  step="0.05"  value="1.0"><span class="val" id="vInvertScale">1.00</span></div>
+          <div class="range-row"><span>倒像中心X</span><input type="range" id="invertcx"    min="-0.04" max="0.04" step="0.001" value="0"><span class="val" id="vInvertCX">0.000</span></div>
+          <div class="range-row"><span>倒像中心Y</span><input type="range" id="invertcy"    min="-0.04" max="0.04" step="0.001" value="0"><span class="val" id="vInvertCY">0.000</span></div>
+          <div class="range-row"><span>擦除半径</span><input type="range" id="wiperadius" min="10" max="160" step="1" value="60"><span class="val" id="vWipeRadius">60</span></div>
+          <div class="range-row"><span>擦除恢复</span><input type="range" id="wiperecover" min="0.02" max="1.2" step="0.01" value="0.44"><span class="val" id="vWipeRecover">0.44</span></div>
+          <div class="range-row"><span>边缘颜色</span><input type="color" id="edgecolor" value="#d9eaff"></div>
+          <div class="range-row"><span>边缘强度</span><input type="range" id="edgestrength" min="0" max="3" step="0.05" value="0.05"><span class="val" id="vEdgeStrength">0.05</span></div>
+        </div>
+      </div>
 
-  <div class="range-row"><span>未播放行字号</span><input type="range" id="fsFuture" min="10" max="40" step="1" value="22"><span class="val" id="vFsFuture">22</span></div>
-  <div class="range-row"><span>已播放行字号</span><input type="range" id="fsPast" min="10" max="40" step="1" value="20"><span class="val" id="vFsPast">20</span></div>
-  <div class="range-row"><span>当前句字号</span><input type="range" id="fsActive" min="12" max="48" step="1" value="24"><span class="val" id="vFsActive">24</span></div>
-  <div class="range-row"><span>已唱字缩放</span><input type="range" id="scaleSung" min="0.8" max="1.6" step="0.01" value="1.05"><span class="val" id="vScaleSung">1.05</span></div>
-  <div class="range-row"><span>正在唱字缩放</span><input type="range" id="scaleSinging" min="0.8" max="2.0" step="0.01" value="1.35"><span class="val" id="vScaleSinging">1.35</span></div>
-  
-  <div class="range-row"><span>字母弹跳高度</span><input type="range" id="charBounce" min="0" max="20" step="1" value="8"><span class="val" id="vCharBounce">8px</span></div>
-  <div class="range-row"><span>字母错峰延迟</span><input type="range" id="charStagger" min="0" max="100" step="5" value="40"><span class="val" id="vCharStagger">40ms</span></div>
-  <div class="range-row">
-    <span>字母缓动</span>
-    <select id="charEasing">
-      <option value="cubic-bezier(0.34, 1.56, 0.64, 1)">弹性 (Q弹)</option>
-      <option value="ease-out">平滑 (减速)</option>
-      <option value="linear">线性 (匀速)</option>
-    </select>
-  </div>
+      <div id="liquidPane" style="display:none; flex-direction:column; gap:7px;">
+        <div class="range-row"><span>扭曲强度</span><input type="range" id="liquidWarp" min="0" max="2.5" step="0.05" value="1"><span class="val" id="vLiquidWarp">1.00</span></div>
+        <div class="range-row"><span>流动速度</span><input type="range" id="liquidSpeed" min="0" max="2" step="0.05" value="0.4"><span class="val" id="vLiquidSpeed">0.40</span></div>
+        <div class="range-row"><span>模糊程度</span><input type="range" id="liquidBlur" min="0" max="1" step="0.02" value="0.3"><span class="val" id="vLiquidBlur">0.30</span></div>
+        <div class="range-row"><span>颜色占比</span><input type="range" id="liquidShare" min="0" max="1" step="0.05" value="1"><span class="val" id="vLiquidShare">1.00</span></div>
+      </div>
 
-  <div class="range-row"><span>缓动时间</span><input type="range" id="lyricTrans" min="0.1" max="2" step="0.05" value="0.4"><span class="val" id="vLyricTrans">0.40s</span></div>
-  <div class="range-row"><span>高亮强度</span><input type="range" id="hlStrength" min="0" max="1.5" step="0.05" value="1"><span class="val" id="vHlStrength">1.00</span></div>
+      <label class="toggle-row" style="margin-top:2px;">
+        <span class="lbl">背景压暗</span>
+        <input type="checkbox" id="autoDim" checked><div class="switch"></div>
+      </label>
+      <div class="range-row"><span>压暗强度</span><input type="range" id="autoDimStrength" min="0" max="1" step="0.01" value="0.8"><span class="val" id="vAutoDimStrength">0.80</span></div>
+    </div>
+  </details>
 
-  <div class="group">歌词滚动 / 打字机</div>
-  <label class="toggle-row">
-    <span class="lbl">歌词自动滚动</span>
-    <input type="checkbox" id="lyricScrollOn" checked><div class="switch"></div>
-  </label>
-  <label class="toggle-row">
-    <span class="lbl">打字机效果</span>
-    <input type="checkbox" id="typewriter"><div class="switch"></div>
-  </label>
-  <div class="range-row"><span>打字速度</span><input type="range" id="typeSpeed" min="30" max="300" step="10" value="90"><span class="val" id="vTypeSpeed">90ms</span></div>
-  <div class="range-row">
-    <span>展开方式</span>
-    <select id="twAnchor">
-      <option value="center" selected>向两侧展开</option>
-      <option value="head">行头固定居中</option>
-    </select>
-  </div>
+  <details class="sec" open>
+    <summary>歌词</summary>
+    <div class="sec-body">
+      <div id="lyricPreview"><div id="lpTag"></div></div>
 
-  <div class="group">歌词排版</div>
-  <div class="range-row">
-    <span>排版</span>
-    <select id="lyricLayout">
-      <option value="default">竖排</option>
-      <option value="ring">半圆环</option>
-    </select>
-  </div>
-  <div class="range-row">
-    <span>弧线方向</span>
-    <select id="ringDir">
-      <option value="right">向右弯</option>
-      <option value="left">向左弯</option>
-    </select>
-  </div>
-  <div class="range-row"><span>弧半径</span><input type="range" id="ringRadius" min="300" max="1600" step="20" value="700"><span class="val" id="vRingRadius">700px</span></div>
-  <div class="range-row"><span>每行角度</span><input type="range" id="ringStep" min="4" max="18" step="1" value="8"><span class="val" id="vRingStep">8°</span></div>
-  
-  <label class="toggle-row">
-    <span class="lbl">显示已播放歌词</span>
-    <input type="checkbox" id="showPast"><div class="switch"></div>
-  </label>
-  <label class="toggle-row">
-    <span class="lbl">显示未播放歌词</span>
-    <input type="checkbox" id="showFuture"><div class="switch"></div>
-  </label>
-  <label class="toggle-row">
-    <span class="lbl">显示歌词翻译</span>
-    <input type="checkbox" id="showTranslation" checked><div class="switch"></div>
-  </label>
+      <div class="seg" id="layoutSeg">
+        <button type="button" data-layout="default">竖排</button>
+        <button type="button" data-layout="ring">半圆环</button>
+      </div>
+      <div class="range-row" style="display:none">
+        <span>排版</span>
+        <select id="lyricLayout">
+          <option value="default">竖排</option>
+          <option value="ring">半圆环</option>
+        </select>
+      </div>
 
-  <div class="group">磨砂与雨滴</div>
-  <label class="toggle-row">
-    <span class="lbl">雨滴</span>
-    <input type="checkbox" id="rainOn" checked><div class="switch"></div>
-  </label>
-  <div class="range-row"><span>磨砂强度</span><input type="range" id="frost"   min="0" max="1"    step="0.01" value="1"><span class="val" id="vFrost">1.00</span></div>
-  <div class="range-row"><span>雨滴密度</span><input type="range" id="density" min="0" max="1"    step="0.01" value="1"><span class="val" id="vDen">1.00</span></div>
-  <div class="range-row"><span>全局倍率</span><input type="range" id="gspeed"  min="0.2" max="3"  step="0.01" value="3"><span class="val" id="vGspd">3.00x</span></div>
-  <div class="range-row"><span>汇聚强度</span><input type="range" id="merge"   min="0" max="1"    step="0.01" value="0.73"><span class="val" id="vMerge">0.73</span></div>
-  <div class="range-row"><span>最大雨滴数</span><input type="range" id="maxdrops" min="20" max="400" step="5" value="400"><span class="val" id="vMaxDrops">400</span></div>
-  <div class="range-row"><span>小雨点上限</span><input type="range" id="smallmax" min="0" max="200" step="5" value="200"><span class="val" id="vSmallMax">200</span></div>
+      <div id="ringPane" style="display:none; flex-direction:column; gap:7px;">
+        <div class="range-row">
+          <span>弧线方向</span>
+          <select id="ringDir">
+            <option value="right">向右弯</option>
+            <option value="left">向左弯</option>
+          </select>
+        </div>
+        <div class="range-row"><span>弧半径</span><input type="range" id="ringRadius" min="300" max="1600" step="20" value="700"><span class="val" id="vRingRadius">700px</span></div>
+        <div class="range-row"><span>每行角度</span><input type="range" id="ringStep" min="4" max="18" step="1" value="8"><span class="val" id="vRingStep">8°</span></div>
+      </div>
 
-  <div class="group">路径控制</div>
-  <div class="range-row"><span>摆动幅度</span><input type="range" id="pathamp"  min="0" max="2"   step="0.05" value="2"><span class="val" id="vPathAmp">2.00</span></div>
-  <div class="range-row"><span>摆动频率</span><input type="range" id="pathfreq" min="0" max="2"   step="0.05" value="1.6"><span class="val" id="vPathFreq">1.60</span></div>
+      <details class="sub" open>
+        <summary>字号与缩放</summary>
+        <div class="sub-body">
+          <div class="range-row"><span>未播放行字号</span><input type="range" id="fsFuture" min="10" max="40" step="1" value="22"><span class="val" id="vFsFuture">22</span></div>
+          <div class="range-row"><span>已播放行字号</span><input type="range" id="fsPast" min="10" max="40" step="1" value="20"><span class="val" id="vFsPast">20</span></div>
+          <div class="range-row"><span>当前句字号</span><input type="range" id="fsActive" min="12" max="48" step="1" value="24"><span class="val" id="vFsActive">24</span></div>
+          <div class="range-row"><span>已唱字缩放</span><input type="range" id="scaleSung" min="0.8" max="1.6" step="0.01" value="1.05"><span class="val" id="vScaleSung">1.05</span></div>
+          <div class="range-row"><span>正在唱字缩放</span><input type="range" id="scaleSinging" min="0.8" max="2.0" step="0.01" value="1.35"><span class="val" id="vScaleSinging">1.35</span></div>
+          <label class="toggle-row">
+            <span class="lbl">长句自适应字号</span>
+            <input type="checkbox" id="enableAutoFit" checked><div class="switch"></div>
+          </label>
+          <div class="range-row"><span>最大占据宽度</span><input type="range" id="maxWidthRatio" min="50" max="100" step="1" value="85"><span class="val" id="vMaxWidthRatio">85%</span></div>
+        </div>
+      </details>
 
-  <div class="group">雨痕控制 (速度联动)</div>
-  <div class="range-row"><span>雨痕概率</span><input type="range" id="trailprob" min="0" max="1"  step="0.01" value="0.21"><span class="val" id="vTrailProb">0.21</span></div>
-  <div class="range-row"><span>雨痕折射</span><input type="range" id="trailref"  min="0" max="1"  step="0.01" value="0.26"><span class="val" id="vTrailRef">0.26</span></div>
-  <div class="range-row"><span>静态上限</span><input type="range" id="trailmax"  min="0" max="300" step="10"  value="130"><span class="val" id="vTrailMax">130</span></div>
-  <div class="range-row"><span>拖尾尺寸小</span><input type="range" id="trailsmin" min="0.5" max="10" step="0.5" value="0.5"><span class="val" id="vTrailSmin">0.5</span></div>
-  <div class="range-row"><span>拖尾尺寸大</span><input type="range" id="trailsmax" min="1"  max="15" step="0.5" value="4.0"><span class="val" id="vTrailSmax">4.0</span></div>
+      <details class="sub">
+        <summary>动效</summary>
+        <div class="sub-body">
+          <div class="range-row"><span>字母弹跳高度</span><input type="range" id="charBounce" min="0" max="20" step="1" value="8"><span class="val" id="vCharBounce">8px</span></div>
+          <div class="range-row"><span>字母错峰延迟</span><input type="range" id="charStagger" min="0" max="100" step="5" value="40"><span class="val" id="vCharStagger">40ms</span></div>
+          <div class="range-row">
+            <span>字母缓动</span>
+            <select id="charEasing">
+              <option value="cubic-bezier(0.34, 1.56, 0.64, 1)">弹性 (Q弹)</option>
+              <option value="ease-out">平滑 (减速)</option>
+              <option value="linear">线性 (匀速)</option>
+            </select>
+          </div>
+          <div class="range-row"><span>缓动时间</span><input type="range" id="lyricTrans" min="0.1" max="2" step="0.05" value="0.4"><span class="val" id="vLyricTrans">0.40s</span></div>
+          <div class="range-row"><span>高亮强度</span><input type="range" id="hlStrength" min="0" max="1.5" step="0.05" value="1"><span class="val" id="vHlStrength">1.00</span></div>
+          <label class="toggle-row">
+            <span class="lbl">歌词律动</span>
+            <input type="checkbox" id="lyricBeat"><div class="switch"></div>
+          </label>
+          <div class="range-row"><span>律动幅度</span><input type="range" id="lyricBeatAmp" min="0" max="2" step="0.05" value="1"><span class="val" id="vLyricBeatAmp">1.00</span></div>
+        </div>
+      </details>
 
-  <div class="group">基础速度范围 (px/s)</div>
-  <div class="range-row"><span>最小速度</span><input type="range" id="vmin" min="5"   max="200" step="1"   value="200"><span class="val" id="vVmin">200</span></div>
-  <div class="range-row"><span>最大速度</span><input type="range" id="vmax" min="20"  max="500" step="1"   value="500"><span class="val" id="vVmax">500</span></div>
+      <details class="sub">
+        <summary>打字机</summary>
+        <div class="sub-body">
+          <label class="toggle-row">
+            <span class="lbl">打字机效果</span>
+            <input type="checkbox" id="typewriter"><div class="switch"></div>
+          </label>
+          <div class="range-row"><span>打字速度</span><input type="range" id="typeSpeed" min="30" max="300" step="10" value="90"><span class="val" id="vTypeSpeed">90ms</span></div>
+          <div class="range-row">
+            <span>展开方式</span>
+            <select id="twAnchor">
+              <option value="center" selected>向两侧展开</option>
+              <option value="head">行头固定居中</option>
+            </select>
+          </div>
+        </div>
+      </details>
 
-  <div class="group">停留时间范围 (s)</div>
-  <div class="range-row"><span>最短停留</span><input type="range" id="pmin" min="0.05" max="2"  step="0.05" value="2.00"><span class="val" id="vPmin">2.00</span></div>
-  <div class="range-row"><span>最长停留</span><input type="range" id="pmax" min="0.5"  max="6"  step="0.1"  value="6.0"><span class="val" id="vPmax">6.0</span></div>
+      <details class="sub">
+        <summary>显示项</summary>
+        <div class="sub-body">
+          <label class="toggle-row">
+            <span class="lbl">歌词自动滚动</span>
+            <input type="checkbox" id="lyricScrollOn" checked><div class="switch"></div>
+          </label>
+          <label class="toggle-row">
+            <span class="lbl">显示已播放歌词</span>
+            <input type="checkbox" id="showPast"><div class="switch"></div>
+          </label>
+          <label class="toggle-row">
+            <span class="lbl">显示未播放歌词</span>
+            <input type="checkbox" id="showFuture"><div class="switch"></div>
+          </label>
+          <label class="toggle-row">
+            <span class="lbl">显示歌词翻译</span>
+            <input type="checkbox" id="showTranslation" checked><div class="switch"></div>
+          </label>
+        </div>
+      </details>
+    </div>
+  </details>
 
-  <div class="group">雨滴尺寸范围 (px)</div>
-  <div class="range-row"><span>最小尺寸</span><input type="range" id="smin" min="1"  max="8"    step="0.5"  value="1.0"><span class="val" id="vSmin">1.0</span></div>
-  <div class="range-row"><span>最大尺寸</span><input type="range" id="smax" min="3"  max="20"   step="0.5"  value="9.5"><span class="val" id="vSmax">9.5</span></div>
-
-  <div class="group">雨痕恢复速度</div>
-  <div class="range-row"><span>最慢恢复</span><input type="range" id="recslow" min="0.001" max="0.02" step="0.001" value="0.002"><span class="val" id="vRecSlow">0.002</span></div>
-  <div class="range-row"><span>最快恢复</span><input type="range" id="recfast" min="0.002" max="0.05" step="0.001" value="0.050"><span class="val" id="vRecFast">0.050</span></div>
-
-  <div class="group">折射强度范围</div>
-  <div class="range-row"><span>最小折射</span><input type="range" id="refmin" min="0" max="0.15" step="0.005" value="0.135"><span class="val" id="vRefMin">0.135</span></div>
-  <div class="range-row"><span>最大折射</span><input type="range" id="refmax" min="0" max="0.15" step="0.005" value="0.100"><span class="val" id="vRefMax">0.100</span></div>
-
-  <div class="group">倒像微调</div>
-  <div class="range-row"><span>倒像强度</span><input type="range" id="invert"      min="0"    max="0.20" step="0.005" value="0.170"><span class="val" id="vInvert">0.170</span></div>
-  <div class="range-row"><span>倒像范围</span><input type="range" id="invertradius" min="0.1"  max="1.0"  step="0.01"  value="0.85"><span class="val" id="vInvertRadius">0.85</span></div>
-  <div class="range-row"><span>倒像缩放</span><input type="range" id="invertscale"  min="0.3"  max="2.5"  step="0.05"  value="1.0"><span class="val" id="vInvertScale">1.00</span></div>
-  <div class="range-row"><span>倒像中心X</span><input type="range" id="invertcx"    min="-0.04" max="0.04" step="0.001" value="0"><span class="val" id="vInvertCX">0.000</span></div>
-  <div class="range-row"><span>倒像中心Y</span><input type="range" id="invertcy"    min="-0.04" max="0.04" step="0.001" value="0"><span class="val" id="vInvertCY">0.000</span></div>
-
-  <div class="group">擦窗控制 (按住滑动擦除)</div>
-  <div class="range-row"><span>擦除半径</span><input type="range" id="wiperadius" min="10" max="160" step="1" value="60"><span class="val" id="vWipeRadius">60</span></div>
-  <div class="range-row"><span>擦除恢复</span><input type="range" id="wiperecover" min="0.02" max="1.2" step="0.01" value="0.44"><span class="val" id="vWipeRecover">0.44</span></div>
-
-  <div class="group">雨滴边缘颜色</div>
-  <div class="range-row"><span>边缘颜色</span><input type="color" id="edgecolor" value="#d9eaff"></div>
-  <div class="range-row"><span>边缘强度</span><input type="range" id="edgestrength" min="0" max="3" step="0.05" value="0.05"><span class="val" id="vEdgeStrength">0.05</span></div>
+  <details class="sec">
+    <summary>界面与视口</summary>
+    <div class="sec-body">
+      <div class="seg" id="viewSeg">
+        <button type="button" data-view="small">小视口</button>
+        <button type="button" data-view="big">大视口</button>
+      </div>
+      <div class="range-row" style="display:none">
+        <span>视口</span>
+        <select id="viewMode">
+          <option value="small">小视口</option>
+          <option value="big">大视口</option>
+        </select>
+      </div>
+      <div style="font-size:11px;color:#7f8ea8;line-height:1.7;">
+        小视口：右侧浮动面板，歌词全屏。<br>
+        大视口：顶栏搜索 + 左侧歌单 + 歌曲列表 + 底部播放条。
+      </div>
+    </div>
+  </details>
 </div>
 
 <button id="restoreBtn" title="展开设置" aria-label="展开设置">
@@ -738,6 +919,54 @@
 <button id="playerRestoreBtn" title="展开播放器" aria-label="展开播放器">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
 </button>
+
+<div id="bigView">
+  <header class="bv-head">
+    <div class="bv-logo">网易云音乐</div>
+    <div class="bv-search">
+      <input id="bvSearchInput" type="text" placeholder="搜索歌曲 / 歌手" autocomplete="off">
+      <button id="bvSearchBtn" type="button">搜索</button>
+    </div>
+    <div class="bv-user" id="bvUser"></div>
+  </header>
+
+  <div class="bv-body">
+    <aside class="bv-side">
+      <div class="bv-side-title">我的音乐</div>
+      <button class="bv-nav" type="button" data-nav="liked">我喜欢的音乐</button>
+      <button class="bv-nav" type="button" data-nav="recent">最近播放</button>
+      <button class="bv-nav" type="button" data-nav="subscribed">收藏的歌单</button>
+      <button class="bv-nav" type="button" data-nav="created">创建的歌单</button>
+      <div class="bv-side-title">歌单</div>
+      <div id="bvPlaylistBox"></div>
+    </aside>
+
+    <main class="bv-main">
+      <div class="bv-main-head">
+        <div id="bvMainTitle">我喜欢的音乐</div>
+        <div id="bvMainSub"></div>
+      </div>
+      <div class="bv-list" id="bvList"></div>
+    </main>
+  </div>
+
+  <footer class="bv-foot">
+    <div class="bv-fcover"><img id="bvCover" alt=""></div>
+    <div class="bv-fmeta">
+      <div id="bvFName">未播放</div>
+      <div id="bvFArtist">—</div>
+    </div>
+    <div id="bvLyric"></div>
+    <div class="bv-fctrl">
+      <button class="bv-btn" type="button" id="bvPrev" title="上一首">&#9198;</button>
+      <button class="bv-btn song-play-pause" type="button" id="bvPlay" title="播放 / 暂停" aria-label="播放或暂停" disabled>&#9654;</button>
+      <button class="bv-btn" type="button" id="bvNext" title="下一首">&#9197;</button>
+      <div class="song-progress bv-prog" title="点击跳转"><div class="song-progress-fill"></div></div>
+      <span class="song-time">0:00 / 0:00</span>
+      <button class="bv-btn heart" type="button" id="bvLike" title="喜欢这首歌">&#9825;</button>
+    </div>
+  </footer>
+</div>
 
 <div id="lyricLayer">
   <div id="lyricScroll"></div>
@@ -2048,7 +2277,7 @@ function render(dt) {
 /* ==================== 预设与登录态存储 ==================== */
 function savePresets() {
   const data = {};
-  document.querySelectorAll('#ui input[type=range], #ui input[type=color], #ui input[type=checkbox], #player input[type=range]').forEach(el => {
+  document.querySelectorAll('#ui input[type=range], #ui input[type=color], #ui input[type=checkbox], #ui select, #player input[type=range]').forEach(el => {
     if (el.id) data[el.id] = el.type === 'checkbox' ? el.checked : el.value;
   });
   const easingEl = document.getElementById('charEasing');
@@ -3296,6 +3525,7 @@ function updateAllProgress() {
       lastTimeText = txt;
     }
   }
+  if (document.body.classList.contains('big-view')) bvSyncNow();
 }
 
 /* ----- 长句自适应计算 ----- */
@@ -3570,6 +3800,456 @@ bindRange('wiperadius', 'vWipeRadius', v => paramWipeRadius = v, v => v.toFixed(
 bindRange('wiperecover', 'vWipeRecover', v => paramWipeRecover = v, v => v.toFixed(2));
 bindRange('edgestrength', 'vEdgeStrength', v => paramEdgeStrength = v, v => v.toFixed(2));
 
+/* ==================== 设置面板：分区 / 背景模式 / 歌词预览 ==================== */
+function bvEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+function syncBgSeg() {
+  const rainEl = $('rainOn'), liqEl = $('liquidBg');
+  if (!rainEl || !liqEl) return;
+  const rain = rainEl.checked, liq = liqEl.checked;
+  document.querySelectorAll('#bgSeg button').forEach(b => {
+    const m = b.dataset.mode;
+    b.classList.toggle('on',
+      (m === 'rain' && rain) || (m === 'liquid' && liq) || (m === 'none' && !rain && !liq));
+  });
+  const rp = $('rainPane'), lp = $('liquidPane');
+  if (rp) rp.style.display = rain ? 'flex' : 'none';
+  if (lp) lp.style.display = liq ? 'flex' : 'none';
+}
+
+function setBgMode(mode) {
+  const rainEl = $('rainOn'), liqEl = $('liquidBg');
+  if (!rainEl || !liqEl) return;
+  const fire = (el, on) => {
+    if (el.checked !== on) { el.checked = on; el.dispatchEvent(new Event('change')); }
+  };
+  // 注意顺序：关闭液体时 setLiquidBg 会把"开液体之前的雨滴状态"还原回来，
+  // 所以必须先关液体、再按目标模式设置雨滴，否则选"纯封面"会被还原成雨滴。
+  if (mode === 'rain') {
+    if (liqEl.checked) fire(liqEl, false);
+    fire(rainEl, true);
+  } else if (mode === 'liquid') {
+    fire(liqEl, true);                  // 液体的 change 处理里会自动关掉雨滴并压暗
+    if (rainEl.checked) fire(rainEl, false);
+  } else {
+    if (liqEl.checked) fire(liqEl, false);   // 关液体可能还原雨滴
+    if (rainEl.checked) fire(rainEl, false); // 再强制关掉
+  }
+  syncBgSeg();
+  savePresets();
+}
+
+function syncRainAdv() {
+  const adv = $('rainAdv'), box = $('rainAdvBox');
+  if (!adv || !box) return;
+  box.style.display = adv.checked ? 'flex' : 'none';
+}
+
+function syncRingPane() {
+  const sel = $('lyricLayout'), box = $('ringPane');
+  const isRing = sel && sel.value === 'ring';
+  if (box) box.style.display = isRing ? 'flex' : 'none';
+  document.querySelectorAll('#layoutSeg button').forEach(b => {
+    b.classList.toggle('on', b.dataset.layout === (sel ? sel.value : 'default'));
+  });
+}
+
+/* 歌词预览：用当前设置渲染三行示例，直观看到字号 / 缩放 / 弹跳 / 高亮 */
+function renderLyricPreview() {
+  const box = $('lyricPreview');
+  if (!box) return;
+  const num = (id, dflt) => {
+    const el = $(id);
+    const v = el ? parseFloat(el.value) : NaN;
+    return isNaN(v) ? dflt : v;
+  };
+  const fsPast = num('fsPast', 20), fsActive = num('fsActive', 24), fsFuture = num('fsFuture', 22);
+  const sungScale = num('scaleSung', 1.05), singScale = num('scaleSinging', 1.35);
+  const bounce = num('charBounce', 8), hl = num('hlStrength', 1);
+  const beatOn = !!($('lyricBeat') && $('lyricBeat').checked);
+  const beatAmp = beatOn ? num('lyricBeatAmp', 1) : 0;
+  const layout = $('lyricLayout') ? $('lyricLayout').value : 'default';
+  const tag = $('lpTag');
+  if (tag) tag.textContent = layout === 'ring' ? '圆环（预览按直线显示）' : '';
+
+  const K = 0.52; // 预览缩放系数，保证三行都塞得下
+  const makeLine = (text, cls, fs, withChars) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'lp-line ' + cls;
+    wrap.style.fontSize = Math.max(7, fs * K).toFixed(1) + 'px';
+    if (cls === 'lp-active' && hl > 0) {
+      wrap.style.textShadow = '0 0 ' + (12 * hl).toFixed(0) + 'px rgba(255,255,255,' + (0.45 * hl).toFixed(2) + ')';
+    }
+    const chars = Array.from(text);
+    const n = chars.length || 1;
+    chars.forEach((ch, i) => {
+      const sp = document.createElement('span');
+      sp.className = 'lp-ch';
+      sp.textContent = ch === ' ' ? '\u00A0' : ch;
+      if (withChars) {
+        if (i < n * 0.42) {
+          sp.style.transform = 'scale(' + sungScale.toFixed(2) + ')';
+          sp.style.color = 'rgba(255,255,255,.72)';
+        } else if (i < n * 0.72) {
+          const lift = bounce * 0.5 * beatAmp;
+          sp.style.transform = 'scale(' + singScale.toFixed(2) + ') translateY(' + (-lift).toFixed(1) + 'px)';
+          sp.style.color = '#cfe6ff';
+        }
+      }
+      wrap.appendChild(sp);
+    });
+    return wrap;
+  };
+
+  box.querySelectorAll('.lp-line').forEach(el => el.remove());
+  box.appendChild(makeLine('时光就这样慢慢老去', 'lp-past', fsPast, false));
+  box.appendChild(makeLine('风吹过夏日的街道', 'lp-active', fsActive, true));
+  box.appendChild(makeLine('我还在等你的消息', 'lp-future', fsFuture, false));
+}
+
+/* 视口模式：小视口 / 大视口 */
+function syncViewSeg() {
+  const sel = $('viewMode');
+  const mode = sel ? sel.value : 'small';
+  const big = mode === 'big';
+  document.querySelectorAll('#viewSeg button').forEach(b => {
+    b.classList.toggle('on', b.dataset.view === mode);
+  });
+  document.body.classList.toggle('big-view', big);
+  const bvEl = $('bigView');
+  if (bvEl) bvEl.classList.toggle('show', big);
+  if (big) bvInit();
+}
+
+function setViewMode(mode) {
+  const sel = $('viewMode');
+  if (sel) {
+    if (sel.value !== mode) { sel.value = mode; sel.dispatchEvent(new Event('change')); }
+    else syncViewSeg();
+  }
+  savePresets();
+}
+
+/* ==================== 大视口 ==================== */
+const bvState = { nav: 'liked', songs: [], playlists: [], inited: false };
+let bvUserSig = '';
+
+function bvSetMain(title, sub) {
+  const t = $('bvMainTitle'), s = $('bvMainSub');
+  if (t) t.textContent = title;
+  if (s) s.textContent = sub || '';
+}
+
+function bvHint(html) {
+  const list = $('bvList');
+  if (list) list.innerHTML = '<div class="bv-hint">' + html + '</div>';
+}
+
+function bvNeedLogin() {
+  if (currentCookie && currentUser && currentUser.uid) return false;
+  bvHint('登录网易云账号后才能查看你的歌单和喜欢的音乐<br><button type="button" data-act="login">去登录</button>');
+  return true;
+}
+
+function bvRowHtml(song, i) {
+  const ar = (song.ar || song.artists || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+  const al = (song.al && song.al.name) || (song.album && song.album.name) || '';
+  const cover = song._cover || buildCoverUrl((song.al && song.al.picUrl) || '');
+  const on = currentSong && String(currentSong.id) === String(song.id) ? ' on' : '';
+  return '<div class="bv-row' + on + '" data-i="' + i + '" data-id="' + song.id + '">' +
+    '<div class="idx">' + (i + 1) + '</div>' +
+    '<img src="' + bvEsc(cover) + '" alt="" loading="lazy">' +
+    '<div class="meta">' +
+    '<div class="name">' + bvEsc(song.name || '未知歌曲') + '</div>' +
+    '<div class="ar">' + bvEsc(ar) + '</div>' +
+    '</div>' +
+    '<div class="al">' + bvEsc(al) + '</div>' +
+    '</div>';
+}
+
+function bvRenderSongs(songs) {
+  bvState.songs = songs || [];
+  const list = $('bvList');
+  if (!list) return;
+  if (!bvState.songs.length) { list.innerHTML = '<div class="bv-hint">这里还没有内容</div>'; return; }
+  list.innerHTML = bvState.songs.map(bvRowHtml).join('');
+}
+
+async function bvFetchDetails(ids) {
+  const out = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    try {
+      const d = await requestAPI('/song/detail', { ids: ids.slice(i, i + 200).join(',') });
+      if (d && d.songs) out.push(...d.songs);
+    } catch (e) { console.warn('[bv] 歌曲详情失败', e); }
+  }
+  return out.map(s => Object.assign({}, s, {
+    _cover: buildCoverUrl((s.al && s.al.picUrl) || (s.album && s.album.picUrl) || '')
+  }));
+}
+
+async function bvLoadLiked() {
+  bvSetMain('我喜欢的音乐', '');
+  if (bvNeedLogin()) return;
+  bvHint('加载中…');
+  try {
+    const d = await requestAPI('/likelist', { uid: currentUser.uid });
+    const ids = (d && (d.ids || (d.data && d.data.ids))) || [];
+    if (!ids.length) { bvSetMain('我喜欢的音乐', '0 首'); bvHint('还没有喜欢的歌曲'); return; }
+    likedIds = new Set(ids.map(String));
+    const songs = await bvFetchDetails(ids);
+    bvSetMain('我喜欢的音乐', songs.length + ' 首');
+    bvRenderSongs(songs);
+  } catch (e) {
+    bvHint('加载失败：' + bvEsc(e.message || e));
+  }
+}
+
+async function bvLoadRecent() {
+  bvSetMain('最近播放', '');
+  if (bvNeedLogin()) return;
+  bvHint('加载中…');
+  try {
+    const d = await requestAPI('/user/record', { uid: currentUser.uid, type: 1 });
+    const arr = (d && (d.allData || (d.data && d.data.allData) || d.data || [])) || [];
+    const songs = [];
+    arr.forEach(it => {
+      const s = it.song || it.data || it;
+      if (s && s.id) {
+        songs.push(Object.assign({}, s, {
+          _cover: buildCoverUrl((s.al && s.al.picUrl) || (s.album && s.album.picUrl) || '')
+        }));
+      }
+    });
+    bvSetMain('最近播放', songs.length + ' 首');
+    bvRenderSongs(songs);
+  } catch (e) {
+    bvHint('加载失败：' + bvEsc(e.message || e));
+  }
+}
+
+function bvRenderPlaylistSide(arr) {
+  const box = $('bvPlaylistBox');
+  if (!box) return;
+  const items = (arr || bvState.playlists || []).slice(0, 60);
+  box.innerHTML = items.map(p =>
+    '<button class="bv-nav" type="button" data-list="' + p.id + '" title="' + bvEsc(p.name) + '">' +
+    bvEsc(p.name) + '</button>').join('');
+}
+
+async function bvLoadPlaylists(only) {
+  const title = only === 'created' ? '创建的歌单' : '收藏的歌单';
+  bvSetMain(title, '');
+  if (bvNeedLogin()) return;
+  bvHint('加载中…');
+  try {
+    const d = await requestAPI('/user/playlist', { uid: currentUser.uid, limit: 1000 });
+    let arr = (d && (d.playlist || (d.data && d.data.playlist))) || [];
+    if (only === 'created') arr = arr.filter(p => !p.subscribed);
+    else if (only === 'subscribed') arr = arr.filter(p => p.subscribed);
+    bvState.playlists = arr;
+    bvRenderPlaylistSide(arr);
+    bvSetMain(title, arr.length + ' 个');
+    const list = $('bvList');
+    if (!list) return;
+    if (!arr.length) { list.innerHTML = '<div class="bv-hint">没有歌单</div>'; return; }
+    list.innerHTML = arr.map(p =>
+      '<div class="bv-row" data-list="' + p.id + '">' +
+      '<div class="idx"></div>' +
+      '<img src="' + bvEsc(buildCoverUrl(p.coverImgUrl || p.picUrl || '')) + '" alt="" loading="lazy">' +
+      '<div class="meta">' +
+      '<div class="name">' + bvEsc(p.name) + '</div>' +
+      '<div class="ar">' + (p.trackCount || 0) + ' 首' +
+      (p.creator ? ' · ' + bvEsc(p.creator.nickname) : '') + '</div>' +
+      '</div>' +
+      '<div class="al"></div>' +
+      '</div>').join('');
+  } catch (e) {
+    bvHint('加载失败：' + bvEsc(e.message || e));
+  }
+}
+
+async function bvLoadPlaylist(id, name) {
+  bvSetMain(name || '歌单', '');
+  bvHint('加载中…');
+  try {
+    const d = await requestAPI('/playlist/detail', { id });
+    const pl = (d && (d.playlist || (d.data && d.data.playlist))) || {};
+    const tracks = pl.tracks || [];
+    const songs = tracks.map(s => Object.assign({}, s, {
+      _cover: buildCoverUrl((s.al && s.al.picUrl) || (s.album && s.album.picUrl) || '')
+    }));
+    bvSetMain((pl.name || name || '歌单'), songs.length + ' 首' +
+      (pl.creator ? ' · ' + pl.creator.nickname : ''));
+    bvRenderSongs(songs);
+  } catch (e) {
+    bvHint('加载失败：' + bvEsc(e.message || e));
+  }
+}
+
+async function bvSearch(kw) {
+  kw = String(kw || '').trim();
+  if (!kw) return;
+  bvSetMain('搜索：' + kw, '');
+  bvHint('搜索中…');
+  try {
+    const d = await requestAPI('/cloudsearch', { keywords: kw, limit: 60 });
+    const res = (d && (d.result || (d.data && d.data.result))) || {};
+    const songs = (res.songs || []).map(s => Object.assign({}, s, {
+      _cover: buildCoverUrl((s.al && s.al.picUrl) || '')
+    }));
+    bvSetMain('搜索：' + kw, songs.length + ' 首');
+    if (!songs.length) { bvHint('没有找到结果'); return; }
+    bvRenderSongs(songs);
+  } catch (e) {
+    bvHint('搜索失败：' + bvEsc(e.message || e));
+  }
+}
+
+function bvRenderUser() {
+  const box = $('bvUser');
+  if (!box) return;
+  const logged = !!(currentCookie && currentUser && currentUser.uid);
+  const sig = logged
+    ? currentUser.uid + '|' + (currentUser.nickname || '') + '|' + (currentUser.avatarUrl || '')
+    : 'guest';
+  if (sig === bvUserSig) return;
+  bvUserSig = sig;
+  if (logged) {
+    box.innerHTML = '<div class="user-info" style="display:flex;">' +
+      '<img class="user-avatar" src="' + bvEsc(currentUser.avatarUrl || '') + '" alt="">' +
+      '<div class="user-details">' +
+      '<div class="user-name">' + bvEsc(currentUser.nickname || '未登录') + '</div>' +
+      '<div class="user-status">已登录</div>' +
+      '</div>' +
+      '<button class="logout-btn" type="button" data-act="logout">退出</button>' +
+      '</div>';
+  } else {
+    box.innerHTML = '<button class="login-btn" type="button" data-act="login">登录 / 游客模式</button>';
+  }
+}
+
+function bvSyncNow() {
+  const n = $('bvFName'), a = $('bvFArtist'), c = $('bvCover'), lyr = $('bvLyric');
+  if (!n) return;
+  bvRenderUser();
+  n.textContent = currentSong ? currentSong.name : '未播放';
+  a.textContent = currentSong ? (currentSong.artist || '—') : '—';
+  if (c) {
+    const u = (currentSong && currentSong.cover) || '';
+    if (c.getAttribute('src') !== u) {
+      if (u) c.setAttribute('src', u); else c.removeAttribute('src');
+    }
+  }
+  if (lyr) {
+    const line = (currentLyricIndex >= 0 && currentLyrics[currentLyricIndex])
+      ? currentLyrics[currentLyricIndex].text : '';
+    if (lyr.textContent !== line) lyr.textContent = line || '';
+  }
+  document.querySelectorAll('#bvList .bv-row.on').forEach(r => r.classList.remove('on'));
+  if (currentSong) {
+    const row = document.querySelector('#bvList .bv-row[data-id="' + currentSong.id + '"]');
+    if (row) row.classList.add('on');
+  }
+  const lk = $('bvLike');
+  if (lk) lk.classList.toggle('liked', !!(currentSong && likedIds.has(String(currentSong.id))));
+}
+
+function bvOnNav(kind) {
+  bvState.nav = kind;
+  if (kind === 'liked') bvLoadLiked();
+  else if (kind === 'recent') bvLoadRecent();
+  else if (kind === 'subscribed') bvLoadPlaylists('subscribed');
+  else if (kind === 'created') bvLoadPlaylists('created');
+}
+
+function bvWire() {
+  const root = $('bigView');
+  if (!root) return;
+
+  root.addEventListener('click', (e) => {
+    const t = e.target;
+
+    const act = t.closest('[data-act]');
+    if (act) {
+      const a = act.dataset.act;
+      if (a === 'login') { const m = $('loginModal'); if (m) m.classList.add('visible'); }
+      if (a === 'logout') { $('logoutBtn').click(); }
+      return;
+    }
+
+    const nav = t.closest('.bv-nav[data-nav]');
+    if (nav) {
+      root.querySelectorAll('.bv-nav').forEach(n => n.classList.remove('on'));
+      nav.classList.add('on');
+      bvOnNav(nav.dataset.nav);
+      return;
+    }
+
+    const listBtn = t.closest('[data-list]');
+    if (listBtn) {
+      bvLoadPlaylist(listBtn.dataset.list, listBtn.textContent.trim());
+      return;
+    }
+
+    const row = t.closest('.bv-row[data-i]');
+    if (row) {
+      const i = parseInt(row.dataset.i, 10);
+      const raw = bvState.songs[i];
+      if (!raw) return;
+      const ar = (raw.ar || raw.artists || []).map(x => x.name).filter(Boolean).join(' / ') || '未知歌手';
+      playlist = bvState.songs.slice();
+      currentPlayIndex = i;
+      playSong({ id: raw.id, name: raw.name, artist: ar, cover: raw._cover || '' });
+    }
+  });
+
+  const sIn = $('bvSearchInput'), sBtn = $('bvSearchBtn');
+  if (sIn) sIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') bvSearch(sIn.value); });
+  if (sBtn) sBtn.addEventListener('click', () => bvSearch(sIn ? sIn.value : ''));
+
+  const pv = $('bvPrev'), nx = $('bvNext'), lk = $('bvLike');
+  if (pv) pv.addEventListener('click', playPrev);
+  if (nx) nx.addEventListener('click', () => playNext(false));
+  if (lk) lk.addEventListener('click', () => toggleLike());
+}
+
+function bvInit() {
+  if (!bvState.inited) {
+    bvState.inited = true;
+    bvWire();
+    bvRenderUser();
+    bvOnNav('liked');
+  }
+  bvSyncNow();
+}
+
+/* ---- 控件事件绑定（分段选择 / 折叠联动 / 预览刷新）---- */
+document.querySelectorAll('#bgSeg button').forEach(b => {
+  b.addEventListener('click', () => setBgMode(b.dataset.mode));
+});
+document.querySelectorAll('#layoutSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    const sel = $('lyricLayout');
+    if (sel) { sel.value = b.dataset.layout; sel.dispatchEvent(new Event('change')); }
+    syncRingPane(); renderLyricPreview(); savePresets();
+  });
+});
+document.querySelectorAll('#viewSeg button').forEach(b => {
+  b.addEventListener('click', () => setViewMode(b.dataset.view));
+});
+$('rainAdv').addEventListener('change', () => { syncRainAdv(); savePresets(); });
+$('viewMode').addEventListener('change', () => { syncViewSeg(); savePresets(); });
+
+// 任何设置变化都刷新预览与联动状态（放在 #ui 上统一代理，预设加载时也会触发）
+$('ui').addEventListener('input', () => renderLyricPreview());
+$('ui').addEventListener('change', () => {
+  syncBgSeg(); syncRingPane(); syncRainAdv(); renderLyricPreview();
+});
 function init() {
   bgSource = makeDefaultBackground();
   const rgb = hexToRgb(edgeColorInput.value);
@@ -3615,6 +4295,13 @@ function init() {
   } else {
     updateUserUI();
   }
+
+  syncBgSeg();
+  syncRingPane();
+  syncRainAdv();
+  renderLyricPreview();
+  syncViewSeg();
+  bvRenderUser();
 
   requestAnimationFrame(loop);
 }
