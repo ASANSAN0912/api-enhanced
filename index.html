@@ -2932,14 +2932,20 @@ $('cookieLoginBtn').addEventListener('click', async () => {
 });
 
 /* ----------------------- 播放器核心逻辑 ----------------------- */
-function buildCoverUrl(picUrl) {
+// 封面地址：默认取方图（缩略图用），需要宽幅时传 size 或交给 loadCoverAsBackground 升级
+// 注意：网易云图床的 param=WxH 是"裁切"而不是"缩放"，宽高比不对就会把画裁掉，
+// 所以方形缩略图必须请求方形图，否则会看起来"被放大、显示不全"。
+function buildCoverUrl(picUrl, size) {
   if (!picUrl) return '';
   const sep = picUrl.includes('?') ? '&' : '?';
-  return picUrl + sep + 'param=1280y720';
+  return picUrl + sep + 'param=' + (size || '300y300');
 }
 
 function loadCoverAsBackground(url) {
-  if (!url || url === lastCoverUrl) return;
+  if (!url) return;
+  // 背景是铺满全屏的宽幅图，这里把方图参数换成 1280x720
+  url = url.replace(/([?&])param=[^&]*/, '$1param=1280y720');
+  if (url === lastCoverUrl) return;
   lastCoverUrl = url;
   const img = new Image(); img.crossOrigin = 'anonymous';
   img.onload = () => { bgSource = img; applyBackground(false); };
