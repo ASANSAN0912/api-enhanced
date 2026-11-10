@@ -2588,14 +2588,16 @@ async function startQrLogin() {
         if (++failCount >= 5) {
           clearInterval(qrTimer);
           currentCookie = savedCookie;
-          qrStatus.textContent = '轮询失败，请确认 API 服务（node app.js）还在运行';
+          qrStatus.textContent = '轮询失败（连不上接口 ' + (API_BASE || '同源') + '）';
         }
       }
     }, 3000);
   } catch (e) {
     currentCookie = savedCookie;
     loginBusy = false;
-    qrStatus.textContent = '获取二维码失败：' + (e.message || e);
+    // 失败时把实际使用的接口地址也显示出来，方便判断是"页面开错了"还是"接口真的连不上"
+    qrStatus.textContent = '获取二维码失败：' + (e.message || e) + '｜接口：' + (API_BASE || '（同源）');
+    console.warn('[NCM] 二维码请求失败', { API_BASE, page: location.href, err: e });
   }
 }
 
