@@ -133,7 +133,7 @@
     display:flex;flex-direction:column;gap:9px;
     border:1px solid rgba(255,255,255,.08); box-shadow:0 8px 32px rgba(0,0,0,.4);user-select:none;
     max-height:calc(100vh - 32px);overflow-y:auto;scrollbar-width:thin;
-    transition:opacity .22s ease, transform .22s ease, width .3s cubic-bezier(.22,1,.36,1), max-height .3s ease;
+    transition:opacity .22s ease, transform .22s ease;
   }
   #player.hidden{opacity:0;pointer-events:none;transform:translateY(-10px) scale(.97)}
   #player::-webkit-scrollbar{width:5px}
@@ -461,8 +461,8 @@
 
   /* ==================== 设置面板：分区折叠 ==================== */
   #ui{width:344px;box-sizing:border-box}
-  /* 关键：面板是 flex 纵向布局 + max-height，子项默认会被压缩，
-     而分区又有 overflow:hidden，结果就是内容被裁掉。这里禁止子项收缩，交给面板整体滚动。 */
+  /* 面板是 flex 纵向 + max-height，子项默认会被压缩，而分区又 overflow:hidden，
+     结果就是内容被裁掉。这里禁止子项收缩，交给面板整体滚动。 */
   #ui>*{flex:0 0 auto}
   #player>*{flex:0 0 auto}
   #ui details.sec{border:1px solid rgba(255,255,255,.07);border-radius:10px;
@@ -506,12 +506,6 @@
   #lyricPreview .lp-future{color:rgba(255,255,255,.58)}
   #lyricPreview .lp-ch{display:inline-block;transform-origin:50% 70%}
 
-  /* ==================== 放大窗口（同一个面板变大，内部布局不变） ==================== */
-  body.big-view #player{width:min(52vw, 620px)}
-  body.big-view #resultList{max-height:44vh}
-  body.big-view #likedPanel{max-height:34vh}
-  #playerExpandBtn.is-max{background:rgba(79,155,255,.34);border-color:rgba(79,155,255,.62);color:#fff}
-
   /* 分区展开的过渡 */
   @keyframes secIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
   #ui details.sec[open]>summary + .sec-body{animation:secIn .22s cubic-bezier(.22,1,.36,1) both}
@@ -525,9 +519,119 @@
   #player .now-playing{transition:opacity .2s ease, transform .2s ease}
   #player .now-playing.swap-out{opacity:0;transform:translateY(-3px)}
 
+  #playerExpandBtn.is-max{background:rgba(79,155,255,.34);border-color:rgba(79,155,255,.62);color:#fff}
+
+  /* ==================== 大视口（浮动窗口，最多占屏 50%） ==================== */
+  #bigView{position:fixed;right:16px;top:16px;z-index:10;
+    width:min(50vw, 820px);height:min(78vh, 700px);
+    display:flex;flex-direction:column;border-radius:14px;overflow:hidden;
+    color:#eaeaea;font-size:13px;font-family:inherit;
+    background:rgba(13,16,22,.8);border:1px solid rgba(255,255,255,.09);
+    box-shadow:0 12px 44px rgba(0,0,0,.5);
+    backdrop-filter:blur(18px) saturate(1.12);-webkit-backdrop-filter:blur(18px) saturate(1.12);
+    opacity:0;pointer-events:none;transform:translateY(-10px) scale(.98);
+    transition:opacity .22s ease, transform .22s ease}
+  #bigView.show{opacity:1;pointer-events:auto;transform:none}
+  #bigView.minimized{opacity:0;pointer-events:none;transform:translateY(-10px) scale(.98)}
+  body.big-view #player,body.big-view #bottomBar,body.big-view #playerRestoreBtn{display:none!important}
+  /* 大视口收起后的还原按钮 */
+  #bvRestoreBtn{position:fixed;right:16px;top:16px;z-index:11;width:44px;height:44px;padding:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(15,18,25,.72);border:1px solid rgba(255,255,255,.12);border-radius:50%;
+    color:#eaeaea;cursor:pointer;box-shadow:0 8px 32px rgba(0,0,0,.45);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    opacity:0;pointer-events:none;transform:scale(.85);
+    transition:opacity .22s ease,transform .22s ease,background .15s,border-color .15s}
+  #bvRestoreBtn.visible{opacity:1;pointer-events:auto;transform:scale(1)}
+  #bvRestoreBtn:hover{background:rgba(79,155,255,.28);border-color:rgba(79,155,255,.55)}
+  #bvMinBtn, #bvShrinkBtn{flex:0 0 auto;width:24px;height:24px;padding:0;display:flex;align-items:center;
+    justify-content:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+    border-radius:6px;color:#eaeaea;cursor:pointer;transition:background .15s,border-color .15s}
+  #bvMinBtn:hover, #bvShrinkBtn:hover{background:rgba(79,155,255,.28);border-color:rgba(79,155,255,.55);color:#fff}
+
+  .bv-head{display:flex;align-items:center;gap:12px;padding:11px 16px;
+    border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.2);flex:0 0 auto}
+  .bv-logo{font-size:15px;font-weight:700;color:#8ec5ff;letter-spacing:1px;flex:0 0 auto}
+  .bv-search{flex:1;min-width:90px;display:flex;gap:8px}
+  .bv-search input{flex:1;min-width:0;background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:7px 15px;color:#fff;
+    font-size:13px;outline:none;transition:border-color .15s,background .15s;font-family:inherit}
+  .bv-search input:focus{border-color:rgba(79,155,255,.6);background:rgba(255,255,255,.13)}
+  .bv-search input::placeholder{color:#7f8ea8}
+  .bv-search button{background:#2f6fe0;border:0;color:#fff;border-radius:20px;padding:7px 18px;
+    cursor:pointer;font-size:13px;font-family:inherit;transition:background .15s}
+  .bv-search button:hover{background:#3d7ce8}
+  .bv-user{margin-left:auto;display:flex;align-items:center;gap:8px;flex:0 0 auto;max-width:220px;overflow:hidden}
+  .bv-user .user-info{padding:4px 10px 4px 4px}
+  .bv-user .user-avatar{width:30px;height:30px}
+
+  .bv-body{flex:1;display:flex;min-height:0}
+  .bv-side{width:180px;flex:0 0 auto;padding:12px 8px;overflow-y:auto;
+    border-right:1px solid rgba(255,255,255,.07);background:rgba(0,0,0,.14);scrollbar-width:thin}
+  .bv-side::-webkit-scrollbar{width:5px}
+  .bv-side::-webkit-scrollbar-thumb{background:rgba(120,160,255,.3);border-radius:3px}
+  .bv-side-title{font-size:10px;color:#6f84a3;letter-spacing:1.2px;margin:14px 8px 6px}
+  .bv-side-title:first-child{margin-top:0}
+  .bv-nav{display:block;width:100%;text-align:left;background:transparent;border:0;
+    color:#c3d2e6;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;
+    margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-family:inherit;transition:background .15s,color .15s}
+  .bv-nav:hover{background:rgba(255,255,255,.08);color:#fff}
+  .bv-nav.on{background:rgba(79,155,255,.24);color:#fff}
+
+  .bv-main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .bv-main-head{padding:14px 16px 8px;display:flex;align-items:baseline;gap:10px;flex:0 0 auto}
+  #bvMainTitle{font-size:18px;font-weight:700;color:#fff}
+  #bvMainSub{font-size:12px;color:#7f93b0}
+  .bv-list{flex:1;overflow-y:auto;padding:0 14px 16px;min-height:0;scrollbar-width:thin}
+  .bv-list::-webkit-scrollbar{width:7px}
+  .bv-list::-webkit-scrollbar-thumb{background:rgba(120,160,255,.3);border-radius:4px}
+  .bv-row{display:flex;align-items:center;gap:12px;padding:7px 10px;border-radius:9px;
+    cursor:pointer;transition:background .13s}
+  .bv-row:hover{background:rgba(255,255,255,.07)}
+  .bv-row.on{background:rgba(79,155,255,.2)}
+  .bv-row .idx{width:26px;color:#6f84a3;font-size:12px;text-align:right;flex:0 0 auto;
+    font-variant-numeric:tabular-nums}
+  .bv-row img{width:42px;height:42px;border-radius:7px;object-fit:cover;background:#1b2029;flex:0 0 auto}
+  .bv-row .meta{flex:1;min-width:0}
+  .bv-row .name{color:#fff;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bv-row .ar{color:#8ea4c8;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bv-row .al{color:#7f93b0;font-size:11px;width:112px;flex:0 0 auto;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;text-align:right}
+  .bv-hint{color:#7f8ea8;font-size:12px;padding:22px 10px;text-align:center;line-height:1.8}
+  .bv-hint button{background:rgba(79,155,255,.2);border:1px solid rgba(79,155,255,.45);
+    color:#cfe3ff;border-radius:7px;padding:5px 14px;cursor:pointer;font-size:12px;
+    font-family:inherit;margin-top:8px}
+
+  .bv-foot{display:flex;align-items:center;gap:12px;padding:9px 14px;flex:0 0 auto;
+    border-top:1px solid rgba(255,255,255,.09);background:rgba(0,0,0,.32)}
+  .bv-fcover img{width:46px;height:46px;border-radius:8px;object-fit:cover;background:#1b2029;display:block}
+  .bv-fmeta{width:150px;flex:0 0 auto;overflow:hidden}
+  #bvFName{font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #bvFArtist{font-size:11px;color:#8ea4c8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #bvLyric{flex:0 0 auto;max-width:22%;font-size:11px;color:rgba(255,255,255,.62);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+  .bv-fctrl{flex:1;display:flex;align-items:center;gap:10px;min-width:0}
+  .bv-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+    color:#dbe8ff;width:32px;height:32px;border-radius:50%;cursor:pointer;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;padding:0;font-size:14px;
+    transition:background .15s,border-color .15s}
+  .bv-btn:hover{background:rgba(79,155,255,.3);border-color:rgba(79,155,255,.55);color:#fff}
+  .bv-btn:disabled{opacity:.4;cursor:not-allowed}
+  .bv-prog{flex:1;min-width:70px}
+  .bv-btn.heart.liked{color:#ff4d6d;border-color:rgba(255,77,109,.55);background:rgba(255,77,109,.18)}
+
+  @media (max-width:1100px){
+    #bigView{width:min(62vw, 720px)}
+  }
   @media (max-width:900px){
-    body.big-view #player{width:calc(100vw - 32px)}
-    #ui{width:min(344px, calc(100vw - 32px))}
+    #bigView{width:calc(100vw - 32px);height:min(84vh, 640px)}
+    .bv-side{width:132px}
+    .bv-row .al{display:none}
+    #bvLyric{display:none}
+    .bv-fmeta{width:96px}
+    .bv-logo{display:none}
+    #ui{width:270px}
   }
 </style>
 </head>
@@ -845,6 +949,64 @@
 
 <button id="playerRestoreBtn" title="展开播放器" aria-label="展开播放器">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+</button>
+
+<div id="bigView">
+  <header class="bv-head">
+    <div class="bv-logo">网易云音乐</div>
+    <div class="bv-search">
+      <input id="bvSearchInput" type="text" placeholder="搜索歌曲 / 歌手" autocomplete="off">
+      <button id="bvSearchBtn" type="button">搜索</button>
+    </div>
+    <div class="bv-user" id="bvUser"></div>
+    <button id="bvShrinkBtn" type="button" title="还原成小窗口" aria-label="还原成小窗口">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h4V2"/><path d="M14 10h-4v4"/><path d="M6 6L2 2"/><path d="M10 10l4 4"/></svg>
+    </button>
+    <button id="bvMinBtn" type="button" title="收起大视口" aria-label="收起大视口">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="6" x2="10" y2="6"/></svg>
+    </button>
+  </header>
+
+  <div class="bv-body">
+    <aside class="bv-side">
+      <div class="bv-side-title">我的音乐</div>
+      <button class="bv-nav" type="button" data-nav="liked">我喜欢的音乐</button>
+      <button class="bv-nav" type="button" data-nav="recent">最近播放</button>
+      <button class="bv-nav" type="button" data-nav="subscribed">收藏的歌单</button>
+      <button class="bv-nav" type="button" data-nav="created">创建的歌单</button>
+      <div class="bv-side-title">歌单</div>
+      <div id="bvPlaylistBox"></div>
+    </aside>
+
+    <main class="bv-main">
+      <div class="bv-main-head">
+        <div id="bvMainTitle">我喜欢的音乐</div>
+        <div id="bvMainSub"></div>
+      </div>
+      <div class="bv-list" id="bvList"></div>
+    </main>
+  </div>
+
+  <footer class="bv-foot">
+    <div class="bv-fcover"><img id="bvCover" alt=""></div>
+    <div class="bv-fmeta">
+      <div id="bvFName">未播放</div>
+      <div id="bvFArtist">—</div>
+    </div>
+    <div id="bvLyric"></div>
+    <div class="bv-fctrl">
+      <button class="bv-btn" type="button" id="bvPrev" title="上一首">&#9198;</button>
+      <button class="bv-btn song-play-pause" type="button" id="bvPlay" title="播放 / 暂停" aria-label="播放或暂停" disabled>&#9654;</button>
+      <button class="bv-btn" type="button" id="bvNext" title="下一首">&#9197;</button>
+      <div class="song-progress bv-prog" title="点击跳转"><div class="song-progress-fill"></div></div>
+      <span class="song-time">0:00 / 0:00</span>
+      <button class="bv-btn heart" type="button" id="bvLike" title="喜欢这首歌">&#9825;</button>
+    </div>
+  </footer>
+</div>
+
+<button id="bvRestoreBtn" type="button" title="展开大视口" aria-label="展开大视口">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="9" x2="9" y2="20"/></svg>
 </button>
 
 <div id="lyricLayer">
@@ -2900,7 +3062,7 @@ function fadeSwapText(nodeA, textA, nodeB, textB) {
   }, 190));
 }
 
-/* 背景模式切换时让画面柔和过渡一下（雨滴 / 液体 / 纯封面互相切换） */
+/* 背景模式切换（雨滴 / 液体 / 纯封面）时让画面柔和过渡一下 */
 let bgSwitchTimer = null, bgSwitchReady = false;
 function smoothBgSwitch() {
   if (!bgSwitchReady) return;
@@ -3433,6 +3595,7 @@ function updateAllProgress() {
       lastTimeText = txt;
     }
   }
+  if (document.body.classList.contains('big-view')) bvSyncNow();
 }
 
 /* ----- 长句自适应计算 ----- */
@@ -3824,12 +3987,25 @@ function syncViewSeg() {
   const box = $('viewModeBig');
   const big = !!(box && box.checked);
   document.body.classList.toggle('big-view', big);
-  const btn = $('playerExpandBtn');
-  if (btn) {
-    btn.title = big ? '还原窗口' : '放大窗口';
-    btn.setAttribute('aria-label', btn.title);
-    btn.classList.toggle('is-max', big);
+  const bvEl = $('bigView'), rb = $('bvRestoreBtn');
+  if (bvEl) {
+    bvEl.classList.toggle('show', big);
+    if (!big) bvEl.classList.remove('minimized');   // 切回小视口时清掉收起状态
   }
+  if (rb && !big) rb.classList.remove('visible');
+  if (big) bvInit();
+}
+
+/* 大视口收起 / 展开（和小视口一样的隐藏行为） */
+function bvMinimize() {
+  const bvEl = $('bigView'), rb = $('bvRestoreBtn');
+  if (bvEl) bvEl.classList.add('minimized');
+  if (rb) rb.classList.add('visible');
+}
+function bvRestore() {
+  const bvEl = $('bigView'), rb = $('bvRestoreBtn');
+  if (bvEl) bvEl.classList.remove('minimized');
+  if (rb) rb.classList.remove('visible');
 }
 
 function setViewMode(mode) {
@@ -3839,6 +4015,300 @@ function setViewMode(mode) {
   if (box.checked !== want) { box.checked = want; box.dispatchEvent(new Event('change')); }
   else syncViewSeg();
   savePresets();
+}
+
+/* ==================== 大视口 ==================== */
+const bvState = { nav: 'liked', songs: [], playlists: [], inited: false };
+let bvUserSig = '';
+
+function bvSetMain(title, sub) {
+  const t = $('bvMainTitle'), s = $('bvMainSub');
+  if (t) t.textContent = title;
+  if (s) s.textContent = sub || '';
+}
+
+function bvHint(html) {
+  const list = $('bvList');
+  if (list) list.innerHTML = '<div class="bv-hint">' + html + '</div>';
+}
+
+function bvNeedLogin() {
+  if (currentCookie && currentUser && currentUser.uid) return false;
+  bvHint('登录网易云账号后才能查看你的歌单和喜欢的音乐<br><button type="button" data-act="login">去登录</button>');
+  return true;
+}
+
+function bvRowHtml(song, i) {
+  const ar = (song.ar || song.artists || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+  const al = (song.al && song.al.name) || (song.album && song.album.name) || '';
+  const cover = song._cover || buildCoverUrl((song.al && song.al.picUrl) || '');
+  const on = currentSong && String(currentSong.id) === String(song.id) ? ' on' : '';
+  return '<div class="bv-row' + on + '" data-i="' + i + '" data-id="' + song.id + '">' +
+    '<div class="idx">' + (i + 1) + '</div>' +
+    '<img src="' + bvEsc(cover) + '" alt="" loading="lazy">' +
+    '<div class="meta">' +
+    '<div class="name">' + bvEsc(song.name || '未知歌曲') + '</div>' +
+    '<div class="ar">' + bvEsc(ar) + '</div>' +
+    '</div>' +
+    '<div class="al">' + bvEsc(al) + '</div>' +
+    '</div>';
+}
+
+function bvRenderSongs(songs) {
+  bvState.songs = songs || [];
+  const list = $('bvList');
+  if (!list) return;
+  if (!bvState.songs.length) { list.innerHTML = '<div class="bv-hint">这里还没有内容</div>'; return; }
+  list.innerHTML = bvState.songs.map(bvRowHtml).join('');
+}
+
+async function bvFetchDetails(ids) {
+  const out = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    try {
+      const d = await requestAPI('/song/detail', { ids: ids.slice(i, i + 200).join(',') });
+      if (d && d.songs) out.push(...d.songs);
+    } catch (e) { console.warn('[bv] 歌曲详情失败', e); }
+  }
+  return out.map(s => Object.assign({}, s, {
+    _cover: buildCoverUrl((s.al && s.al.picUrl) || (s.album && s.album.picUrl) || '')
+  }));
+}
+
+async function bvLoadLiked() {
+  bvSetMain('我喜欢的音乐', '');
+  if (bvNeedLogin()) return;
+  bvHint('加载中…');
+  try {
+    const d = await requestAPI('/likelist', { uid: currentUser.uid });
+    const ids = (d && (d.ids || (d.data && d.data.ids))) || [];
+    if (!ids.length) { bvSetMain('我喜欢的音乐', '0 首'); bvHint('还没有喜欢的歌曲'); return; }
+    likedIds = new Set(ids.map(String));
+    const songs = await bvFetchDetails(ids);
+    bvSetMain('我喜欢的音乐', songs.length + ' 首');
+    bvRenderSongs(songs);
+  } catch (e) {
+    bvHint('加载失败：' + bvEsc(e.message || e));
+  }
+}
+
+async function bvLoadRecent() {
+  bvSetMain('最近播放', '');
+  if (bvNeedLogin()) return;
+  bvHint('加载中…');
+  try {
+    const d = await requestAPI('/user/record', { uid: currentUser.uid, type: 1 });
+    const arr = (d && (d.allData || (d.data && d.data.allData) || d.data || [])) || [];
+    const songs = [];
+    arr.forEach(it => {
+      const s = it.song || it.data || it;
+      if (s && s.id) {
+        songs.push(Object.assign({}, s, {
+          _cover: buildCoverUrl((s.al && s.al.picUrl) || (s.album && s.album.picUrl) || '')
+        }));
+      }
+    });
+    bvSetMain('最近播放', songs.length + ' 首');
+    bvRenderSongs(songs);
+  } catch (e) {
+    bvHint('加载失败：' + bvEsc(e.message || e));
+  }
+}
+
+function bvRenderPlaylistSide(arr) {
+  const box = $('bvPlaylistBox');
+  if (!box) return;
+  const items = (arr || bvState.playlists || []).slice(0, 60);
+  box.innerHTML = items.map(p =>
+    '<button class="bv-nav" type="button" data-list="' + p.id + '" title="' + bvEsc(p.name) + '">' +
+    bvEsc(p.name) + '</button>').join('');
+}
+
+async function bvLoadPlaylists(only) {
+  const title = only === 'created' ? '创建的歌单' : '收藏的歌单';
+  bvSetMain(title, '');
+  if (bvNeedLogin()) return;
+  bvHint('加载中…');
+  try {
+    const d = await requestAPI('/user/playlist', { uid: currentUser.uid, limit: 1000 });
+    let arr = (d && (d.playlist || (d.data && d.data.playlist))) || [];
+    if (only === 'created') arr = arr.filter(p => !p.subscribed);
+    else if (only === 'subscribed') arr = arr.filter(p => p.subscribed);
+    bvState.playlists = arr;
+    bvRenderPlaylistSide(arr);
+    bvSetMain(title, arr.length + ' 个');
+    const list = $('bvList');
+    if (!list) return;
+    if (!arr.length) { list.innerHTML = '<div class="bv-hint">没有歌单</div>'; return; }
+    list.innerHTML = arr.map(p =>
+      '<div class="bv-row" data-list="' + p.id + '">' +
+      '<div class="idx"></div>' +
+      '<img src="' + bvEsc(buildCoverUrl(p.coverImgUrl || p.picUrl || '')) + '" alt="" loading="lazy">' +
+      '<div class="meta">' +
+      '<div class="name">' + bvEsc(p.name) + '</div>' +
+      '<div class="ar">' + (p.trackCount || 0) + ' 首' +
+      (p.creator ? ' · ' + bvEsc(p.creator.nickname) : '') + '</div>' +
+      '</div>' +
+      '<div class="al"></div>' +
+      '</div>').join('');
+  } catch (e) {
+    bvHint('加载失败：' + bvEsc(e.message || e));
+  }
+}
+
+async function bvLoadPlaylist(id, name) {
+  bvSetMain(name || '歌单', '');
+  bvHint('加载中…');
+  try {
+    const d = await requestAPI('/playlist/detail', { id });
+    const pl = (d && (d.playlist || (d.data && d.data.playlist))) || {};
+    const tracks = pl.tracks || [];
+    const songs = tracks.map(s => Object.assign({}, s, {
+      _cover: buildCoverUrl((s.al && s.al.picUrl) || (s.album && s.album.picUrl) || '')
+    }));
+    bvSetMain((pl.name || name || '歌单'), songs.length + ' 首' +
+      (pl.creator ? ' · ' + pl.creator.nickname : ''));
+    bvRenderSongs(songs);
+  } catch (e) {
+    bvHint('加载失败：' + bvEsc(e.message || e));
+  }
+}
+
+async function bvSearch(kw) {
+  kw = String(kw || '').trim();
+  if (!kw) return;
+  bvSetMain('搜索：' + kw, '');
+  bvHint('搜索中…');
+  try {
+    const d = await requestAPI('/cloudsearch', { keywords: kw, limit: 60 });
+    const res = (d && (d.result || (d.data && d.data.result))) || {};
+    const songs = (res.songs || []).map(s => Object.assign({}, s, {
+      _cover: buildCoverUrl((s.al && s.al.picUrl) || '')
+    }));
+    bvSetMain('搜索：' + kw, songs.length + ' 首');
+    if (!songs.length) { bvHint('没有找到结果'); return; }
+    bvRenderSongs(songs);
+  } catch (e) {
+    bvHint('搜索失败：' + bvEsc(e.message || e));
+  }
+}
+
+function bvRenderUser() {
+  const box = $('bvUser');
+  if (!box) return;
+  const logged = !!(currentCookie && currentUser && currentUser.uid);
+  const sig = logged
+    ? currentUser.uid + '|' + (currentUser.nickname || '') + '|' + (currentUser.avatarUrl || '')
+    : 'guest';
+  if (sig === bvUserSig) return;
+  bvUserSig = sig;
+  if (logged) {
+    box.innerHTML = '<div class="user-info" style="display:flex;">' +
+      '<img class="user-avatar" src="' + bvEsc(currentUser.avatarUrl || '') + '" alt="">' +
+      '<div class="user-details">' +
+      '<div class="user-name">' + bvEsc(currentUser.nickname || '未登录') + '</div>' +
+      '<div class="user-status">已登录</div>' +
+      '</div>' +
+      '<button class="logout-btn" type="button" data-act="logout">退出</button>' +
+      '</div>';
+  } else {
+    box.innerHTML = '<button class="login-btn" type="button" data-act="login">登录 / 游客模式</button>';
+  }
+}
+
+function bvSyncNow() {
+  const n = $('bvFName'), a = $('bvFArtist'), c = $('bvCover'), lyr = $('bvLyric');
+  if (!n) return;
+  bvRenderUser();
+  n.textContent = currentSong ? currentSong.name : '未播放';
+  a.textContent = currentSong ? (currentSong.artist || '—') : '—';
+  if (c) {
+    const u = (currentSong && currentSong.cover) || '';
+    if (c.getAttribute('src') !== u) {
+      if (u) c.setAttribute('src', u); else c.removeAttribute('src');
+    }
+  }
+  if (lyr) {
+    const line = (currentLyricIndex >= 0 && currentLyrics[currentLyricIndex])
+      ? currentLyrics[currentLyricIndex].text : '';
+    if (lyr.textContent !== line) lyr.textContent = line || '';
+  }
+  document.querySelectorAll('#bvList .bv-row.on').forEach(r => r.classList.remove('on'));
+  if (currentSong) {
+    const row = document.querySelector('#bvList .bv-row[data-id="' + currentSong.id + '"]');
+    if (row) row.classList.add('on');
+  }
+  const lk = $('bvLike');
+  if (lk) lk.classList.toggle('liked', !!(currentSong && likedIds.has(String(currentSong.id))));
+}
+
+function bvOnNav(kind) {
+  bvState.nav = kind;
+  if (kind === 'liked') bvLoadLiked();
+  else if (kind === 'recent') bvLoadRecent();
+  else if (kind === 'subscribed') bvLoadPlaylists('subscribed');
+  else if (kind === 'created') bvLoadPlaylists('created');
+}
+
+function bvWire() {
+  const root = $('bigView');
+  if (!root) return;
+
+  root.addEventListener('click', (e) => {
+    const t = e.target;
+
+    const act = t.closest('[data-act]');
+    if (act) {
+      const a = act.dataset.act;
+      if (a === 'login') { const m = $('loginModal'); if (m) m.classList.add('visible'); }
+      if (a === 'logout') { $('logoutBtn').click(); }
+      return;
+    }
+
+    const nav = t.closest('.bv-nav[data-nav]');
+    if (nav) {
+      root.querySelectorAll('.bv-nav').forEach(n => n.classList.remove('on'));
+      nav.classList.add('on');
+      bvOnNav(nav.dataset.nav);
+      return;
+    }
+
+    const listBtn = t.closest('[data-list]');
+    if (listBtn) {
+      bvLoadPlaylist(listBtn.dataset.list, listBtn.textContent.trim());
+      return;
+    }
+
+    const row = t.closest('.bv-row[data-i]');
+    if (row) {
+      const i = parseInt(row.dataset.i, 10);
+      const raw = bvState.songs[i];
+      if (!raw) return;
+      const ar = (raw.ar || raw.artists || []).map(x => x.name).filter(Boolean).join(' / ') || '未知歌手';
+      playlist = bvState.songs.slice();
+      currentPlayIndex = i;
+      playSong({ id: raw.id, name: raw.name, artist: ar, cover: raw._cover || '' });
+    }
+  });
+
+  const sIn = $('bvSearchInput'), sBtn = $('bvSearchBtn');
+  if (sIn) sIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') bvSearch(sIn.value); });
+  if (sBtn) sBtn.addEventListener('click', () => bvSearch(sIn ? sIn.value : ''));
+
+  const pv = $('bvPrev'), nx = $('bvNext'), lk = $('bvLike');
+  if (pv) pv.addEventListener('click', playPrev);
+  if (nx) nx.addEventListener('click', () => playNext(false));
+  if (lk) lk.addEventListener('click', () => toggleLike());
+}
+
+function bvInit() {
+  if (!bvState.inited) {
+    bvState.inited = true;
+    bvWire();
+    bvRenderUser();
+    bvOnNav('liked');
+  }
+  bvSyncNow();
 }
 
 /* ---- 控件事件绑定（分段选择 / 折叠联动 / 预览刷新）---- */
@@ -3853,12 +4323,12 @@ document.querySelectorAll('#layoutSeg button').forEach(b => {
   });
 });
 $('rainAdv').addEventListener('change', () => { syncRainAdv(); savePresets(); });
-// 放大窗口：小窗口右上角的放大按钮，点一下变大、再点一下还原
-$('playerExpandBtn').addEventListener('click', () => {
-  const box = $('viewModeBig');
-  setViewMode(box && box.checked ? 'small' : 'big');
-});
+// 视口放大：小窗口右上角放大按钮 ↔ 大窗口的还原按钮
+$('playerExpandBtn').addEventListener('click', () => setViewMode('big'));
+$('bvShrinkBtn').addEventListener('click', () => setViewMode('small'));
 $('viewModeBig').addEventListener('change', () => { syncViewSeg(); savePresets(); });
+$('bvMinBtn').addEventListener('click', bvMinimize);
+$('bvRestoreBtn').addEventListener('click', bvRestore);
 
 // 任何设置变化都刷新预览与联动状态（放在 #ui 上统一代理，预设加载时也会触发）
 $('ui').addEventListener('input', () => renderLyricPreview());
@@ -3916,6 +4386,7 @@ function init() {
   syncRainAdv();
   renderLyricPreview();
   syncViewSeg();
+  bvRenderUser();
   bgSwitchReady = true;
 
   requestAnimationFrame(loop);
