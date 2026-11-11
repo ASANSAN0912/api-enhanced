@@ -636,6 +636,16 @@
 
 
   /* ==================== 3D 光盘选歌（独立白底页面） ==================== */
+  /* 顶部居中的 3D 选歌入口：纯下拉箭头，无背景 */
+  #discBtnTop{position:fixed;left:50%;top:12px;transform:translateX(-50%);
+    z-index:12;width:46px;height:34px;padding:0;border:0;background:none;
+    color:rgba(255,255,255,.62);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:color .18s,transform .18s;-webkit-tap-highlight-color:transparent;
+    filter:drop-shadow(0 1px 4px rgba(0,0,0,.45))}
+  #discBtnTop:hover{color:#fff;transform:translateX(-50%) translateY(2px)}
+  #discBtnTop:active{transform:translateX(-50%) translateY(3px) scale(.93)}
+  body.disc-mode #discBtnTop{display:none!important}
   body.disc-mode{background:#fff}
   body.disc-mode #c,
   body.disc-mode #ui,
@@ -797,6 +807,13 @@
 </head>
 <body class="hide-past hide-future">
 <canvas id="c"></canvas>
+
+<button id="discBtnTop" type="button" title="3D 选歌" aria-label="3D 选歌">
+  <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor"
+       stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M6 9.5l6 6 6-6"/>
+  </svg>
+</button>
 
 <div id="loginModal">
   <div class="modal-content" style="width:320px;">
@@ -5155,6 +5172,8 @@ function dvStep(delta) {
 /* ---------- 事件 ---------- */
 function dvWire() {
   const btn = $('discBtn'), close = $('dvClose'), refresh = $('dvRefresh');
+  const topBtn = $('discBtnTop');
+  if (topBtn) topBtn.addEventListener('click', dvOpen);
   const modeBtn = $('dvModeBtn');
   if (modeBtn) {
     modeBtn.textContent = DV_MODE === 'case' ? '切换成光盘' : '切换成专辑盒';
