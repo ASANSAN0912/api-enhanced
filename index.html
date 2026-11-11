@@ -660,7 +660,7 @@
 
   .dv-slot{position:absolute;left:50%;top:50%;width:330px;height:330px;
     margin:-165px 0 0 -165px;transform-style:preserve-3d;
-    transition:transform .58s cubic-bezier(.22,1,.36,1),opacity .4s ease,filter .4s ease;
+    transition:transform .48s cubic-bezier(.2,.9,.25,1),opacity .34s ease,filter .34s ease;
     will-change:transform,opacity,filter}
 
   .disc{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:#eef2f9;
@@ -4479,31 +4479,41 @@ $('ui').addEventListener('change', () => {
 /* ==================== 3D 光盘选歌（独立白底页面） ==================== */
 const DV = {
   items: [], index: 0, open: false, picked: [], groups: [],
-  pool: [], lastWheel: 0, startY: 0, dragging: false,
+  nodes: new Map(),          // itemIdx -> { el, img }
+  lastWheel: 0, startY: 0, dragging: false,
   activeGroup: -1, loading: false,
 };
-const DV_POOL = 13;        // 光碟池（上下各 6 + 中心 1）
-const DV_HALF = 6;
-const DV_STEP_Y = 112;     // 相邻两张的纵向间距（小于盘的直径 → 层叠遮挡）
+const DV_SPAN = 6;           // 上下各显示几张
+const DV_ARC_R = 620;        // 排列弧半径（越大越平直）
+const DV_ARC_STEP = 0.182;   // 每张盘在弧上占的角度（弧度）
 
-/* 排布：弧形走向 + 三轴旋转 + 层叠遮挡
-   d = 相对中心的偏移（负数是上方，正数是下方） */
+/* 排布：半圆环弧线 + 三轴旋转
+   d > 0 在下方，d < 0 在上方；中心 d = 0 轻微向左转，是"面向镜头但侧了一点"的视角。
+   上方因为转得更平 + Z 轴后退，视觉上会更小；层级按"上面的压下面的"排。 */
 function dvPlacement(d) {
   const ad = Math.abs(d);
-  const x = Math.sin(d * 0.35) * 74;              // 弧形走向
-  const y = d * DV_STEP_Y;
-  const z = -ad * 54;                              // 越远越靠后
-  const rotX = 12 + ad * 15;                       // 中心 12°（几乎正面朝向用户）
-  const rotY = d * -13;                            // 侧转
-  const rotZ = d * 4 - 3;                          // 轻微倾斜
-  const scale = Math.max(0.5, 1 - ad * 0.068);
+  const th = d * DV_ARC_STEP;
+  // 半圆弧：y 沿弧走，x = R(1-cosθ) 形成弧的横向位移
+  const y = DV_ARC_R * Math.sin(th);
+  const x = -DV_ARC_R * (1 - Math.cos(th)) * 0.62;
+  // 上方更快变小、更靠后；下方收得慢
+  const scale = d <= 0
+    ? Math.max(0.42, 1 - ad * 0.105)
+    : Math.max(0.54, 1 - ad * 0.052);
+  const z = d <= 0 ? -ad * 88 : -ad * 26;
+  const rotX = 14 + ad * 16;         // 中心 14°，越远越平躺
+  const rotY = -17 + d * -8.5;       // 中心轻微向左转
+  const rotZ = -5 + d * 4.6;         // 轻微倾斜
+  const opacity = Math.max(0.2, 1 - ad * (d <= 0 ? 0.135 : 0.10));
+  const blur = ad === 0 ? 0 : Math.min(3.4, ad * 0.6);
+
   return {
     transform: 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,' + z.toFixed(1) + 'px) ' +
                'rotateX(' + rotX.toFixed(1) + 'deg) rotateY(' + rotY.toFixed(1) + 'deg) ' +
                'rotateZ(' + rotZ.toFixed(1) + 'deg) scale(' + scale.toFixed(3) + ')',
-    opacity: Math.max(0.22, 1 - ad * 0.115),
-    blur: ad === 0 ? 0 : Math.min(3.6, ad * 0.62),
-    z: d === 0 ? 400 : 200 + d,                    // 下方压上方 → 层层叠落
+    opacity,
+    blur,
+    z: 200 - d,                       // 上面的压下面的
   };
 }
 
@@ -4512,46 +4522,84 @@ function dvMeta(song) {
   const al = (song.al && song.al.name) || (song.album && song.album.name) || '';
   const pic = (song.al && song.al.picUrl) || (song.album && song.album.picUrl) || '';
   const base = song.cover || song._cover || buildCoverUrl(pic, '500y500');
-  // 光盘直径约 330px，统一按方形大图请求，避免被裁切
   const cover = base ? base.replace(/([?&])param=[^&]*/, '$1param=500y500') : '';
   return { ar, al, cover };
 }
 
-function dvBuildPool() {
-  if (DV.pool.length) return;
-  const box = $('dvSlots');
-  if (!box) return;
-  for (let i = 0; i < DV_POOL; i++) {
-    const el = document.createElement('div');
-    el.className = 'dv-slot';
-    el.innerHTML = '<div class="disc"><img alt=""><i></i><b></b></div>';
-    const k = i - DV_HALF;
-    el.dataset.k = String(k);
-    box.appendChild(el);
-    DV.pool.push({ el, img: el.querySelector('img'), id: null, k });
-  }
+function dvApplyPlacement(el, d) {
+  const p = dvPlacement(d);
+  el.style.transform = p.transform;
+  el.style.opacity = String(p.opacity);
+  el.style.filter = p.blur > 0.04 ? 'blur(' + p.blur.toFixed(1) + 'px)' : 'none';
+  el.style.zIndex = String(p.z);
+  el.style.pointerEvents = 'auto';
 }
 
-function dvRenderSlots() {
+function dvMakeNode(idx) {
+  const el = document.createElement('div');
+  el.className = 'dv-slot';
+  el.dataset.idx = String(idx);
+  el.innerHTML = '<div class="disc"><img alt=""><i></i><b></b></div>';
+  const img = el.querySelector('img');
+  const item = DV.items[idx];
+  img.src = item.cover || '';
+  img.alt = item.name;
+  ($('dvSlots') || document.body).appendChild(el);
+  return { el, img };
+}
+
+function dvClearNodes() {
+  DV.nodes.forEach(node => node.el.remove());
+  DV.nodes.clear();
+}
+
+/* 关键：元素跟"歌"绑定（不是跟"位置"绑定），
+   所以 index 变化时每个元素都会从旧位置平滑移动到新位置 —— 这才是滚动动画。 */
+function dvRenderSlots(instant) {
   const n = DV.items.length;
   const box = $('dvSlots');
   if (box) box.style.display = n ? '' : 'none';
-  if (!n) { DV.pool.forEach(s => { s.el.style.opacity = '0'; }); return; }
-  DV.pool.forEach(slot => {
-    const d = slot.k, ad = Math.abs(d);
+  if (!n) { dvClearNodes(); return; }
+
+  const span = Math.min(DV_SPAN, Math.max(0, Math.floor((n - 1) / 2)));
+  const keep = new Set();
+
+  for (let d = -span; d <= span; d++) {
     const idx = ((DV.index + d) % n + n) % n;
-    const item = DV.items[idx];
-    const p = dvPlacement(d);
-    slot.el.style.transform = p.transform;
-    slot.el.style.opacity = String(p.opacity);
-    slot.el.style.filter = p.blur > 0.04 ? 'blur(' + p.blur.toFixed(1) + 'px)' : 'none';
-    slot.el.style.zIndex = String(p.z);
-    slot.el.style.pointerEvents = 'auto';
-    slot.el.classList.toggle('active', d === 0);
-    if (slot.id !== item.id) {
-      slot.id = item.id;
-      slot.img.src = item.cover || '';
-      slot.img.alt = item.name;
+    keep.add(idx);
+    let node = DV.nodes.get(idx);
+    if (!node) {
+      node = dvMakeNode(idx);
+      DV.nodes.set(idx, node);
+      // 新进入的元素：先从窗口外一格就位（无动画），下一帧再滑到目标位置
+      node.el.style.transition = 'none';
+      dvApplyPlacement(node.el, d + (d >= 0 ? 1 : -1));
+      void node.el.offsetWidth;             // 强制回流，让起点生效
+      node.el.style.transition = '';
+      const target = d;
+      if (!instant && typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => {
+          if (DV.nodes.get(idx) === node) dvApplyPlacement(node.el, target);
+        });
+      } else {
+        node.el.style.transition = 'none';
+        dvApplyPlacement(node.el, target);
+        void node.el.offsetWidth;
+        node.el.style.transition = '';
+      }
+    } else {
+      dvApplyPlacement(node.el, d);         // 已有元素：平滑移到新位置
+    }
+    node.el.dataset.k = String(d);
+    node.el.classList.toggle('active', d === 0);
+  }
+
+  // 移出窗口的
+  Array.from(DV.nodes.keys()).forEach(idx => {
+    if (!keep.has(idx)) {
+      const node = DV.nodes.get(idx);
+      if (node) node.el.remove();
+      DV.nodes.delete(idx);
     }
   });
 }
@@ -4576,16 +4624,13 @@ function dvRenderGroups() {
         songs = '<div class="dv-load">这个歌单是空的</div>';
       } else {
         const max = 800;
-        songs = g.songs.slice(0, max).map((s, k) => {
-          const m = dvMeta(s);
-          return '<div class="dv-song" data-i="' + k + '">' +
-            '<div class="n">' + (k + 1) + '</div>' +
-            '<div class="nm">' + bvEsc(s.name || '未知歌曲') + '</div>' +
-            '<div class="tg">♪</div></div>';
-        }).join('');
+        songs = g.songs.slice(0, max).map((s, k) =>
+          '<div class="dv-song" data-i="' + k + '">' +
+          '<div class="n">' + (k + 1) + '</div>' +
+          '<div class="nm">' + bvEsc(s.name || '未知歌曲') + '</div>' +
+          '<div class="tg">♪</div></div>').join('');
         if (g.songs.length > max) {
-          songs += '<div class="dv-load">共 ' + g.songs.length + ' 首，列表仅显示前 ' + max +
-                   ' 首（滚轮仍可继续浏览全部）</div>';
+          songs += '<div class="dv-load">共 ' + g.songs.length + ' 首，列表仅显示前 ' + max + ' 首</div>';
         }
       }
     }
@@ -4627,7 +4672,8 @@ function dvSetItems(rawSongs) {
     if (p >= 0) idx = p;
   }
   DV.index = idx;
-  dvRenderSlots();
+  dvClearNodes();
+  dvRenderSlots(true);          // 整组换歌单时不要逐个飞入
   dvSyncSongHighlight();
 }
 
@@ -4635,7 +4681,7 @@ async function dvExpandGroup(i) {
   const g = DV.groups[i];
   if (!g) return;
   DV.activeGroup = i;
-  dvRenderGroups();                    // 先把"展开中"画出来
+  dvRenderGroups();
   if (g.songs === null) {
     try {
       if (g.type === 'liked') {
@@ -4655,13 +4701,13 @@ async function dvExpandGroup(i) {
       g.songs = [];
       g.count = 0;
     }
-    if (DV.activeGroup !== i) return;   // 用户在等的时候又点了别的
+    if (DV.activeGroup !== i) return;
     dvRenderGroups();
   }
   dvSetItems(g.songs || []);
 }
 
-async function dvLoadLibrary(force) {
+async function dvLoadLibrary() {
   if (DV.loading) return;
   DV.loading = true;
   const sub = $('dvSub');
@@ -4704,13 +4750,11 @@ async function dvLoadLibrary(force) {
 function dvShowEmpty() {
   const stage = $('dvStage');
   if (!stage) return;
-  let el = document.querySelector('#discView .dv-empty');
-  if (!el) {
-    el = document.createElement('div');
-    el.className = 'dv-empty';
-    el.innerHTML = '还没有可选的歌曲<br>请先登录网易云账号，或回到播放器搜索几首歌';
-    stage.appendChild(el);
-  }
+  if (document.querySelector('#discView .dv-empty')) return;
+  const el = document.createElement('div');
+  el.className = 'dv-empty';
+  el.innerHTML = '还没有可选的歌曲<br>请先登录网易云账号，或回到播放器搜索几首歌';
+  stage.appendChild(el);
 }
 
 function dvHideEmpty() {
@@ -4722,7 +4766,7 @@ function dvHideEmpty() {
 function dvSelect() {
   const item = DV.items[DV.index];
   if (!item) return;
-  playlist = DV.items.map(it => it.raw);   // 让上一首/下一首也在这个歌单里走
+  playlist = DV.items.map(it => it.raw);
   currentPlayIndex = DV.index;
   playSong({ id: item.id, name: item.name, artist: item.ar, cover: item.cover });
 
@@ -4757,10 +4801,9 @@ function dvOpen() {
   document.body.classList.add('disc-mode');
   const v = $('discView');
   if (v) v.classList.add('show');
-  dvBuildPool();
   dvRenderPicked();
   try { history.replaceState(null, '', '#disc'); } catch (e) { /* 忽略 */ }
-  if (!DV.groups.length) dvLoadLibrary(false);
+  if (!DV.groups.length) dvLoadLibrary();
   else if (DV.activeGroup >= 0) dvExpandGroup(DV.activeGroup);
 }
 
@@ -4778,7 +4821,7 @@ function dvStep(delta) {
   const n = DV.items.length;
   if (!n) return;
   DV.index = ((DV.index + delta) % n + n) % n;
-  dvRenderSlots();
+  dvRenderSlots(false);
   dvSyncSongHighlight();
 }
 
@@ -4789,7 +4832,7 @@ function dvWire() {
   if (close) close.addEventListener('click', dvClose);
   if (refresh) refresh.addEventListener('click', () => {
     DV.groups = []; DV.activeGroup = -1;
-    dvLoadLibrary(true);
+    dvLoadLibrary();
   });
 
   const stage = $('dvStage');
@@ -4797,7 +4840,7 @@ function dvWire() {
     stage.addEventListener('wheel', (e) => {
       e.preventDefault();
       const now = Date.now();
-      if (now - DV.lastWheel < 65) return;
+      if (now - DV.lastWheel < 55) return;
       DV.lastWheel = now;
       dvStep(e.deltaY > 0 ? 1 : -1);
     }, { passive: false });
@@ -4805,10 +4848,12 @@ function dvWire() {
     stage.addEventListener('click', (e) => {
       const slot = e.target.closest('.dv-slot');
       if (!slot) return;
-      const k = parseInt(slot.dataset.k, 10) || 0;
-      if (k === 0) { dvSelect(); return; }
-      DV.index = ((DV.index + k) % DV.items.length + DV.items.length) % DV.items.length;
-      dvRenderSlots();
+      const k = parseInt(slot.dataset.k, 10);
+      if (!k) { dvSelect(); return; }
+      const n = DV.items.length;
+      if (!n) return;
+      DV.index = ((DV.index + k) % n + n) % n;
+      dvRenderSlots(false);
       dvSyncSongHighlight();
     });
 
@@ -4833,7 +4878,7 @@ function dvWire() {
         const i = parseInt(song.dataset.i, 10);
         if (!isNaN(i) && DV.items[i]) {
           DV.index = i;
-          dvRenderSlots();
+          dvRenderSlots(false);
           dvSyncSongHighlight();
           dvSelect();
         }
@@ -4841,8 +4886,7 @@ function dvWire() {
       }
       const head = e.target.closest('.dv-group-head');
       if (head) {
-        const wrap = head.parentElement;
-        const gi = parseInt(wrap.dataset.g, 10);
+        const gi = parseInt(head.parentElement.dataset.g, 10);
         if (!isNaN(gi)) {
           if (gi === DV.activeGroup) { DV.activeGroup = -1; dvRenderGroups(); }
           else dvExpandGroup(gi);
@@ -4859,7 +4903,6 @@ function dvWire() {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dvSelect(); }
   });
 
-  // 支持直接用 #disc 打开这个页面
   if (location.hash === '#disc') setTimeout(dvOpen, 260);
 }
 
