@@ -683,6 +683,28 @@
   .disc>.face>b{position:absolute;left:50%;top:50%;width:12%;height:12%;margin:-6% 0 0 -6%;
     border-radius:50%;background:#fff;
     box-shadow:inset 0 0 0 2px rgba(28,46,82,.28),0 1px 3px rgba(28,46,82,.2)}
+  /* CD 背面：银色数据面 + 光栅环 + 虹彩，孔和正面一样带夹持区暗环 */
+  .disc>.back{position:absolute;inset:0;border-radius:50%;overflow:hidden;
+    transform:translateZ(-4px) rotateY(180deg);
+    background:
+      repeating-radial-gradient(circle at 50% 50%,
+        rgba(255,255,255,calc(var(--groove, 0.5) * 0.55)) 0 1.5px,
+        rgba(255,255,255,0) 1.5px 4.5px),
+      conic-gradient(from 210deg,
+        rgba(120,190,255,calc(var(--irid, 0.5) * 0.55)),
+        rgba(255,160,220,calc(var(--irid, 0.5) * 0.48)),
+        rgba(255,235,150,calc(var(--irid, 0.5) * 0.45)),
+        rgba(140,255,200,calc(var(--irid, 0.5) * 0.48)),
+        rgba(120,190,255,calc(var(--irid, 0.5) * 0.55))),
+      radial-gradient(circle at 42% 36%, #e8eef7 0%, #c6d0e0 34%, #97a4b8 70%, #74829a 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),
+      inset 0 0 28px rgba(38,50,72,.30),
+      inset 0 -10px 26px rgba(38,50,72,.22)}
+  .disc>.back>u{position:absolute;left:50%;top:50%;border-radius:50%;
+    transform:translate(-50%,-50%);pointer-events:none}
+  .disc>.back>b{position:absolute;left:50%;top:50%;width:12%;height:12%;
+    margin:-6% 0 0 -6%;border-radius:50%;background:#fff;
+    box-shadow:inset 0 0 0 2px rgba(28,46,82,.30), 0 1px 3px rgba(28,46,82,.28)}
   .dv-slot.active .disc>.face{outline:2px solid rgba(79,155,255,.55);outline-offset:3px}
 
 
@@ -4541,6 +4563,8 @@ const DV_CFG = {
   shadow: 2,             // 阴影强度
   thick: 3,              // 光碟厚度 px
   bevel: 0.8,            // 边缘高光强度 0~1（上沿亮线）
+  groove: 1,             // CD 背面光栅强度 0~1
+  iridescence: 0,        // CD 背面虹彩强度 0~1
   bevelSize: 13,         // 高光/暗边宽度 px
   innerRing: 26,         // 内圈（夹持区）直径 %
   innerDark: 0.5,        // 内圈暗度
@@ -4598,7 +4622,7 @@ function dvApplyBlur(el, blur) {
   const b = blur > 0.04 ? 'blur(' + blur.toFixed(1) + 'px)' : '';
 
   // 光盘：封面 + 每一层厚度侧壁
-  Array.prototype.forEach.call(el.querySelectorAll('.face, .edge i'), node => {
+  Array.prototype.forEach.call(el.querySelectorAll('.face, .edge i, .back'), node => {
     if (node.style.filter !== b) node.style.filter = b;
   });
 
@@ -4627,7 +4651,7 @@ function dvApplyPlacement(el, d) {
 
 /* 显示形态：disc = 光盘 / case = 专辑盒（记住用户选择） */
 let DV_MODE = 'disc';
-try { DV_MODE = localStorage.getItem('ncm_disc_mode') === 'disc' ? 'disc' : 'case'; } catch (e) { /* 忽略 */ }
+try { DV_MODE = localStorage.getItem('ncm_disc_mode') === 'case' ? 'case' : 'disc'; } catch (e) { /* 忽略 */ }
 
 /* 从封面图里取"面积最大的颜色"，缓存起来避免重复计算 */
 const dvColorCache = new Map();
@@ -4714,9 +4738,15 @@ function dvStyleCase(el, item) {
   // 先用一个默认色，取到主色后再替换
   box.style.setProperty('--cd', 'rgb(38,48,68)');
   const token = (el.dataset.colorToken = String(Math.random()));
-  dvDominant(item.cover, (rgb) => {
-    if (el.dataset.colorToken !== token || !el.isConnected) return;
+  const applyCd = (rgb) => {
+    if (el.dataset.colorToken !== token) return;
     box.style.setProperty('--cd', 'rgb(' + rgb.join(',') + ')');
+  };
+  // 缓存命中时 dvDominant 是同步回调的，此刻节点可能还没挂到 DOM，
+  // 所以不能判断 isConnected，统一推到下一帧写入。
+  dvDominant(item.cover, (rgb) => {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => applyCd(rgb));
+    else applyCd(rgb);
   });
 }
 
@@ -4738,7 +4768,7 @@ function dvMakeNode(idx) {
   } else {
     el.innerHTML = '<div class="disc">' +
       '<div class="edge"></div>' +
-      '<div class="face"><img alt=""><i></i><u></u><b></b></div>' +
+      '<div class="back"><u></u><b></b></div><div class="face"><img alt=""><i></i><u></u><b></b></div>' +
       '</div>';
     img = el.querySelector('img');
     img.src = item.cover || '';
@@ -4800,14 +4830,38 @@ function dvStyleDisc(el) {
         '%, rgba(18,26,40,' + c.innerDark.toFixed(2) + ') ' + innerPct.toFixed(1) + '% 100%)';
   }
 
-  const hole = el.querySelector('.face b');
-  if (hole) {
-    hole.style.width = c.holeSize + '%';
-    hole.style.height = c.holeSize + '%';
-    hole.style.marginLeft = (-c.holeSize / 2) + '%';
-    hole.style.marginTop = (-c.holeSize / 2) + '%';
-  }
+  // ---- 正面 / 背面的轴孔与夹持区（背面也要有掏孔感）----
+  const styleHoleAndIris = (root) => {
+    if (!root) return;
+    const iris = root.querySelector('u');
+    if (iris) {
+      const ring = Math.max(c.holeSize + 2, c.innerRing);
+      const innerPct = Math.min(92, (c.holeSize / ring) * 100);
+      iris.style.width = ring + '%';
+      iris.style.height = ring + '%';
+      iris.style.background = c.innerDark <= 0.001 ? 'none'
+        : 'radial-gradient(circle, rgba(18,26,40,0) 0 ' + innerPct.toFixed(1) +
+          '%, rgba(18,26,40,' + c.innerDark.toFixed(2) + ') ' + innerPct.toFixed(1) + '% 100%)';
+    }
+    const hole = root.querySelector('b');
+    if (hole) {
+      hole.style.width = c.holeSize + '%';
+      hole.style.height = c.holeSize + '%';
+      hole.style.marginLeft = (-c.holeSize / 2) + '%';
+      hole.style.marginTop = (-c.holeSize / 2) + '%';
+    }
+  };
 
+  styleHoleAndIris(el.querySelector('.face'));
+
+  // 背面（数据面）：贴在厚度末端，朝向后方
+  const back = el.querySelector('.back');
+  if (back) {
+    back.style.transform = 'translateZ(' + (-(c.thick + 0.5)).toFixed(2) + 'px) rotateY(180deg)';
+    styleHoleAndIris(back);
+  }
+  el.style.setProperty('--groove', String(c.groove));
+  el.style.setProperty('--irid', String(c.iridescence));
   const edge = el.querySelector('.edge');
   if (edge) {
     const n = Math.max(0, Math.min(14, Math.round(c.thick)));
