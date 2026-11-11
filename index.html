@@ -634,93 +634,112 @@
     #ui{width:270px}
   }
 
-  /* ==================== 3D 选歌（光盘视窗） ==================== */
-  #discView{position:fixed;inset:0;z-index:12;display:flex;
-    background:rgba(6,8,12,.82);
-    backdrop-filter:blur(22px) saturate(1.1);-webkit-backdrop-filter:blur(22px) saturate(1.1);
-    opacity:0;pointer-events:none;transition:opacity .28s ease;
-    color:#eaeaea;font-family:inherit}
+
+  /* ==================== 3D 光盘选歌（独立白底页面） ==================== */
+  body.disc-mode{background:#fff}
+  body.disc-mode #c,
+  body.disc-mode #ui,
+  body.disc-mode #restoreBtn,
+  body.disc-mode #player,
+  body.disc-mode #playerRestoreBtn,
+  body.disc-mode #bottomBar,
+  body.disc-mode #lyricLayer,
+  body.disc-mode #bigView,
+  body.disc-mode #bvRestoreBtn{display:none!important}
+
+  #discView{position:fixed;inset:0;z-index:30;display:flex;
+    background:#fff;color:#16202f;font-family:inherit;
+    opacity:0;pointer-events:none;transition:opacity .24s ease}
   #discView.show{opacity:1;pointer-events:auto}
 
-  .dv-stage{position:relative;flex:1 1 58%;min-width:0;overflow:hidden;cursor:grab;
-    perspective:1250px;perspective-origin:50% 48%}
+  /* ---------- 左：光碟舞台 ---------- */
+  .dv-stage{position:relative;flex:1 1 auto;min-width:0;overflow:hidden;cursor:grab;
+    perspective:1500px;perspective-origin:50% 46%;
+    background:radial-gradient(62% 55% at 46% 44%, #f6f9ff 0%, #ffffff 68%)}
   .dv-stage.dragging{cursor:grabbing}
-  .dv-stage::after{content:'';position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(60% 55% at 50% 48%, rgba(79,155,255,.10), rgba(0,0,0,0) 70%)}
 
-  .dv-slot{position:absolute;left:50%;top:50%;width:320px;height:320px;
-    margin:-160px 0 0 -160px;transform-style:preserve-3d;
-    transition:transform .46s cubic-bezier(.22,1,.36,1),opacity .34s ease,filter .34s ease;
+  .dv-slot{position:absolute;left:50%;top:50%;width:330px;height:330px;
+    margin:-165px 0 0 -165px;transform-style:preserve-3d;
+    transition:transform .58s cubic-bezier(.22,1,.36,1),opacity .4s ease,filter .4s ease;
     will-change:transform,opacity,filter}
-  .disc{position:absolute;inset:0;border-radius:50%;overflow:hidden;
-    transform:rotateX(66deg) rotateZ(-13deg);
-    background:#141a24;
-    box-shadow:0 42px 64px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.10) inset}
+
+  .disc{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:#eef2f9;
+    box-shadow:0 16px 30px rgba(28,46,82,.16), 0 0 0 1px rgba(28,46,82,.10)}
   .disc img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
   .disc i{position:absolute;inset:0;border-radius:50%;pointer-events:none;
     background:
-      radial-gradient(circle at 32% 26%, rgba(255,255,255,.30), rgba(255,255,255,0) 44%),
-      radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0 11%, rgba(0,0,0,.14) 12%,
-                      rgba(0,0,0,.30) 34%, rgba(0,0,0,0) 46%)}
-  .disc b{position:absolute;left:50%;top:50%;width:13%;height:13%;margin:-6.5% 0 0 -6.5%;
-    border-radius:50%;background:rgba(6,8,12,.94);
-    box-shadow:inset 0 0 0 2px rgba(255,255,255,.20)}
-  .dv-slot.active .disc{box-shadow:0 46px 70px rgba(0,0,0,.65),
-    0 0 0 2px rgba(79,155,255,.55) inset, 0 0 34px rgba(79,155,255,.25)}
+      radial-gradient(circle at 30% 24%, rgba(255,255,255,.42), rgba(255,255,255,0) 42%),
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 0 9%,
+                      rgba(15,26,45,.10) 10% 30%, rgba(255,255,255,0) 31% 100%)}
+  .disc b{position:absolute;left:50%;top:50%;width:12%;height:12%;margin:-6% 0 0 -6%;
+    border-radius:50%;background:#fff;
+    box-shadow:inset 0 0 0 2px rgba(28,46,82,.28), 0 1px 3px rgba(28,46,82,.2)}
+  .dv-slot.active .disc{box-shadow:0 22px 40px rgba(28,46,82,.22),
+    0 0 0 2px rgba(79,155,255,.5), 0 0 30px rgba(79,155,255,.16)}
 
-  .dv-hint{position:absolute;left:0;right:0;bottom:18px;text-align:center;
-    font-size:12px;color:#7f8ea8;letter-spacing:.5px;pointer-events:none}
+  .dv-hint{position:absolute;left:0;right:0;bottom:16px;text-align:center;
+    font-size:11.5px;color:#93a2ba;letter-spacing:.4px;pointer-events:none}
   .dv-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    font-size:13px;color:#8ea4c8;text-align:center;line-height:2}
+    font-size:13px;color:#7b8aa1;text-align:center;line-height:2.1;padding:0 40px}
 
-  .dv-panel{flex:1 1 42%;max-width:540px;display:flex;flex-direction:column;min-width:0;
-    border-left:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.24)}
-  .dv-now{padding:22px 22px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
-  .dv-now .t{font-size:23px;font-weight:700;color:#fff;line-height:1.32;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-    transition:opacity .18s ease}
-  .dv-now .a{font-size:13px;color:#9db0cc;margin-top:7px;overflow:hidden;
-    text-overflow:ellipsis;white-space:nowrap}
-  .dv-now .al{font-size:11px;color:#6f84a3;margin-top:3px;overflow:hidden;
-    text-overflow:ellipsis;white-space:nowrap}
-  .dv-now.swap-out .t,.dv-now.swap-out .a,.dv-now.swap-out .al{opacity:0}
+  /* ---------- 右：歌单面板（白底深字） ---------- */
+  .dv-panel{flex:0 0 430px;max-width:46vw;display:flex;flex-direction:column;min-width:0;
+    background:#fff;border-left:1px solid #e9eef6}
+  .dv-head{padding:20px 20px 12px;border-bottom:1px solid #eef2f8;flex:0 0 auto}
+  .dv-head h3{margin:0;font-size:15px;font-weight:700;color:#0f172a;letter-spacing:.4px}
+  .dv-head .sub{margin-top:5px;font-size:11.5px;color:#8b9ab1}
+  .dv-head .btn-mini{margin-top:10px;background:#f3f7ff;border:1px solid #d9e6fa;color:#2563c9;
+    border-radius:7px;padding:5px 12px;font-size:11.5px;cursor:pointer;font-family:inherit}
+  .dv-head .btn-mini:hover{background:#e8f1ff}
 
-  .dv-list{flex:1;overflow-y:auto;padding:8px 10px 12px;scrollbar-width:thin;min-height:0}
-  .dv-list::-webkit-scrollbar{width:6px}
-  .dv-list::-webkit-scrollbar-thumb{background:rgba(120,160,255,.3);border-radius:3px}
-  .dv-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;
-    cursor:pointer;transition:background .15s}
-  .dv-item:hover{background:rgba(255,255,255,.06)}
-  .dv-item.on{background:rgba(79,155,255,.22)}
-  .dv-item .n{width:26px;text-align:right;font-size:12px;color:#6f84a3;flex:0 0 auto;
+  .dv-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px 10px;scrollbar-width:thin}
+  .dv-scroll::-webkit-scrollbar{width:6px}
+  .dv-scroll::-webkit-scrollbar-thumb{background:#d7e2f2;border-radius:3px}
+
+  .dv-group{margin-bottom:2px}
+  .dv-group-head{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;
+    cursor:pointer;transition:background .15s;color:#1b2436;user-select:none}
+  .dv-group-head:hover{background:#f5f8ff}
+  .dv-group.active>.dv-group-head{background:#e9f1ff;color:#1250a8;font-weight:600}
+  .dv-group-head .cv{width:24px;height:24px;border-radius:5px;object-fit:cover;
+    flex:0 0 auto;background:#eef2f9}
+  .dv-group-head .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;font-size:12.5px}
+  .dv-group-head .ct{font-size:11px;color:#96a4ba;flex:0 0 auto}
+  .dv-group-head .ar{font-size:9px;color:#9aabc2;flex:0 0 auto;transition:transform .2s}
+  .dv-group.active>.dv-group-head .ar{transform:rotate(180deg)}
+
+  .dv-songs{display:none;padding:2px 0 6px 14px;
+    border-left:1px solid #e6edf8;margin-left:20px}
+  .dv-group.active>.dv-songs{display:block}
+  .dv-song{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:7px;
+    cursor:pointer;font-size:12.5px;color:#3a475d;transition:background .13s}
+  .dv-song:hover{background:#f5f8ff}
+  .dv-song.on{background:#dcebff;color:#0b3f8f;font-weight:600}
+  .dv-song .n{width:20px;text-align:right;color:#a3b1c6;font-size:11px;flex:0 0 auto;
     font-variant-numeric:tabular-nums}
-  .dv-item.on .n{color:#8ec5ff}
-  .dv-item .meta{flex:1;min-width:0}
-  .dv-item .name{font-size:13px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .dv-item .ar{font-size:11px;color:#8ea4c8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .dv-item .tag{flex:0 0 auto;font-size:10px;color:#8ec5ff;opacity:0;transition:opacity .2s}
-  .dv-item.played .tag{opacity:1}
+  .dv-song .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dv-song .tg{font-size:10px;color:#3b82f6;flex:0 0 auto;opacity:0;transition:opacity .2s}
+  .dv-song.played .tg{opacity:1}
+  .dv-load{font-size:11.5px;color:#98a7bd;padding:8px 12px}
 
-  .dv-picked{flex:0 0 auto;border-top:1px solid rgba(255,255,255,.08);
-    padding:10px 16px 14px;max-height:28%;overflow-y:auto;scrollbar-width:thin}
-  .dv-picked h4{margin:0 0 6px;font-size:10px;letter-spacing:1.4px;color:#6f84a3;font-weight:600}
-  .dv-picked .pi{font-size:12px;color:#c3d2e6;padding:3px 0;overflow:hidden;
-    text-overflow:ellipsis;white-space:nowrap;opacity:0;animation:pIn .25s ease forwards}
-  .dv-picked .pi .d{color:#5f7391;margin-right:6px;font-size:11px}
-  @keyframes pIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .dv-picked{flex:0 0 auto;border-top:1px solid #eef2f8;padding:9px 16px 12px;
+    max-height:22%;overflow-y:auto;background:#fcfdff}
+  .dv-picked h4{margin:0 0 5px;font-size:10px;letter-spacing:1.3px;color:#93a2ba;font-weight:600}
+  .dv-picked .pi{font-size:11.5px;color:#3a475d;padding:2px 0;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;animation:pIn .24s ease both}
+  .dv-picked .pi .d{color:#a3b1c6;margin-right:5px}
+  @keyframes pIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 
-  .dv-close{position:absolute;right:20px;top:18px;z-index:3;width:34px;height:34px;padding:0;
+  .dv-close{position:absolute;right:20px;top:18px;z-index:5;width:34px;height:34px;padding:0;
     border-radius:50%;display:flex;align-items:center;justify-content:center;
-    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
-    color:#eaeaea;cursor:pointer;transition:background .15s,border-color .15s}
-  .dv-close:hover{background:rgba(255,79,109,.24);border-color:rgba(255,79,109,.5);color:#fff}
+    background:#f2f6fd;border:1px solid #dde7f5;color:#4a5b73;cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s}
+  .dv-close:hover{background:#ffe9ee;border-color:#f7c3cf;color:#d93a5c}
 
-  @media (max-width:900px){
-    #discView{flex-direction:column}
-    .dv-stage{flex:1 1 46%}
-    .dv-panel{flex:1 1 54%;max-width:none;border-left:0;
-      border-top:1px solid rgba(255,255,255,.08)}
-    .dv-slot{width:230px;height:230px;margin:-115px 0 0 -115px}
+  @media (max-width:1000px){
+    .dv-panel{flex:0 0 340px}
+    .dv-slot{width:260px;height:260px;margin:-130px 0 0 -130px}
   }
 </style>
 </head>
@@ -1102,25 +1121,25 @@
 <div id="discView">
   <div class="dv-stage" id="dvStage">
     <div id="dvSlots"></div>
-    <div class="dv-hint">滚轮 / ↑↓ 切换 &nbsp;·&nbsp; 点击或回车选中 &nbsp;·&nbsp; Esc 关闭</div>
+    <div class="dv-hint">滚轮 / ↑↓ 切换 &nbsp;·&nbsp; 点击或回车选中播放 &nbsp;·&nbsp; Esc 返回</div>
   </div>
 
   <div class="dv-panel">
-    <div class="dv-now" id="dvNow">
-      <div class="t" id="dvTitle">未选择</div>
-      <div class="a" id="dvArtist">—</div>
-      <div class="al" id="dvAlbum"></div>
+    <div class="dv-head">
+      <h3>我的歌单</h3>
+      <div class="sub" id="dvSub">自动同步你的全部歌单</div>
+      <button class="btn-mini" id="dvRefresh" type="button">刷新歌单</button>
     </div>
 
-    <div class="dv-list" id="dvList"></div>
+    <div class="dv-scroll" id="dvGroups"></div>
 
-    <div class="dv-picked" id="dvPicked">
+    <div class="dv-picked">
       <h4>已选（本次）</h4>
       <div id="dvPickedList"></div>
     </div>
   </div>
 
-  <button class="dv-close" id="dvClose" type="button" title="关闭 (Esc)" aria-label="关闭">
+  <button class="dv-close" id="dvClose" type="button" title="返回 (Esc)" aria-label="返回">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg>
   </button>
 </div>
@@ -4457,21 +4476,44 @@ $('ui').addEventListener('input', () => renderLyricPreview());
 $('ui').addEventListener('change', () => {
   syncBgSeg(); syncRingPane(); syncRainAdv(); renderLyricPreview();
 });
-/* ==================== 3D 选歌（光盘视窗） ==================== */
+/* ==================== 3D 光盘选歌（独立白底页面） ==================== */
 const DV = {
-  items: [], index: 0, open: false, picked: [],
+  items: [], index: 0, open: false, picked: [], groups: [],
   pool: [], lastWheel: 0, startY: 0, dragging: false,
+  activeGroup: -1, loading: false,
 };
-const DV_POOL = 11;      // 池子大小（上下各 5 + 中间 1）
-const DV_STEP = 96;      // 相邻两张盘的纵向间距
-const DV_HALF = 5;       // 可见范围
+const DV_POOL = 13;        // 光碟池（上下各 6 + 中心 1）
+const DV_HALF = 6;
+const DV_STEP_Y = 112;     // 相邻两张的纵向间距（小于盘的直径 → 层叠遮挡）
+
+/* 排布：弧形走向 + 三轴旋转 + 层叠遮挡
+   d = 相对中心的偏移（负数是上方，正数是下方） */
+function dvPlacement(d) {
+  const ad = Math.abs(d);
+  const x = Math.sin(d * 0.35) * 74;              // 弧形走向
+  const y = d * DV_STEP_Y;
+  const z = -ad * 54;                              // 越远越靠后
+  const rotX = 12 + ad * 15;                       // 中心 12°（几乎正面朝向用户）
+  const rotY = d * -13;                            // 侧转
+  const rotZ = d * 4 - 3;                          // 轻微倾斜
+  const scale = Math.max(0.5, 1 - ad * 0.068);
+  return {
+    transform: 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,' + z.toFixed(1) + 'px) ' +
+               'rotateX(' + rotX.toFixed(1) + 'deg) rotateY(' + rotY.toFixed(1) + 'deg) ' +
+               'rotateZ(' + rotZ.toFixed(1) + 'deg) scale(' + scale.toFixed(3) + ')',
+    opacity: Math.max(0.22, 1 - ad * 0.115),
+    blur: ad === 0 ? 0 : Math.min(3.6, ad * 0.62),
+    z: d === 0 ? 400 : 200 + d,                    // 下方压上方 → 层层叠落
+  };
+}
 
 function dvMeta(song) {
   const ar = (song.ar || song.artists || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
   const al = (song.al && song.al.name) || (song.album && song.album.name) || '';
-  const pic = (song.al && song.al.picUrl) || (song.album && song.album.picUrl) || song._cover || '';
-  // 光盘上是方形封面，必须请求方形图，否则会被裁切
-  const cover = song.cover || buildCoverUrl(pic, '500y500');
+  const pic = (song.al && song.al.picUrl) || (song.album && song.album.picUrl) || '';
+  const base = song.cover || song._cover || buildCoverUrl(pic, '500y500');
+  // 光盘直径约 330px，统一按方形大图请求，避免被裁切
+  const cover = base ? base.replace(/([?&])param=[^&]*/, '$1param=500y500') : '';
   return { ar, al, cover };
 }
 
@@ -4492,18 +4534,18 @@ function dvBuildPool() {
 
 function dvRenderSlots() {
   const n = DV.items.length;
+  const box = $('dvSlots');
+  if (box) box.style.display = n ? '' : 'none';
+  if (!n) { DV.pool.forEach(s => { s.el.style.opacity = '0'; }); return; }
   DV.pool.forEach(slot => {
-    if (!n) { slot.el.style.opacity = '0'; return; }
-    const idx = ((DV.index + slot.k) % n + n) % n;
-    const item = DV.items[idx];
     const d = slot.k, ad = Math.abs(d);
-    const scale = Math.max(0.44, 1 - ad * 0.125);
-    const blur = ad === 0 ? 0 : Math.min(4.2, ad * 0.8);
-    slot.el.style.transform = 'translateY(' + (d * DV_STEP) + 'px) translateZ(' +
-      (-ad * 46) + 'px) scale(' + scale.toFixed(3) + ')';
-    slot.el.style.opacity = String(Math.max(0.16, 1 - ad * 0.17));
-    slot.el.style.filter = blur > 0.05 ? 'blur(' + blur.toFixed(1) + 'px)' : 'none';
-    slot.el.style.zIndex = String(100 - ad);
+    const idx = ((DV.index + d) % n + n) % n;
+    const item = DV.items[idx];
+    const p = dvPlacement(d);
+    slot.el.style.transform = p.transform;
+    slot.el.style.opacity = String(p.opacity);
+    slot.el.style.filter = p.blur > 0.04 ? 'blur(' + p.blur.toFixed(1) + 'px)' : 'none';
+    slot.el.style.zIndex = String(p.z);
     slot.el.style.pointerEvents = 'auto';
     slot.el.classList.toggle('active', d === 0);
     if (slot.id !== item.id) {
@@ -4514,81 +4556,67 @@ function dvRenderSlots() {
   });
 }
 
-function dvRenderPanel() {
-  const item = DV.items[DV.index];
-  if (item) {
-    if ($('dvTitle')) $('dvTitle').textContent = item.name;
-    if ($('dvArtist')) $('dvArtist').textContent = item.ar;
-    if ($('dvAlbum')) $('dvAlbum').textContent = item.al ? '专辑：' + item.al : '';
-  }
-  const list = $('dvList');
-  if (!list) return;
-  if (list.childElementCount !== DV.items.length) {
-    list.innerHTML = DV.items.map((it, i) =>
-      '<div class="dv-item" data-i="' + i + '">' +
-      '<div class="n">' + (i + 1) + '</div>' +
-      '<div class="meta"><div class="name">' + bvEsc(it.name) + '</div>' +
-      '<div class="ar">' + bvEsc(it.ar) + '</div></div>' +
-      '<div class="tag">已选</div></div>').join('');
-  }
-  Array.prototype.forEach.call(list.children, (el, i) => el.classList.toggle('on', i === DV.index));
-  const cur = list.children[DV.index];
+/* ---------- 右侧歌单 ---------- */
+function dvGroupIcon(g) {
+  if (g.cover) return '<img class="cv" src="' + bvEsc(g.cover) + '" alt="">';
+  return '<div class="cv"></div>';
+}
+
+function dvRenderGroups() {
+  const box = $('dvGroups');
+  if (!box) return;
+  if (!DV.groups.length) { box.innerHTML = ''; return; }
+  box.innerHTML = DV.groups.map((g, i) => {
+    const active = i === DV.activeGroup;
+    let songs = '';
+    if (active) {
+      if (g.songs === null) {
+        songs = '<div class="dv-load">加载中…</div>';
+      } else if (!g.songs.length) {
+        songs = '<div class="dv-load">这个歌单是空的</div>';
+      } else {
+        const max = 800;
+        songs = g.songs.slice(0, max).map((s, k) => {
+          const m = dvMeta(s);
+          return '<div class="dv-song" data-i="' + k + '">' +
+            '<div class="n">' + (k + 1) + '</div>' +
+            '<div class="nm">' + bvEsc(s.name || '未知歌曲') + '</div>' +
+            '<div class="tg">♪</div></div>';
+        }).join('');
+        if (g.songs.length > max) {
+          songs += '<div class="dv-load">共 ' + g.songs.length + ' 首，列表仅显示前 ' + max +
+                   ' 首（滚轮仍可继续浏览全部）</div>';
+        }
+      }
+    }
+    return '<div class="dv-group' + (active ? ' active' : '') + '" data-g="' + i + '">' +
+      '<div class="dv-group-head">' + dvGroupIcon(g) +
+      '<div class="nm">' + bvEsc(g.name) + '</div>' +
+      '<div class="ct">' + (g.count || 0) + '</div>' +
+      '<div class="ar">▾</div></div>' +
+      (active ? '<div class="dv-songs">' + songs + '</div>' : '') +
+      '</div>';
+  }).join('');
+  dvSyncSongHighlight();
+}
+
+function dvSyncSongHighlight() {
+  const box = $('dvGroups');
+  if (!box) return;
+  const songs = box.querySelectorAll('.dv-songs .dv-song');
+  let cur = null;
+  Array.prototype.forEach.call(songs, el => {
+    const on = parseInt(el.dataset.i, 10) === DV.index;
+    el.classList.toggle('on', on);
+    if (on) cur = el;
+  });
   if (cur && typeof cur.scrollIntoView === 'function') {
     try { cur.scrollIntoView({ block: 'nearest' }); } catch (e) { /* 忽略 */ }
   }
 }
 
-function dvStep(delta) {
-  const n = DV.items.length;
-  if (!n) return;
-  DV.index = ((DV.index + delta) % n + n) % n;
-  dvRenderSlots();
-  dvRenderPanel();
-}
-
-function dvSetIndex(i) {
-  const n = DV.items.length;
-  if (!n) return;
-  DV.index = ((i % n) + n) % n;
-  dvRenderSlots();
-  dvRenderPanel();
-}
-
-function dvRenderPicked() {
-  const box = $('dvPickedList');
-  if (!box) return;
-  if (!DV.picked.length) {
-    box.innerHTML = '<div class="pi" style="animation:none;opacity:.55">还没有选中歌曲</div>';
-    return;
-  }
-  box.innerHTML = DV.picked.map((p, i) =>
-    '<div class="pi" style="animation-delay:' + (i * 18) + 'ms">' +
-    '<span class="d">' + (i + 1) + '.</span>' + bvEsc(p.name) +
-    '<span style="color:#6f84a3"> · ' + bvEsc(p.artist) + '</span></div>').join('');
-}
-
-function dvSelect() {
-  const item = DV.items[DV.index];
-  if (!item) return;
-  // 让"上一首/下一首"也在这个队列里走
-  playlist = DV.items.map(it => it.raw);
-  currentPlayIndex = DV.index;
-  playSong({ id: item.id, name: item.name, artist: item.ar, cover: item.cover });
-
-  const list = $('dvList');
-  if (list && list.children[DV.index]) list.children[DV.index].classList.add('played');
-
-  DV.picked = DV.picked.filter(p => String(p.id) !== String(item.id));
-  DV.picked.unshift({ id: item.id, name: item.name, artist: item.ar });
-  if (DV.picked.length > 20) DV.picked.length = 20;
-  dvRenderPicked();
-}
-
-function dvOpen() {
-  let src = (playlist && playlist.length) ? playlist.slice() : [];
-  if (!src.length && likedSongs && likedSongs.length) src = likedSongs.slice();
-
-  DV.items = src.map(raw => {
+function dvSetItems(rawSongs) {
+  DV.items = (rawSongs || []).map(raw => {
     const m = dvMeta(raw);
     return { id: raw.id, name: raw.name || '未知歌曲', ar: m.ar, al: m.al, cover: m.cover, raw };
   }).filter(it => it.id);
@@ -4599,46 +4627,177 @@ function dvOpen() {
     if (p >= 0) idx = p;
   }
   DV.index = idx;
-  DV.open = true;
+  dvRenderSlots();
+  dvSyncSongHighlight();
+}
 
-  const slotsBox = $('dvSlots');
-  if (slotsBox) slotsBox.style.display = DV.items.length ? '' : 'none';
-  let empty = document.querySelector('#discView .dv-empty');
-  if (!DV.items.length) {
-    if (!empty) {
-      empty = document.createElement('div');
-      empty.className = 'dv-empty';
-      empty.innerHTML = '还没有可选的歌曲<br>先在播放器面板里搜索歌曲，或打开「我喜欢的音乐」';
-      const stage = $('dvStage');
-      if (stage) stage.appendChild(empty);
+async function dvExpandGroup(i) {
+  const g = DV.groups[i];
+  if (!g) return;
+  DV.activeGroup = i;
+  dvRenderGroups();                    // 先把"展开中"画出来
+  if (g.songs === null) {
+    try {
+      if (g.type === 'liked') {
+        const d = await requestAPI('/likelist', { uid: currentUser.uid });
+        const ids = (d && (d.ids || (d.data && d.data.ids))) || [];
+        g.songs = ids.length ? await bvFetchDetails(ids) : [];
+      } else if (g.type === 'playlist') {
+        const d = await requestAPI('/playlist/detail', { id: g.key });
+        const pl = (d && (d.playlist || (d.data && d.data.playlist))) || {};
+        g.songs = (pl.tracks || []).map(s => Object.assign({}, s));
+      } else {
+        g.songs = g.songs || [];
+      }
+      g.count = g.songs.length;
+    } catch (e) {
+      console.warn('[dv] 歌单加载失败', e);
+      g.songs = [];
+      g.count = 0;
     }
-  } else if (empty) {
-    empty.remove();
+    if (DV.activeGroup !== i) return;   // 用户在等的时候又点了别的
+    dvRenderGroups();
+  }
+  dvSetItems(g.songs || []);
+}
+
+async function dvLoadLibrary(force) {
+  if (DV.loading) return;
+  DV.loading = true;
+  const sub = $('dvSub');
+  if (sub) sub.textContent = '正在同步歌单…';
+  const next = [];
+  try {
+    if (currentCookie && currentUser && currentUser.uid) {
+      next.push({ key: 'liked', name: '我喜欢的音乐', type: 'liked', cover: '', count: 0, songs: null });
+      const d = await requestAPI('/user/playlist', { uid: currentUser.uid, limit: 1000 });
+      const arr = (d && (d.playlist || (d.data && d.data.playlist))) || [];
+      arr.forEach(p => {
+        next.push({
+          key: String(p.id), name: p.name, type: 'playlist',
+          cover: buildCoverUrl(p.coverImgUrl || '', '60y60'),
+          count: p.trackCount || 0, songs: null,
+        });
+      });
+      if (sub) sub.textContent = '已同步 ' + next.length + ' 个歌单（含我喜欢的音乐）';
+    } else {
+      const src = (playlist && playlist.length) ? playlist : [];
+      if (src.length) {
+        next.push({ key: 'queue', name: '当前播放队列', type: 'queue', cover: '',
+          count: src.length, songs: src.slice() });
+      }
+      if (sub) sub.textContent = src.length
+        ? '未登录：先用当前播放队列（登录后可同步全部歌单）'
+        : '未登录，也没有可用的队列';
+    }
+  } catch (e) {
+    if (sub) sub.textContent = '歌单加载失败：' + (e.message || e);
+  }
+  DV.groups = next;
+  DV.activeGroup = -1;
+  DV.loading = false;
+  dvRenderGroups();
+  if (DV.groups.length) await dvExpandGroup(0);
+  else dvShowEmpty();
+}
+
+function dvShowEmpty() {
+  const stage = $('dvStage');
+  if (!stage) return;
+  let el = document.querySelector('#discView .dv-empty');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'dv-empty';
+    el.innerHTML = '还没有可选的歌曲<br>请先登录网易云账号，或回到播放器搜索几首歌';
+    stage.appendChild(el);
+  }
+}
+
+function dvHideEmpty() {
+  const el = document.querySelector('#discView .dv-empty');
+  if (el) el.remove();
+}
+
+/* ---------- 选中 ---------- */
+function dvSelect() {
+  const item = DV.items[DV.index];
+  if (!item) return;
+  playlist = DV.items.map(it => it.raw);   // 让上一首/下一首也在这个歌单里走
+  currentPlayIndex = DV.index;
+  playSong({ id: item.id, name: item.name, artist: item.ar, cover: item.cover });
+
+  const box = $('dvGroups');
+  if (box) {
+    const songs = box.querySelectorAll('.dv-songs .dv-song');
+    if (songs[DV.index]) songs[DV.index].classList.add('played');
   }
 
-  $('discView').classList.add('show');
-  dvBuildPool();
-  dvRenderSlots();
-  dvRenderPanel();
+  DV.picked = DV.picked.filter(p => String(p.id) !== String(item.id));
+  DV.picked.unshift({ id: item.id, name: item.name, artist: item.ar });
+  if (DV.picked.length > 20) DV.picked.length = 20;
   dvRenderPicked();
+}
+
+function dvRenderPicked() {
+  const box = $('dvPickedList');
+  if (!box) return;
+  if (!DV.picked.length) {
+    box.innerHTML = '<div class="pi" style="opacity:.55;animation:none">还没有选中歌曲</div>';
+    return;
+  }
+  box.innerHTML = DV.picked.map((p, i) =>
+    '<div class="pi" style="animation-delay:' + (i * 18) + 'ms">' +
+    '<span class="d">' + (i + 1) + '.</span>' + bvEsc(p.name) +
+    '<span style="color:#96a4ba"> · ' + bvEsc(p.artist) + '</span></div>').join('');
+}
+
+/* ---------- 打开 / 关闭 ---------- */
+function dvOpen() {
+  DV.open = true;
+  document.body.classList.add('disc-mode');
+  const v = $('discView');
+  if (v) v.classList.add('show');
+  dvBuildPool();
+  dvRenderPicked();
+  try { history.replaceState(null, '', '#disc'); } catch (e) { /* 忽略 */ }
+  if (!DV.groups.length) dvLoadLibrary(false);
+  else if (DV.activeGroup >= 0) dvExpandGroup(DV.activeGroup);
 }
 
 function dvClose() {
   DV.open = false;
+  document.body.classList.remove('disc-mode');
   const v = $('discView');
   if (v) v.classList.remove('show');
+  try {
+    if (location.hash === '#disc') history.replaceState(null, '', location.pathname + location.search);
+  } catch (e) { /* 忽略 */ }
 }
 
+function dvStep(delta) {
+  const n = DV.items.length;
+  if (!n) return;
+  DV.index = ((DV.index + delta) % n + n) % n;
+  dvRenderSlots();
+  dvSyncSongHighlight();
+}
+
+/* ---------- 事件 ---------- */
 function dvWire() {
-  const stage = $('dvStage'), list = $('dvList'), btn = $('discBtn'), close = $('dvClose');
+  const btn = $('discBtn'), close = $('dvClose'), refresh = $('dvRefresh');
   if (btn) btn.addEventListener('click', dvOpen);
   if (close) close.addEventListener('click', dvClose);
+  if (refresh) refresh.addEventListener('click', () => {
+    DV.groups = []; DV.activeGroup = -1;
+    dvLoadLibrary(true);
+  });
 
+  const stage = $('dvStage');
   if (stage) {
     stage.addEventListener('wheel', (e) => {
       e.preventDefault();
       const now = Date.now();
-      if (now - DV.lastWheel < 70) return;
+      if (now - DV.lastWheel < 65) return;
       DV.lastWheel = now;
       dvStep(e.deltaY > 0 ? 1 : -1);
     }, { passive: false });
@@ -4648,10 +4807,11 @@ function dvWire() {
       if (!slot) return;
       const k = parseInt(slot.dataset.k, 10) || 0;
       if (k === 0) { dvSelect(); return; }
-      dvSetIndex(DV.index + k);
+      DV.index = ((DV.index + k) % DV.items.length + DV.items.length) % DV.items.length;
+      dvRenderSlots();
+      dvSyncSongHighlight();
     });
 
-    // 触屏滑动
     stage.addEventListener('touchstart', (e) => {
       DV.dragging = true;
       DV.startY = e.touches[0].clientY;
@@ -4660,29 +4820,34 @@ function dvWire() {
     stage.addEventListener('touchend', (e) => {
       if (!DV.dragging) return;
       DV.dragging = false;
-      const dy = (e.changedTouches[0].clientY - DV.startY);
+      const dy = e.changedTouches[0].clientY - DV.startY;
       if (Math.abs(dy) > 36) dvStep(dy < 0 ? 1 : -1);
     }, { passive: true });
   }
 
-  if (list) {
-    list.addEventListener('click', (e) => {
-      const row = e.target.closest('.dv-item');
-      if (!row) return;
-      const i = parseInt(row.dataset.i, 10);
-      if (isNaN(i)) return;
-      DV.index = i;
-      dvRenderSlots();
-      dvRenderPanel();
-      dvSelect();
-    });
-  }
-
-  // 点击左右空白处关闭
-  const view = $('discView');
-  if (view) {
-    view.addEventListener('click', (e) => {
-      if (e.target === view) dvClose();
+  const groups = $('dvGroups');
+  if (groups) {
+    groups.addEventListener('click', (e) => {
+      const song = e.target.closest('.dv-song');
+      if (song) {
+        const i = parseInt(song.dataset.i, 10);
+        if (!isNaN(i) && DV.items[i]) {
+          DV.index = i;
+          dvRenderSlots();
+          dvSyncSongHighlight();
+          dvSelect();
+        }
+        return;
+      }
+      const head = e.target.closest('.dv-group-head');
+      if (head) {
+        const wrap = head.parentElement;
+        const gi = parseInt(wrap.dataset.g, 10);
+        if (!isNaN(gi)) {
+          if (gi === DV.activeGroup) { DV.activeGroup = -1; dvRenderGroups(); }
+          else dvExpandGroup(gi);
+        }
+      }
     });
   }
 
@@ -4693,6 +4858,9 @@ function dvWire() {
     if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); dvStep(-1); return; }
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dvSelect(); }
   });
+
+  // 支持直接用 #disc 打开这个页面
+  if (location.hash === '#disc') setTimeout(dvOpen, 260);
 }
 
 dvWire();
