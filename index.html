@@ -663,6 +663,12 @@
     opacity:0;pointer-events:none;transform:translateY(-42px);
     transition:opacity .26s ease,transform .46s cubic-bezier(.22,1,.36,1)}
   #discView.show{opacity:1;transform:translateY(0);pointer-events:auto}
+  /* 未显示时整层（含所有子元素）都不接收事件：
+     光碟槽位自己设了 pointer-events:auto，父层的 none 拦不住，必须在子元素上覆盖 */
+  #discView:not(.show),#discView:not(.show) *{pointer-events:none!important}
+  /* 淡出期间也不要拦截后续点击 */
+  #discView:not(.show){visibility:hidden}
+  #discView.show{visibility:visible}
 
   .dv-stage{position:absolute;left:0;top:0;bottom:0;right:var(--dvlist);
     overflow:hidden;cursor:grab;
