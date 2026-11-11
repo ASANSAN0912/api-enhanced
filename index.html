@@ -659,8 +659,9 @@
 
   #discView{position:fixed;inset:0;z-index:30;display:flex;
     background:#fff;color:#16202f;font-family:inherit;
-    opacity:0;pointer-events:none;transition:opacity .24s ease}
-  #discView.show{opacity:1;pointer-events:auto}
+    opacity:0;pointer-events:none;transform:translateY(-42px);
+    transition:opacity .26s ease,transform .46s cubic-bezier(.22,1,.36,1)}
+  #discView.show{opacity:1;transform:translateY(0);pointer-events:auto}
 
   /* ---------- 左：光碟舞台 ---------- */
   .dv-stage{position:relative;flex:1 1 auto;min-width:0;overflow:hidden;cursor:grab;
@@ -845,7 +846,7 @@
   </div>
 </div>
 
-<div id="ui">
+<div id="ui" class="hidden">
   <div class="title">
     <span>设置</span>
     <button id="minimizeBtn" title="收起面板" aria-label="收起面板">
@@ -1053,11 +1054,11 @@
   </label>
 </div>
 
-<button id="restoreBtn" title="展开设置" aria-label="展开设置">
+<button id="restoreBtn" class="visible" title="展开设置" aria-label="展开设置">
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="6"  x2="14" y2="6"/><line x1="4" y1="9"  x2="14" y2="9"/><line x1="4" y1="12" x2="14" y2="12"/></svg>
 </button>
 
-<div id="player">
+<div id="player" class="hidden">
   <div class="title">
     <span>网易云音乐</span>
     <button id="playerExpandBtn" title="放大窗口" aria-label="放大窗口">
@@ -1089,7 +1090,6 @@
 
   <div style="display:flex; gap:6px; margin-top: 4px;">
     <button id="toggleLikedBtn" class="mini-btn" style="flex:1;">我喜欢的音乐</button>
-    <button id="discBtn" class="mini-btn" style="flex:1;" title="3D 光盘选歌">3D 选歌</button>
   </div>
   <div id="likedPanel"></div>
 
@@ -1125,7 +1125,7 @@
   </label>
 </div>
 
-<button id="playerRestoreBtn" title="展开播放器" aria-label="展开播放器">
+<button id="playerRestoreBtn" class="visible" title="展开播放器" aria-label="展开播放器">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
 </button>
 
