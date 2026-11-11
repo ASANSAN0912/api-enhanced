@@ -657,17 +657,32 @@
   body.disc-mode #bigView,
   body.disc-mode #bvRestoreBtn{display:none!important}
 
-  #discView{position:fixed;inset:0;z-index:30;display:flex;
+  /* ---------- 左：光碟舞台（右侧让出歌单宽度） ---------- */
+  #discView{position:fixed;inset:0;z-index:30;--dvlist:min(430px,44vw);
     background:#fff;color:#16202f;font-family:inherit;
     opacity:0;pointer-events:none;transform:translateY(-42px);
     transition:opacity .26s ease,transform .46s cubic-bezier(.22,1,.36,1)}
   #discView.show{opacity:1;transform:translateY(0);pointer-events:auto}
 
-  /* ---------- 左：光碟舞台 ---------- */
-  .dv-stage{position:relative;flex:1 1 auto;min-width:0;overflow:hidden;cursor:grab;
+  .dv-stage{position:absolute;left:0;top:0;bottom:0;right:var(--dvlist);
+    overflow:hidden;cursor:grab;
     perspective:1500px;perspective-origin:50% 46%;
-    background:radial-gradient(62% 55% at 46% 44%, #f6f9ff 0%, #ffffff 68%)}
+    background:radial-gradient(62% 55% at 46% 44%, #f6f9ff 0%, #ffffff 68%);
+    transition:right .34s cubic-bezier(.22,1,.36,1)}
   .dv-stage.dragging{cursor:grabbing}
+  #discView.list-off .dv-stage{right:0}
+
+  /* 歌单收起/展开把手 */
+  #dvListHide,#dvListShow{position:absolute;z-index:6;top:50%;transform:translateY(-50%);
+    width:24px;height:66px;padding:0;border:1px solid #e6ecf6;border-right:0;
+    background:#fff;color:#8b9ab1;cursor:pointer;font-size:16px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:9px 0 0 9px;transition:color .15s,opacity .22s}
+  #dvListHide{right:var(--dvlist)}
+  #dvListShow{right:0;opacity:0;pointer-events:none}
+  #discView.list-off #dvListHide{opacity:0;pointer-events:none}
+  #discView.list-off #dvListShow{opacity:1;pointer-events:auto}
+  #dvListHide:hover,#dvListShow:hover{color:#2563c9}
 
 
   .dv-slot{position:absolute;left:50%;top:50%;width:460px;height:460px;
@@ -746,8 +761,11 @@
     font-size:13px;color:#7b8aa1;text-align:center;line-height:2.1;padding:0 40px}
 
   /* ---------- 右：歌单面板（白底深字） ---------- */
-  .dv-panel{flex:0 0 430px;max-width:46vw;display:flex;flex-direction:column;min-width:0;
-    background:#fff;border-left:1px solid #e9eef6}
+  .dv-panel{position:absolute;right:0;top:0;bottom:0;width:var(--dvlist);
+    display:flex;flex-direction:column;min-width:0;
+    background:#fff;border-left:1px solid #e9eef6;
+    transition:transform .34s cubic-bezier(.22,1,.36,1)}
+  #discView.list-off .dv-panel{transform:translateX(100%)}
   .dv-head{padding:20px 20px 12px;border-bottom:1px solid #eef2f8;flex:0 0 auto}
   .dv-head h3{margin:0;font-size:15px;font-weight:700;color:#0f172a;letter-spacing:.4px}
   .dv-head .sub{margin-top:5px;font-size:11.5px;color:#8b9ab1}
@@ -1199,6 +1217,8 @@
     </div>
   </div>
 
+  <button id="dvListHide" type="button" title="收起歌单">›</button>
+  <button id="dvListShow" type="button" title="展开歌单">‹</button>
   <div class="dv-panel">
     <div class="dv-head">
       <h3>我的歌单</h3>
@@ -4583,7 +4603,7 @@ const DV_CFG = {
   holeSize: 12,          // 轴孔 %
   shadow: 2,             // 阴影强度
   thick: 3,              // 光碟厚度 px
-  bevel: 0.8,            // 边缘高光强度 0~1（上沿亮线）
+  bevel: 0.82,           // 边缘高光强度 0~1（上沿亮线）
   groove: 1,             // CD 背面光栅强度 0~1
   iridescence: 0,        // CD 背面虹彩强度 0~1
   bevelSize: 13,         // 高光/暗边宽度 px
@@ -4595,8 +4615,80 @@ const DV_CFG = {
 };
 const DV_SPAN = DV_CFG.span;
 
+/* ==================== 横向排列（歌单收起时） ==================== */
+Object.assign(DV_CFG, {
+  dirMode: 'auto',      // auto / v / h
+  hGapX: 322,           // 横向间距
+  hArcR: 6000,          // 横向弧半径
+  hArcBend: 3,          // 弧强度
+  hArcDir: 1,           // 弧朝向
+  hGroupX: 0,           // 整组 X 偏移
+  hGroupY: 0,           // 整组 Y 偏移
+  hSelScale: 1.08,
+  hScaleLeft: 0.145,
+  hScaleRight: 0.14,
+  hRotXBase: 22,
+  hRotYBase: 23,
+  hRotZBase: -12.5,
+  hRotXLeft: -40, hRotYLeft: 6, hRotZLeft: -4, hZLeft: 40,
+  hRotXRight: 40, hRotYRight: -6, hRotZRight: 4, hZRight: 40,
+});
+
+let DV_LIST = true;     // 歌单面板是否展开
+
+function dvCurDir() {
+  if (DV_CFG.dirMode === 'v') return 'v';
+  if (DV_CFG.dirMode === 'h') return 'h';
+  return DV_LIST ? 'v' : 'h';
+}
+
+/* 横向：沿 X 轴走弧，左右两侧独立旋转 */
+function dvHPlacement(d) {
+  const c = DV_CFG;
+  const ad = Math.abs(d);
+  const left = d < 0;
+  const th = d * (c.hGapX / Math.max(1, c.hArcR));
+
+  const x = c.hArcR * Math.sin(th) + c.hGroupX;
+  const y = c.hArcR * (1 - Math.cos(th)) * c.hArcBend * c.hArcDir + c.hGroupY;
+  const z = -ad * (left ? c.hZLeft : c.hZRight);
+
+  const scale = Math.max(0.15, c.hSelScale - ad * (left ? c.hScaleLeft : c.hScaleRight));
+
+  const rotX = c.hRotXBase + d * (left ? c.hRotXLeft : c.hRotXRight);
+  const rotY = c.hRotYBase + d * (left ? c.hRotYLeft : c.hRotYRight);
+  const rotZ = c.hRotZBase + d * (left ? c.hRotZLeft : c.hRotZRight);
+
+  const opacity = Math.max(0.08, 1 - ad * (left ? c.opacityUp : c.opacityDown));
+  const blur = ad === 0 ? 0 : Math.min(c.blurMax, ad * c.blurStep);
+
+  let zIndex;
+  if (c.zOrder === 'up') zIndex = 200 - d;
+  else if (c.zOrder === 'down') zIndex = 200 + d;
+  else zIndex = d === 0 ? 400 : 200 + d;
+
+  return {
+    transform: 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,' + z.toFixed(1) + 'px) ' +
+      'rotateX(' + rotX.toFixed(1) + 'deg) rotateY(' + rotY.toFixed(1) + 'deg) ' +
+      'rotateZ(' + rotZ.toFixed(1) + 'deg) scale(' + scale.toFixed(3) + ')',
+    opacity, blur, zIndex,
+  };
+}
+
+/* 收起 / 展开歌单：舞台宽度变化 + 重新排布（可能切换方向） */
+function dvSetList(open) {
+  DV_LIST = !!open;
+  const v = $('discView');
+  if (v) v.classList.toggle('list-off', !DV_LIST);
+  dvRenderSlots(false);
+  dvSyncSongHighlight();
+}
+
+
+
 /* 排布：半圆环弧线 + 上下独立三轴旋转 + Z 纵深 */
 function dvPlacement(d) {
+  if (dvCurDir() === 'h') return dvHPlacement(d);
   const c = DV_CFG;
   const ad = Math.abs(d);
   const up = d <= 0;
@@ -4672,7 +4764,7 @@ function dvApplyPlacement(el, d) {
 
 /* 显示形态：disc = 光盘 / case = 专辑盒（记住用户选择） */
 let DV_MODE = 'disc';
-try { DV_MODE = localStorage.getItem('ncm_disc_mode') === 'case' ? 'case' : 'disc'; } catch (e) { /* 忽略 */ }
+try { DV_MODE = localStorage.getItem('ncm_disc_mode') === 'disc' ? 'disc' : 'case'; } catch (e) { /* 忽略 */ }
 
 /* 从封面图里取"面积最大的颜色"，缓存起来避免重复计算 */
 const dvColorCache = new Map();
@@ -5188,6 +5280,9 @@ function dvStep(delta) {
 /* ---------- 事件 ---------- */
 function dvWire() {
   const btn = $('discBtn'), close = $('dvClose'), refresh = $('dvRefresh');
+  const listHide = $('dvListHide'), listShow = $('dvListShow');
+  if (listHide) listHide.addEventListener('click', () => dvSetList(false));
+  if (listShow) listShow.addEventListener('click', () => dvSetList(true));
   const topBtn = $('discBtnTop');
   if (topBtn) topBtn.addEventListener('click', dvOpen);
   const modeBtn = $('dvModeBtn');
