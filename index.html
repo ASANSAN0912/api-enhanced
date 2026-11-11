@@ -3147,8 +3147,12 @@ $('cookieLoginBtn').addEventListener('click', async () => {
 // 所以方形缩略图必须请求方形图，否则会看起来"被放大、显示不全"。
 function buildCoverUrl(picUrl, size) {
   if (!picUrl) return '';
-  const sep = picUrl.includes('?') ? '&' : '?';
-  return picUrl + sep + 'param=' + (size || '300y300');
+  let url = String(picUrl);
+  // 页面是 https 时，http 图片会被浏览器当混合内容拦截 → 统一升级到 https
+  if (url.indexOf('http://') === 0) url = 'https://' + url.slice(7);
+  else if (url.indexOf('//') === 0) url = 'https:' + url;
+  const sep = url.includes('?') ? '&' : '?';
+  return url + sep + 'param=' + (size || '300y300');
 }
 
 function loadCoverAsBackground(url) {
@@ -4788,8 +4792,20 @@ function dvMakeNode(idx) {
       '<div class="back"><u></u><b></b></div><div class="face"><img alt=""><i></i><u></u><b></b></div>' +
       '</div>';
     img = el.querySelector('img');
-    img.src = item.cover || '';
     img.alt = item.name;
+    // 兜底：某些封面不支持 param 裁剪会 404，失败后退回原图
+    img.onerror = () => {
+      if (img.dataset.fb) { img.style.opacity = '0'; return; }
+      img.dataset.fb = '1';
+      const raw = item.raw && ((item.raw.al && item.raw.al.picUrl) ||
+        (item.raw.album && item.raw.album.picUrl)) || '';
+      if (raw) {
+        img.src = raw.indexOf('http://') === 0 ? 'https://' + raw.slice(7) : raw;
+      } else {
+        img.style.opacity = '0';
+      }
+    };
+    img.src = item.cover || '';
     dvStyleDisc(el);
   }
 
