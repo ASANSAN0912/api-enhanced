@@ -672,18 +672,27 @@
   .dv-stage.dragging{cursor:grabbing}
   #discView.list-off .dv-stage{right:0}
 
-  /* 歌单收起/展开把手 */
+  /* 歌单收起/展开把手（改成显眼的蓝色标签，白底上也能看见） */
   #dvListHide,#dvListShow{position:absolute;z-index:6;top:50%;transform:translateY(-50%);
-    width:24px;height:66px;padding:0;border:1px solid #e6ecf6;border-right:0;
-    background:#fff;color:#8b9ab1;cursor:pointer;font-size:16px;line-height:1;
-    display:flex;align-items:center;justify-content:center;
-    border-radius:9px 0 0 9px;transition:color .15s,opacity .22s}
+    width:28px;height:76px;padding:0;border:1px solid #cfe0f7;border-right:0;
+    background:#eef4ff;color:#2f6fe0;cursor:pointer;font-size:17px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;line-height:1;
+    border-radius:11px 0 0 11px;box-shadow:-3px 0 12px rgba(28,46,82,.10);
+    transition:color .15s,background .15s,opacity .22s,width .16s}
   #dvListHide{right:var(--dvlist)}
   #dvListShow{right:0;opacity:0;pointer-events:none}
   #discView.list-off #dvListHide{opacity:0;pointer-events:none}
   #discView.list-off #dvListShow{opacity:1;pointer-events:auto}
-  #dvListHide:hover,#dvListShow:hover{color:#2563c9}
+  #dvListHide:hover,#dvListShow:hover{background:#dfeaff;color:#1d5fd0;width:33px}
 
+  /* 顶部：收起 3D 选歌（倒过来的箭头，向上滑出） */
+  #dvTopClose{position:absolute;left:50%;top:12px;transform:translateX(-50%);
+    z-index:7;width:46px;height:34px;padding:0;border:0;background:none;
+    color:rgba(20,32,52,.52);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:color .18s,transform .18s;-webkit-tap-highlight-color:transparent}
+  #dvTopClose:hover{color:#16202f;transform:translateX(-50%) translateY(-2px)}
+  #dvTopClose:active{transform:translateX(-50%) translateY(-3px) scale(.93)}
 
   .dv-slot{position:absolute;left:50%;top:50%;width:460px;height:460px;
     margin:-230px 0 0 -230px;transform-style:preserve-3d;
@@ -1217,6 +1226,12 @@
     </div>
   </div>
 
+  <button id="dvTopClose" type="button" title="收起 3D 选歌" aria-label="收起 3D 选歌">
+    <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor"
+         stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 14.5l6-6 6 6"/>
+    </svg>
+  </button>
   <button id="dvListHide" type="button" title="收起歌单">›</button>
   <button id="dvListShow" type="button" title="展开歌单">‹</button>
   <div class="dv-panel">
@@ -5280,6 +5295,8 @@ function dvStep(delta) {
 /* ---------- 事件 ---------- */
 function dvWire() {
   const btn = $('discBtn'), close = $('dvClose'), refresh = $('dvRefresh');
+  const topClose = $('dvTopClose');
+  if (topClose) topClose.addEventListener('click', dvClose);
   const listHide = $('dvListHide'), listShow = $('dvListShow');
   if (listHide) listHide.addEventListener('click', () => dvSetList(false));
   if (listShow) listShow.addEventListener('click', () => dvSetList(true));
