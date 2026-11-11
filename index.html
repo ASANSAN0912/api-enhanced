@@ -658,26 +658,56 @@
     background:radial-gradient(62% 55% at 46% 44%, #f6f9ff 0%, #ffffff 68%)}
   .dv-stage.dragging{cursor:grabbing}
 
-  .dv-slot{position:absolute;left:50%;top:50%;width:330px;height:330px;
-    margin:-165px 0 0 -165px;transform-style:preserve-3d;
-    transition:transform .48s cubic-bezier(.2,.9,.25,1),opacity .34s ease,filter .34s ease;
-    will-change:transform,opacity,filter}
 
-  .disc{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:#eef2f9;
-    box-shadow:0 16px 30px rgba(28,46,82,.16), 0 0 0 1px rgba(28,46,82,.10)}
-  .disc img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
-  .disc i{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  .dv-slot{position:absolute;left:50%;top:50%;width:460px;height:460px;
+    margin:-230px 0 0 -230px;transform-style:preserve-3d;
+    transition:transform 1s cubic-bezier(.2,.9,.25,1),opacity .7s ease;
+    will-change:transform}
+
+  /* 光碟 = 侧壁(edge) + 正面(face)：face 在 Z=0，侧壁逐层后移 → 斜看有厚度 */
+  .disc{position:absolute;inset:0;border-radius:50%;transform-style:preserve-3d}
+  .disc>.edge{position:absolute;inset:0;transform-style:preserve-3d}
+  .disc>.edge>i{position:absolute;inset:0;border-radius:50%;
+    background:linear-gradient(135deg,#334158,#0d141f)}
+  .disc>.face{position:absolute;inset:0;border-radius:50%;overflow:hidden;
+    background:#eef2f9;transform:translateZ(0);
+    box-shadow:0 16px 30px rgba(28,46,82,.16),0 0 0 1px rgba(28,46,82,.10)}
+  .disc>.face>img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+  .disc>.face>i{position:absolute;inset:0;border-radius:50%;pointer-events:none;
     background:
       radial-gradient(circle at 30% 24%, rgba(255,255,255,.42), rgba(255,255,255,0) 42%),
       radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 0 9%,
                       rgba(15,26,45,.10) 10% 30%, rgba(255,255,255,0) 31% 100%)}
-  .disc b{position:absolute;left:50%;top:50%;width:12%;height:12%;margin:-6% 0 0 -6%;
+  .disc>.face>u{position:absolute;left:50%;top:50%;border-radius:50%;
+    transform:translate(-50%,-50%);pointer-events:none}
+  .disc>.face>b{position:absolute;left:50%;top:50%;width:12%;height:12%;margin:-6% 0 0 -6%;
     border-radius:50%;background:#fff;
-    box-shadow:inset 0 0 0 2px rgba(28,46,82,.28), 0 1px 3px rgba(28,46,82,.2)}
-  .dv-slot.active .disc{box-shadow:0 22px 40px rgba(28,46,82,.22),
-    0 0 0 2px rgba(79,155,255,.5), 0 0 30px rgba(79,155,255,.16)}
+    box-shadow:inset 0 0 0 2px rgba(28,46,82,.28),0 1px 3px rgba(28,46,82,.2)}
+  .dv-slot.active .disc>.face{outline:2px solid rgba(79,155,255,.55);outline-offset:3px}
 
-  .dv-hint{position:absolute;left:0;right:0;bottom:16px;text-align:center;
+
+  /* 专辑盒（六面体）：正面封面，其余面用封面主色 */
+  .case{position:absolute;inset:0;transform-style:preserve-3d}
+  .case .f{position:absolute;left:0;top:0;width:100%;height:100%;
+    background:var(--cd,#26334a);border-radius:2px;overflow:hidden;
+    box-shadow:0 0 0 1px rgba(255,255,255,.10) inset}
+  .case .front{background-color:#eef2f9;background-size:cover;background-position:center}
+  .case .left,.case .right{display:flex;align-items:center;justify-content:center}
+  .case .left .tx{writing-mode:vertical-rl;text-orientation:mixed;
+    color:rgba(255,255,255,.94);letter-spacing:1.2px;line-height:1.15;
+    max-height:94%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    text-shadow:0 1px 3px rgba(0,0,0,.45)}
+  .dv-slot.active .case .front{outline:2px solid rgba(79,155,255,.55);outline-offset:2px}
+
+  /* 形态切换按钮 */
+  #dvModeBtn{pointer-events:auto;display:inline-flex;align-items:center;
+    background:#f2f6fd;border:1px solid #dde7f5;color:#2563c9;
+    border-radius:999px;padding:4px 14px;font-size:11.5px;font-family:inherit;
+    cursor:pointer;transition:background .15s,border-color .15s}
+  #dvModeBtn:hover{background:#e6efff;border-color:#b9d3f6}
+
+  .dv-hint{position:absolute;left:0;right:0;bottom:16px;display:flex;
+    align-items:center;justify-content:center;gap:10px;
     font-size:11.5px;color:#93a2ba;letter-spacing:.4px;pointer-events:none}
   .dv-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     font-size:13px;color:#7b8aa1;text-align:center;line-height:2.1;padding:0 40px}
@@ -1121,7 +1151,13 @@
 <div id="discView">
   <div class="dv-stage" id="dvStage">
     <div id="dvSlots"></div>
-    <div class="dv-hint">滚轮 / ↑↓ 切换 &nbsp;·&nbsp; 点击或回车选中播放 &nbsp;·&nbsp; Esc 返回</div>
+    <div class="dv-hint">
+      <span>滚轮 / ↑↓ 切换</span>
+      <span>·</span>
+      <span>点击或回车选中播放</span>
+      <button id="dvModeBtn" type="button" title="切换光盘 / 专辑盒">切换成专辑盒</button>
+      <span>Esc 返回</span>
+    </div>
   </div>
 
   <div class="dv-panel">
@@ -4483,37 +4519,67 @@ const DV = {
   lastWheel: 0, startY: 0, dragging: false,
   activeGroup: -1, loading: false,
 };
-const DV_SPAN = 6;           // 上下各显示几张
-const DV_ARC_R = 620;        // 排列弧半径（越大越平直）
-const DV_ARC_STEP = 0.182;   // 每张盘在弧上占的角度（弧度）
+/* 光碟排布参数（由 disc-lab.html 调出来的一整套数值，改这里即可） */
+const DV_CFG = {
+  span: 7,               // 上下各显示几张
+  gapY: 220,             // 相邻两张纵向间距 px
+  arcR: 1860,            // 弧半径
+  arcBend: 2,            // 弧形横向强度
+  arcDir: -1,            // 弧朝向：1 向左 / -1 向右
+  selScale: 0.89,        // 选中盘缩放
+  scaleUp: 0.1,          // 上方每格缩小
+  scaleDown: 0,          // 下方每格缩小
+  rotXBase: 29, rotYBase: 15.5, rotZBase: -22,
+  rotXUp: -40, rotYUp: 12.5, rotZUp: 20,
+  rotXDown: 40, rotYDown: -25, rotZDown: -0.6,
+  zUp: 0, zDown: 0,      // 每格 Z 后退
+  opacityUp: 0, opacityDown: 0,
+  blurStep: 1.3, blurMax: 8,
+  zOrder: 'center',      // 遮挡顺序：up / down / center
+  discSize: 460,         // 盘直径 px
+  holeSize: 12,          // 轴孔 %
+  shadow: 2,             // 阴影强度
+  thick: 3,              // 光碟厚度 px
+  bevel: 0.8,            // 边缘高光强度 0~1（上沿亮线）
+  bevelSize: 13,         // 高光/暗边宽度 px
+  innerRing: 26,         // 内圈（夹持区）直径 %
+  innerDark: 0.5,        // 内圈暗度
+  caseDepth: 11,         // 专辑盒厚度 px（左面文字宽度）
+  dur: 0.72,             // 切换动画时长 s
+  easing: 'cubic-bezier(.2,.9,.25,1)',
+};
+const DV_SPAN = DV_CFG.span;
 
-/* 排布：半圆环弧线 + 三轴旋转
-   d > 0 在下方，d < 0 在上方；中心 d = 0 轻微向左转，是"面向镜头但侧了一点"的视角。
-   上方因为转得更平 + Z 轴后退，视觉上会更小；层级按"上面的压下面的"排。 */
+/* 排布：半圆环弧线 + 上下独立三轴旋转 + Z 纵深 */
 function dvPlacement(d) {
+  const c = DV_CFG;
   const ad = Math.abs(d);
-  const th = d * DV_ARC_STEP;
-  // 半圆弧：y 沿弧走，x = R(1-cosθ) 形成弧的横向位移
-  const y = DV_ARC_R * Math.sin(th);
-  const x = -DV_ARC_R * (1 - Math.cos(th)) * 0.62;
-  // 上方更快变小、更靠后；下方收得慢
-  const scale = d <= 0
-    ? Math.max(0.42, 1 - ad * 0.105)
-    : Math.max(0.54, 1 - ad * 0.052);
-  const z = d <= 0 ? -ad * 88 : -ad * 26;
-  const rotX = 14 + ad * 16;         // 中心 14°，越远越平躺
-  const rotY = -17 + d * -8.5;       // 中心轻微向左转
-  const rotZ = -5 + d * 4.6;         // 轻微倾斜
-  const opacity = Math.max(0.2, 1 - ad * (d <= 0 ? 0.135 : 0.10));
-  const blur = ad === 0 ? 0 : Math.min(3.4, ad * 0.6);
+  const up = d <= 0;
+  const th = d * (c.gapY / Math.max(1, c.arcR));
+
+  const y = c.arcR * Math.sin(th);
+  const x = -c.arcR * (1 - Math.cos(th)) * c.arcBend * c.arcDir;
+  const z = -ad * (up ? c.zUp : c.zDown);
+
+  const scale = Math.max(0.15, c.selScale - ad * (up ? c.scaleUp : c.scaleDown));
+
+  const rotX = c.rotXBase + d * (up ? c.rotXUp : c.rotXDown);
+  const rotY = c.rotYBase + d * (up ? c.rotYUp : c.rotYDown);
+  const rotZ = c.rotZBase + d * (up ? c.rotZUp : c.rotZDown);
+
+  const opacity = Math.max(0.08, 1 - ad * (up ? c.opacityUp : c.opacityDown));
+  const blur = ad === 0 ? 0 : Math.min(c.blurMax, ad * c.blurStep);
+
+  let zIndex;
+  if (c.zOrder === 'up') zIndex = 200 - d;
+  else if (c.zOrder === 'down') zIndex = 200 + d;
+  else zIndex = d === 0 ? 400 : 200 + d;
 
   return {
     transform: 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,' + z.toFixed(1) + 'px) ' +
                'rotateX(' + rotX.toFixed(1) + 'deg) rotateY(' + rotY.toFixed(1) + 'deg) ' +
                'rotateZ(' + rotZ.toFixed(1) + 'deg) scale(' + scale.toFixed(3) + ')',
-    opacity,
-    blur,
-    z: 200 - d,                       // 上面的压下面的
+    opacity, blur, zIndex,
   };
 }
 
@@ -4526,26 +4592,233 @@ function dvMeta(song) {
   return { ar, al, cover };
 }
 
+/* 模糊只能加在叶子元素上：加在 3D 容器上会把 preserve-3d 拍平，厚度/侧壁就消失了。
+   专辑盒要把 6 个面全糊（含侧面轮廓），同时保留各面的明暗。 */
+function dvApplyBlur(el, blur) {
+  const b = blur > 0.04 ? 'blur(' + blur.toFixed(1) + 'px)' : '';
+
+  // 光盘：封面 + 每一层厚度侧壁
+  Array.prototype.forEach.call(el.querySelectorAll('.face, .edge i'), node => {
+    if (node.style.filter !== b) node.style.filter = b;
+  });
+
+  // 专辑盒：6 个面都模糊，但 back/top/bottom 的 brightness 不能被覆盖
+  const BRIGHT = { back: '0.78', top: '1.18', bottom: '0.62' };
+  Array.prototype.forEach.call(el.querySelectorAll('.case .f'), node => {
+    let name = '';
+    if (node.classList.contains('back')) name = 'back';
+    else if (node.classList.contains('top')) name = 'top';
+    else if (node.classList.contains('bottom')) name = 'bottom';
+    const bright = name ? 'brightness(' + BRIGHT[name] + ')' : '';
+    const v = b ? (bright ? b + ' ' + bright : b) : bright;
+    if (node.style.filter !== v) node.style.filter = v;
+  });
+}
+
 function dvApplyPlacement(el, d) {
   const p = dvPlacement(d);
   el.style.transform = p.transform;
   el.style.opacity = String(p.opacity);
-  el.style.filter = p.blur > 0.04 ? 'blur(' + p.blur.toFixed(1) + 'px)' : 'none';
-  el.style.zIndex = String(p.z);
+  el.style.filter = '';                 // 容器上绝不留 filter
+  el.style.zIndex = String(p.zIndex);
   el.style.pointerEvents = 'auto';
+  dvApplyBlur(el, p.blur);
+}
+
+/* 显示形态：disc = 光盘 / case = 专辑盒（记住用户选择） */
+let DV_MODE = 'disc';
+try { DV_MODE = localStorage.getItem('ncm_disc_mode') === 'disc' ? 'disc' : 'case'; } catch (e) { /* 忽略 */ }
+
+/* 从封面图里取"面积最大的颜色"，缓存起来避免重复计算 */
+const dvColorCache = new Map();
+function dvDominant(url, cb) {
+  if (!url) { cb([38, 48, 68]); return; }
+  if (dvColorCache.has(url)) { cb(dvColorCache.get(url)); return; }
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    let rgb = [38, 48, 68];
+    try {
+      const cv = document.createElement('canvas');
+      cv.width = 16; cv.height = 16;
+      const ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, 16, 16);
+      const d = ctx.getImageData(0, 0, 16, 16).data;
+      const buckets = new Map();
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        const k = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);   // 量化到 4bit
+        let e = buckets.get(k);
+        if (!e) { e = { n: 0, r: 0, g: 0, b: 0 }; buckets.set(k, e); }
+        e.n++; e.r += r; e.g += g; e.b += b;
+      }
+      let best = null;
+      buckets.forEach(e => { if (!best || e.n > best.n) best = e; });
+      if (best && best.n) {
+        rgb = [Math.round(best.r / best.n), Math.round(best.g / best.n), Math.round(best.b / best.n)];
+      }
+    } catch (err) { /* 跨域取色失败就用默认深色 */ }
+    dvColorCache.set(url, rgb);
+    cb(rgb);
+  };
+  img.onerror = () => { dvColorCache.set(url, [38, 48, 68]); cb([38, 48, 68]); };
+  img.src = url;
+}
+
+/* 专辑盒：正面封面，其余五面用封面主色铺满，左面竖排歌名 + 歌手 */
+function dvStyleCase(el, item) {
+  const c = DV_CFG, S = c.discSize, D = c.caseDepth;
+  const box = el.querySelector('.case');
+  if (!box) return;
+  const q = (s) => box.querySelector(s);
+  const half = D / 2, side = (S - D) / 2;
+
+  const front = q('.front');
+  if (front) {
+    front.style.backgroundImage = item.cover ? 'url("' + item.cover + '")' : 'none';
+    front.style.transform = 'translateZ(' + half + 'px)';
+    // 盒子的投影：按 shadow 强度给正面加外阴影
+    const sh = c.shadow;
+    front.style.boxShadow = sh === 1
+      ? '0 14px 30px rgba(28,46,82,.18)'
+      : '0 ' + (14 * sh).toFixed(0) + 'px ' + (30 * sh).toFixed(0) +
+        'px rgba(28,46,82,' + Math.min(0.55, 0.14 * sh).toFixed(3) + ')';
+  }
+  const back = q('.back');
+  if (back) back.style.transform = 'rotateY(180deg) translateZ(' + half + 'px)';
+
+  const left = q('.left'), right = q('.right');
+  [left, right].forEach((f, i) => {
+    if (!f) return;
+    f.style.width = D + 'px';
+    f.style.left = side + 'px';
+    f.style.transform = (i === 0 ? 'rotateY(-90deg)' : 'rotateY(90deg)') +
+      ' translateZ(' + (S / 2) + 'px)';
+  });
+
+  const top = q('.top'), bottom = q('.bottom');
+  [top, bottom].forEach((f, i) => {
+    if (!f) return;
+    f.style.height = D + 'px';
+    f.style.top = side + 'px';
+    f.style.transform = (i === 0 ? 'rotateX(90deg)' : 'rotateX(-90deg)') +
+      ' translateZ(' + (S / 2) + 'px)';
+  });
+
+  const tx = q('.left .tx');
+  if (tx) {
+    tx.textContent = (item.name || '未知歌曲') + ' · ' + (item.ar || '未知歌手');
+    tx.style.fontSize = Math.max(8, Math.min(26, D * 0.32)).toFixed(1) + 'px';
+  }
+
+  // 先用一个默认色，取到主色后再替换
+  box.style.setProperty('--cd', 'rgb(38,48,68)');
+  const token = (el.dataset.colorToken = String(Math.random()));
+  dvDominant(item.cover, (rgb) => {
+    if (el.dataset.colorToken !== token || !el.isConnected) return;
+    box.style.setProperty('--cd', 'rgb(' + rgb.join(',') + ')');
+  });
 }
 
 function dvMakeNode(idx) {
   const el = document.createElement('div');
   el.className = 'dv-slot';
   el.dataset.idx = String(idx);
-  el.innerHTML = '<div class="disc"><img alt=""><i></i><b></b></div>';
-  const img = el.querySelector('img');
   const item = DV.items[idx];
-  img.src = item.cover || '';
-  img.alt = item.name;
+  let img = null;
+
+  if (DV_MODE === 'case') {
+    el.innerHTML = '<div class="case">' +
+      '<div class="f front"></div><div class="f back"></div>' +
+      '<div class="f left"><span class="tx"></span></div>' +
+      '<div class="f right"></div>' +
+      '<div class="f top"></div><div class="f bottom"></div>' +
+      '</div>';
+    dvStyleCase(el, item);
+  } else {
+    el.innerHTML = '<div class="disc">' +
+      '<div class="edge"></div>' +
+      '<div class="face"><img alt=""><i></i><u></u><b></b></div>' +
+      '</div>';
+    img = el.querySelector('img');
+    img.src = item.cover || '';
+    img.alt = item.name;
+    dvStyleDisc(el);
+  }
+
   ($('dvSlots') || document.body).appendChild(el);
   return { el, img };
+}
+
+/* 切换显示形态 */
+function dvSetMode(mode) {
+  DV_MODE = mode === 'case' ? 'case' : 'disc';
+  try { localStorage.setItem('ncm_disc_mode', DV_MODE); } catch (e) { /* 忽略 */ }
+  dvClearNodes();
+  dvRenderSlots(true);
+  const b = $('dvModeBtn');
+  if (b) b.textContent = DV_MODE === 'case' ? '切换成光盘' : '切换成专辑盒';
+}
+
+/* 盘尺寸 / 轴孔 / 阴影 / 厚度（沿 Z 轴堆叠薄层做出侧壁） */
+function dvStyleDisc(el) {
+  const c = DV_CFG;
+  el.style.width = c.discSize + 'px';
+  el.style.height = c.discSize + 'px';
+  el.style.marginLeft = (-c.discSize / 2) + 'px';
+  el.style.marginTop = (-c.discSize / 2) + 'px';
+  el.style.transitionDuration = c.dur + 's, ' + (c.dur * 0.7).toFixed(2) + 's, ' +
+    (c.dur * 0.7).toFixed(2) + 's';
+  el.style.transitionTimingFunction = c.easing;
+
+  const face = el.querySelector('.face');
+  if (face) {
+    const base = c.shadow === 1
+      ? '0 16px 30px rgba(28,46,82,.16),0 0 0 1px rgba(28,46,82,.10)'
+      : '0 ' + (16 * c.shadow).toFixed(0) + 'px ' + (30 * c.shadow).toFixed(0) +
+        'px rgba(28,46,82,' + Math.min(0.55, 0.16 * c.shadow).toFixed(3) + ')';
+    // 倒角高光：上沿一道亮线 + 下沿暗边
+    const bv = c.bevel;
+    const inset = bv > 0.01
+      ? ',inset 0 ' + c.bevelSize.toFixed(1) + 'px ' + (c.bevelSize * 1.6).toFixed(1) +
+        'px rgba(255,255,255,' + (0.92 * bv).toFixed(2) + ')' +
+        ',inset 0 ' + (-c.bevelSize * 1.4).toFixed(1) + 'px ' + (c.bevelSize * 2.4).toFixed(1) +
+        'px rgba(10,18,32,' + (0.45 * bv).toFixed(2) + ')'
+      : '';
+    face.style.boxShadow = base + inset;
+  }
+
+  // 内圈（夹持区）：轴孔周围一圈暗色
+  const iris = el.querySelector('.face u');
+  if (iris) {
+    const ring = Math.max(c.holeSize + 2, c.innerRing);
+    const innerPct = Math.min(92, (c.holeSize / ring) * 100);
+    iris.style.width = ring + '%';
+    iris.style.height = ring + '%';
+    iris.style.background = c.innerDark <= 0.001 ? 'none'
+      : 'radial-gradient(circle, rgba(18,26,40,0) 0 ' + innerPct.toFixed(1) +
+        '%, rgba(18,26,40,' + c.innerDark.toFixed(2) + ') ' + innerPct.toFixed(1) + '% 100%)';
+  }
+
+  const hole = el.querySelector('.face b');
+  if (hole) {
+    hole.style.width = c.holeSize + '%';
+    hole.style.height = c.holeSize + '%';
+    hole.style.marginLeft = (-c.holeSize / 2) + '%';
+    hole.style.marginTop = (-c.holeSize / 2) + '%';
+  }
+
+  const edge = el.querySelector('.edge');
+  if (edge) {
+    const n = Math.max(0, Math.min(14, Math.round(c.thick)));
+    edge.innerHTML = '';
+    const step = n ? c.thick / n : 0;
+    for (let i = 1; i <= n; i++) {
+      const lay = document.createElement('i');
+      lay.style.transform = 'translateZ(' + (-i * step).toFixed(2) + 'px)';
+      edge.appendChild(lay);
+    }
+  }
 }
 
 function dvClearNodes() {
@@ -4828,6 +5101,11 @@ function dvStep(delta) {
 /* ---------- 事件 ---------- */
 function dvWire() {
   const btn = $('discBtn'), close = $('dvClose'), refresh = $('dvRefresh');
+  const modeBtn = $('dvModeBtn');
+  if (modeBtn) {
+    modeBtn.textContent = DV_MODE === 'case' ? '切换成光盘' : '切换成专辑盒';
+    modeBtn.addEventListener('click', () => dvSetMode(DV_MODE === 'case' ? 'disc' : 'case'));
+  }
   if (btn) btn.addEventListener('click', dvOpen);
   if (close) close.addEventListener('click', dvClose);
   if (refresh) refresh.addEventListener('click', () => {
