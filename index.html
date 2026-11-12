@@ -765,6 +765,19 @@
     text-shadow:0 1px 3px rgba(0,0,0,.45)}
   .dv-slot.active .case .front{outline:2px solid rgba(79,155,255,.55);outline-offset:2px}
 
+
+  /* ---------- 形态切换动画：光盘 ⇄ 专辑盒 ---------- */
+  .dv-slot.leaving{pointer-events:none!important}
+  .dv-slot.leaving .disc,.dv-slot.leaving .case{
+    animation:dvFormOut .22s cubic-bezier(.4,0,1,1) forwards}
+  .dv-slot.appearing .disc,.dv-slot.appearing .case{
+    animation:dvFormIn .42s cubic-bezier(.22,1,.36,1) both;
+    animation-delay:calc(var(--k,0) * 26ms)}
+  @keyframes dvFormOut{
+    to{opacity:0;transform:scale(.82) rotateX(16deg)}}
+  @keyframes dvFormIn{
+    from{opacity:0;transform:scale(1.14) rotateX(-12deg)}
+    to{opacity:1;transform:scale(1) rotateX(0deg)}}
   /* 形态切换按钮 */
   #dvModeBtn{pointer-events:auto;display:inline-flex;align-items:center;
     background:#f2f6fd;border:1px solid #dde7f5;color:#2563c9;
@@ -5002,11 +5015,29 @@ function dvMakeNode(idx) {
 }
 
 /* 切换显示形态 */
+let DV_SWITCH_ANIM = false;
+
 function dvSetMode(mode) {
-  DV_MODE = mode === 'case' ? 'case' : 'disc';
+  const next = mode === 'case' ? 'case' : 'disc';
+  if (next === DV_MODE) return;
+
+  // 旧形态留在原地缩小淡出
+  const old = [];
+  DV.nodes.forEach((n) => { n.el.classList.add('leaving'); old.push(n.el); });
+  DV.nodes.clear();
+
+  DV_MODE = next;
   try { localStorage.setItem('ncm_disc_mode', DV_MODE); } catch (e) { /* 忽略 */ }
-  dvClearNodes();
+
+  // 新形态同时在原地弹入（错峰）
+  DV_SWITCH_ANIM = true;
   dvRenderSlots(true);
+  DV_SWITCH_ANIM = false;
+
+  window.setTimeout(() => {
+    old.forEach((el) => { if (el.parentNode) el.remove(); });
+  }, 300);
+
   const b = $('dvModeBtn');
   if (b) b.textContent = DV_MODE === 'case' ? '切换成光盘' : '切换成专辑盒';
 }
@@ -5124,6 +5155,10 @@ function dvRenderSlots(instant) {
     if (!node) {
       node = dvMakeNode(idx);
       DV.nodes.set(idx, node);
+      if (DV_SWITCH_ANIM) {
+        node.el.style.setProperty('--k', String(Math.abs(d)));
+        node.el.classList.add('appearing');
+      }
       // 新进入的元素：先从窗口外一格就位（无动画），下一帧再滑到目标位置
       node.el.style.transition = 'none';
       dvApplyPlacement(node.el, d + (d >= 0 ? 1 : -1));
