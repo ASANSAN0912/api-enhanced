@@ -766,18 +766,30 @@
   .dv-slot.active .case .front{outline:2px solid rgba(79,155,255,.55);outline-offset:2px}
 
 
-  /* ---------- 形态切换动画：光盘 ⇄ 专辑盒 ---------- */
+  /* ---------- 形态切换动画：消失 → 停顿 → 出现 ---------- */
   .dv-slot.leaving{pointer-events:none!important}
+  /* 淡出分两层：
+     ① 容器只做 scale / rotate（独立变换属性，不覆盖 transform，也不拍平 3D）
+     ② opacity 下放到每个叶子面（叶子没有 3D 子元素，淡出不会影响立体结构） */
   .dv-slot.leaving .disc,.dv-slot.leaving .case{
-    animation:dvFormOut .22s cubic-bezier(.4,0,1,1) forwards}
+    animation:dvFormOut var(--out-dur,.28s) var(--out-ease,ease-out)
+      var(--out-delay,0ms) forwards}
+  .dv-slot.leaving .disc>.face,
+  .dv-slot.leaving .disc>.back,
+  .dv-slot.leaving .disc>.edge>i,
+  .dv-slot.leaving .case .f{
+    animation:dvFadeOut var(--out-dur,.28s) var(--out-ease,ease-out)
+      var(--out-delay,0ms) forwards}
+  /* 入场完全不用 opacity，3D 厚度全程保留 */
   .dv-slot.appearing .disc,.dv-slot.appearing .case{
-    animation:dvFormIn .42s cubic-bezier(.22,1,.36,1) both;
-    animation-delay:calc(var(--k,0) * 26ms)}
+    animation:dvFormIn var(--in-dur,.46s) var(--in-ease,ease-out)
+      calc(var(--in-delay,520ms) + var(--k,0) * var(--in-step,26ms)) both}
   @keyframes dvFormOut{
-    to{opacity:0;transform:scale(.82) rotateX(16deg)}}
+    to{scale:var(--out-scale,.9);rotate:x var(--out-rot,14deg);visibility:hidden}}
+  @keyframes dvFadeOut{ to{opacity:0} }
   @keyframes dvFormIn{
-    from{opacity:0;transform:scale(1.14) rotateX(-12deg)}
-    to{opacity:1;transform:scale(1) rotateX(0deg)}}
+    from{scale:var(--in-scale,1.06);rotate:x var(--in-rot,-8deg)}
+    to{scale:1;rotate:x 0deg}}
   /* 形态切换按钮 */
   #dvModeBtn{pointer-events:auto;display:inline-flex;align-items:center;
     background:#f2f6fd;border:1px solid #dde7f5;color:#2563c9;
@@ -4650,13 +4662,18 @@ const DV_CFG = {
   holeSize: 12,          // 轴孔 %
   shadow: 2,             // 阴影强度
   thick: 3,              // 光碟厚度 px
-  bevel: 0.82,           // 边缘高光强度 0~1（上沿亮线）
+  bevel: 0.8,            // 边缘高光强度 0~1（上沿亮线）
   groove: 1,             // CD 背面光栅强度 0~1
   iridescence: 0,        // CD 背面虹彩强度 0~1
   bevelSize: 13,         // 高光/暗边宽度 px
   innerRing: 26,         // 内圈（夹持区）直径 %
   innerDark: 0.5,        // 内圈暗度
   caseDepth: 11,         // 专辑盒厚度 px（左面文字宽度）
+  // —— 形态切换动画 ——
+  outDur: 0.28, outDelay: 0, outScale: 0.9, outRot: 45,
+  outEase: 'cubic-bezier(.22,1,.36,1)',
+  inDur: 1.03, inDelay: 520, inScale: 1.02, inRot: -30,
+  inStep: 43, inEase: 'cubic-bezier(.22,1,.36,1)', hold: 80,
   dur: 0.72,             // 切换动画时长 s
   easing: 'cubic-bezier(.2,.9,.25,1)',
 };
@@ -5017,6 +5034,23 @@ function dvMakeNode(idx) {
 /* 切换显示形态 */
 let DV_SWITCH_ANIM = false;
 
+
+/* 把切换动画参数写到 CSS 变量上 */
+function dvSyncAnimVars() {
+  const v = $('discView');
+  if (!v) return;
+  v.style.setProperty('--out-dur', DV_CFG.outDur + 's');
+  v.style.setProperty('--out-delay', DV_CFG.outDelay + 'ms');
+  v.style.setProperty('--out-scale', String(DV_CFG.outScale));
+  v.style.setProperty('--out-rot', DV_CFG.outRot + 'deg');
+  v.style.setProperty('--out-ease', DV_CFG.outEase);
+  v.style.setProperty('--in-dur', DV_CFG.inDur + 's');
+  v.style.setProperty('--in-delay', DV_CFG.inDelay + 'ms');
+  v.style.setProperty('--in-scale', String(DV_CFG.inScale));
+  v.style.setProperty('--in-rot', DV_CFG.inRot + 'deg');
+  v.style.setProperty('--in-step', DV_CFG.inStep + 'ms');
+  v.style.setProperty('--in-ease', DV_CFG.inEase);
+}
 function dvSetMode(mode) {
   const next = mode === 'case' ? 'case' : 'disc';
   if (next === DV_MODE) return;
@@ -5030,13 +5064,21 @@ function dvSetMode(mode) {
   try { localStorage.setItem('ncm_disc_mode', DV_MODE); } catch (e) { /* 忽略 */ }
 
   // 新形态同时在原地弹入（错峰）
+  dvSyncAnimVars();
   DV_SWITCH_ANIM = true;
   dvRenderSlots(true);
   DV_SWITCH_ANIM = false;
 
   window.setTimeout(() => {
     old.forEach((el) => { if (el.parentNode) el.remove(); });
-  }, 300);
+    // 全量清扫：连续快速切换时可能留下孤儿节点，会变成"莫名出现的 CD"
+    const box = $('dvSlots');
+    if (box) {
+      Array.prototype.forEach.call(
+        box.querySelectorAll('.dv-slot.leaving'),
+        (el) => { el.remove(); });
+    }
+  }, Math.max(DV_CFG.outDur * 1000 + 60, DV_CFG.hold || 340));
 
   const b = $('dvModeBtn');
   if (b) b.textContent = DV_MODE === 'case' ? '切换成光盘' : '切换成专辑盒';
@@ -5158,6 +5200,13 @@ function dvRenderSlots(instant) {
       if (DV_SWITCH_ANIM) {
         node.el.style.setProperty('--k', String(Math.abs(d)));
         node.el.classList.add('appearing');
+        // 动画结束后必须摘掉：关键帧里的 opacity/transform 一旦持久生效，
+        // 会把内部的 preserve-3d 拍平，厚度就消失了（变成纸片）
+        const clearAnim = () => node.el.classList.remove('appearing');
+        const inner = node.el.querySelector('.disc, .case');
+        if (inner) inner.addEventListener('animationend', clearAnim, { once: true });
+        window.setTimeout(clearAnim,
+          DV_CFG.inDur * 1000 + Math.abs(d) * DV_CFG.inStep + 140);
       }
       // 新进入的元素：先从窗口外一格就位（无动画），下一帧再滑到目标位置
       node.el.style.transition = 'none';
@@ -5408,6 +5457,7 @@ function dvOpen() {
   const v = $('discView');
   if (v) v.classList.add('show');
   dvRenderPicked();
+  dvSyncAnimVars();
   DV_LAST_FIT = 0;      // 强制下次重排时按新尺寸算
   setTimeout(dvRelayout, 60);
   try { history.replaceState(null, '', '#disc'); } catch (e) { /* 忽略 */ }
