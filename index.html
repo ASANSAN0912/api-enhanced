@@ -4751,13 +4751,28 @@ function dvRelayout() {
   if (st) st.style.perspective = (DV_CFG.perspective * k).toFixed(0) + 'px';
   const vv = $('discView');
   if (vv) vv.style.setProperty('--dvk', k.toFixed(3));
-  if (Math.abs(k - DV_LAST_FIT) < 0.004) return;
+  if (Math.abs(k - DV_LAST_FIT) < 0.002) return;
   DV_LAST_FIT = k;
-  DV.nodes.forEach((node) => {
-    const idx = parseInt(node.el.dataset.idx, 10);
-    if (DV_MODE === 'case') dvStyleCase(node.el, DV.items[idx]);
-    else dvStyleDisc(node.el);
-  });
+
+  // 逐个节点更新：单个节点出错不能中断整轮，否则后面的节点会保留旧尺寸
+  const restyle = (node) => {
+    try {
+      const idx = parseInt(node.el.dataset.idx, 10);
+      if (!isFinite(idx)) return;
+      const el = node.el;
+      // 缩放期间关掉过渡：否则宽高会以 0.72s 动画慢慢变，
+      // 这时滚回来看会以为"大小不一样"
+      const prev = el.style.transition;
+      el.style.transition = 'none';
+      if (DV_MODE === 'case') dvStyleCase(el, DV.items[idx]);
+      else dvStyleDisc(el);
+      // 离屏节点也按新视口摆位，避免下次进入时从旧位置/旧缩放飞过来
+      dvApplyPlacement(el, idx - DV.index);
+      void el.offsetWidth;
+      el.style.transition = prev;
+    } catch (e) { /* 单个节点失败不影响其它节点 */ }
+  };
+  DV.nodes.forEach(restyle);
   dvRenderSlots(false);
 }
 
