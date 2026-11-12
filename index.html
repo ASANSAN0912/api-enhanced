@@ -752,10 +752,12 @@
   /* 专辑盒（六面体）：正面封面，其余面用封面主色 */
   .case{position:absolute;inset:0;transform-style:preserve-3d}
   .case .f{position:absolute;left:0;top:0;width:100%;height:100%;
-    background:var(--cd,#26334a);border-radius:2px;overflow:hidden;
-    backface-visibility:hidden;-webkit-backface-visibility:hidden;
-    box-shadow:0 0 0 1px rgba(255,255,255,.10) inset}
+    background:var(--cd,#26334a);overflow:hidden;
+    backface-visibility:hidden;-webkit-backface-visibility:hidden}
   .case .front{background-color:#eef2f9;background-size:cover;background-position:center}
+  /* 侧壁外扩 1.2px：盖住面与面之间的亚像素接缝，避免露白边 */
+  .case .left,.case .right,.case .top,.case .bottom{
+    box-shadow:0 0 0 1.2px var(--cd,#26334a)}
   .case .left,.case .right{display:flex;align-items:center;justify-content:center}
   .case .left .tx{writing-mode:vertical-rl;text-orientation:mixed;
     color:rgba(255,255,255,.94);letter-spacing:1.2px;line-height:1.15;
