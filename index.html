@@ -444,7 +444,7 @@
      常驻：贴着窗口底边的一条细进度条（透明磨砂白）
      鼠标靠近底部：浮出完整控制（歌名/喜欢/音量/歌词/播放/时间） */
   #bottomBar{
-    position:fixed; left:0; right:0; bottom:0; z-index:9;
+    position:fixed; left:0; right:0; bottom:0; z-index:40;   /* 高于 3D 选歌视图(30)，否则退出后被它挡住收不到鼠标 */
     display:flex; flex-direction:column; align-items:center;
     color:#eaeaea; font-size:12px; user-select:none;
   }
@@ -796,7 +796,7 @@
      光碟槽位自己设了 pointer-events:auto，父层的 none 拦不住，必须在子元素上覆盖 */
   #discView:not(.show),#discView:not(.show) *{pointer-events:none!important}
   /* 淡出期间也不要拦截后续点击 */
-  #discView:not(.show){visibility:hidden}
+  #discView:not(.show){visibility:hidden;pointer-events:none!important}
   #discView.show{visibility:visible}
 
   .dv-stage{position:absolute;left:0;top:0;bottom:0;right:var(--dvlist);
