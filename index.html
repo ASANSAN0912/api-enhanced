@@ -4897,6 +4897,7 @@ function dvDominant(url, cb) {
 /* 专辑盒：正面封面，其余五面用封面主色铺满，左面竖排歌名 + 歌手 */
 function dvStyleCase(el, item) {
   const c = dvEff(), S = c.discSize, D = c.caseDepth;
+  dvSizeSlot(el, c);
   const box = el.querySelector('.case');
   if (!box) return;
   const q = (s) => box.querySelector(s);
@@ -5007,9 +5008,9 @@ function dvSetMode(mode) {
   if (b) b.textContent = DV_MODE === 'case' ? '切换成光盘' : '切换成专辑盒';
 }
 
-/* 盘尺寸 / 轴孔 / 阴影 / 厚度（沿 Z 轴堆叠薄层做出侧壁） */
-function dvStyleDisc(el) {
-  const c = dvEff();
+
+/* 槽位尺寸：光盘和专辑盒都必须调用，否则容器与被缩放的面尺寸不一致 */
+function dvSizeSlot(el, c) {
   el.style.width = c.discSize + 'px';
   el.style.height = c.discSize + 'px';
   el.style.marginLeft = (-c.discSize / 2) + 'px';
@@ -5017,6 +5018,11 @@ function dvStyleDisc(el) {
   el.style.transitionDuration = c.dur + 's, ' + (c.dur * 0.7).toFixed(2) + 's, ' +
     (c.dur * 0.7).toFixed(2) + 's';
   el.style.transitionTimingFunction = c.easing;
+}
+/* 盘尺寸 / 轴孔 / 阴影 / 厚度（沿 Z 轴堆叠薄层做出侧壁） */
+function dvStyleDisc(el) {
+  const c = dvEff();
+  dvSizeSlot(el, c);
 
   const face = el.querySelector('.face');
   if (face) {
