@@ -526,6 +526,7 @@
     border-radius:50%; background:#fff; box-shadow:0 0 6px rgba(0,0,0,.4);
   }
   #bottomBar:hover #bbPanel,
+  #bottomBar.show #bbPanel,
   #bottomBar:focus-within #bbPanel{ opacity:1; transform:none; pointer-events:auto; }
 
   .bb-song{ flex:1; min-width:0; order:-1; }
@@ -4186,6 +4187,29 @@ audio.addEventListener('pause', () => {
   // 律动值归零，避免停在半拍上
   try { document.documentElement.style.setProperty('--beat', '0'); } catch (e) { /* 忽略 */ }
 });
+/* 底部控制栏：用鼠标纵坐标驱动，不依赖 :hover
+   （Electron 的无边框窗口底部有缩放热区，:hover 有时收不到） */
+(function bindBottomBarAutoShow() {
+  const bar = document.getElementById('bottomBar');
+  if (!bar) return;
+  let hideTimer = null;
+  const show = () => { bar.classList.add('show'); if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } };
+  const hideSoon = () => {
+    if (hideTimer) return;
+    hideTimer = setTimeout(() => { bar.classList.remove('show'); hideTimer = null; }, 240);
+  };
+  window.addEventListener('mousemove', (e) => {
+    const h = window.innerHeight || 800;
+    if (e.clientY >= h - 96) show();
+    else if (e.clientY < h - 140) hideSoon();
+  }, { passive: true });
+  window.addEventListener('blur', () => bar.classList.remove('show'));
+  // 点一下底部也能唤出（触屏/触控板轻点）
+  window.addEventListener('mousedown', (e) => {
+    const h = window.innerHeight || 800;
+    if (e.clientY >= h - 96) show();
+  }, { passive: true });
+})();
 audio.addEventListener('ended', handleEnded);
 audio.addEventListener('error', onAudioErrorCors);   // 先处理 CORS 失败，别把播放搞哑
 audio.addEventListener('error', handleAudioError);
