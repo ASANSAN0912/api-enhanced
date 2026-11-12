@@ -679,7 +679,7 @@
   #discView.list-off .dv-stage{right:0}
 
   /* 歌单收起/展开把手（改成显眼的蓝色标签，白底上也能看见） */
-  #dvListHide,#dvListShow{position:absolute;z-index:6;top:50%;transform:translateY(-50%);
+  #dvListHide,#dvListShow{position:absolute;z-index:1002;top:50%;transform:translateY(-50%);
     width:28px;height:76px;padding:0;border:1px solid #cfe0f7;border-right:0;
     background:#eef4ff;color:#2f6fe0;cursor:pointer;font-size:17px;font-weight:600;
     display:flex;align-items:center;justify-content:center;line-height:1;
@@ -693,7 +693,7 @@
 
   /* 顶部：收起 3D 选歌（倒过来的箭头，向上滑出） */
   #dvTopClose{position:absolute;left:50%;top:12px;transform:translateX(-50%);
-    z-index:7;width:46px;height:34px;padding:0;border:0;background:none;
+    z-index:1001;width:46px;height:34px;padding:0;border:0;background:none;
     color:rgba(20,32,52,.52);cursor:pointer;
     display:flex;align-items:center;justify-content:center;
     transition:color .18s,transform .18s;-webkit-tap-highlight-color:transparent}
@@ -787,9 +787,11 @@
   @keyframes dvFormOut{
     to{scale:var(--out-scale,.9);rotate:x var(--out-rot,14deg);visibility:hidden}}
   @keyframes dvFadeOut{ to{opacity:0} }
+  /* visibility 在延迟期间生效（fill:both），让"停顿"是真正的空场；
+     它不像 opacity 那样把 3D 拍平，所以厚度全程保留 */
   @keyframes dvFormIn{
-    from{scale:var(--in-scale,1.06);rotate:x var(--in-rot,-8deg)}
-    to{scale:1;rotate:x 0deg}}
+    from{scale:var(--in-scale,1.06);rotate:x var(--in-rot,-8deg);visibility:hidden}
+    to{scale:1;rotate:x 0deg;visibility:visible}}
   /* 形态切换按钮 */
   #dvModeBtn{pointer-events:auto;display:inline-flex;align-items:center;
     background:#f2f6fd;border:1px solid #dde7f5;color:#2563c9;
@@ -798,7 +800,7 @@
   #dvModeBtn:hover{background:#e6efff;border-color:#b9d3f6}
 
   /* 收起歌单后，舞台下方显示专辑 / 曲目 / 歌手 */
-  #dvInfo{position:absolute;left:0;right:0;bottom:74px;z-index:4;
+  #dvInfo{position:absolute;left:0;right:0;bottom:74px;z-index:999;
     text-align:center;pointer-events:none;
     opacity:0;transform:translateY(10px);
     transition:opacity .34s ease,transform .36s cubic-bezier(.22,1,.36,1)}
@@ -810,7 +812,7 @@
     line-height:1.25}
   #dvInfo .ar{margin-top:calc(6px * var(--dvk,1));font-size:calc(13px * var(--dvk,1));color:#6b7c93;letter-spacing:.3px}
 
-  .dv-hint{position:absolute;left:0;right:0;bottom:16px;display:flex;
+  .dv-hint{position:absolute;left:0;right:0;bottom:16px;z-index:1000;display:flex;
     align-items:center;justify-content:center;gap:10px;
     font-size:11.5px;color:#93a2ba;letter-spacing:.4px;pointer-events:none}
   .dv-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -4893,7 +4895,7 @@ function dvApplyPlacement(el, d) {
 
 /* 显示形态：disc = 光盘 / case = 专辑盒（记住用户选择） */
 let DV_MODE = 'disc';
-try { DV_MODE = localStorage.getItem('ncm_disc_mode') === 'disc' ? 'disc' : 'case'; } catch (e) { /* 忽略 */ }
+try { DV_MODE = localStorage.getItem('ncm_disc_mode') === 'case' ? 'case' : 'disc'; } catch (e) { /* 忽略 */ }
 
 /* 从封面图里取"面积最大的颜色"，缓存起来避免重复计算 */
 const dvColorCache = new Map();
@@ -5209,8 +5211,9 @@ function dvRenderSlots(instant) {
         const clearAnim = () => node.el.classList.remove('appearing');
         const inner = node.el.querySelector('.disc, .case');
         if (inner) inner.addEventListener('animationend', clearAnim, { once: true });
+        // 兜底必须比动画总时长更长：延迟 + 时长 + 错峰，否则会中途中断动画
         window.setTimeout(clearAnim,
-          DV_CFG.inDur * 1000 + Math.abs(d) * DV_CFG.inStep + 140);
+          DV_CFG.inDelay + DV_CFG.inDur * 1000 + Math.abs(d) * DV_CFG.inStep + 160);
       }
       // 新进入的元素：先从窗口外一格就位（无动画），下一帧再滑到目标位置
       node.el.style.transition = 'none';
