@@ -4655,6 +4655,7 @@ const DV_CFG = {
   rotXUp: -40, rotYUp: 12.5, rotZUp: 20,
   rotXDown: 40, rotYDown: -25, rotZDown: -0.6,
   zUp: 0, zDown: 0,      // 每格 Z 后退
+  perspective: 4000,     // 透视距离（与实验室一致）
   opacityUp: 0, opacityDown: 0,
   blurStep: 1.3, blurMax: 8,
   zOrder: 'center',      // 遮挡顺序：up / down / center
@@ -4707,11 +4708,29 @@ let DV_LIST = true;     // 歌单面板是否展开
 const DV_BASE_W = 1280, DV_BASE_H = 760;
 let DV_LAST_FIT = 1;
 
+let DV_REF = null;   // 缩放基准：首次打开 3D 时的舞台尺寸
+
 function dvFit() {
   const st = $('dvStage');
   const w = (st && st.clientWidth) || window.innerWidth || DV_BASE_W;
   const h = (st && st.clientHeight) || window.innerHeight || DV_BASE_H;
-  const k = Math.min(w / DV_BASE_W, h / DV_BASE_H);
+
+  if (!DV_REF) {
+    try {
+      const saved = localStorage.getItem('ncm_dv_ref');
+      if (saved) {
+        const o = JSON.parse(saved);
+        if (o && o.w > 0 && o.h > 0) DV_REF = o;
+      }
+    } catch (e) { /* 忽略 */ }
+    if (!DV_REF) {
+      // 首次运行：把当前舞台尺寸记为 1.0 基准 → 布局与实验室的原始数值完全一致
+      DV_REF = { w: w, h: h };
+      try { localStorage.setItem('ncm_dv_ref', JSON.stringify(DV_REF)); } catch (e) { /* 忽略 */ }
+    }
+  }
+
+  const k = Math.min(w / DV_REF.w, h / DV_REF.h);
   return Math.max(0.34, Math.min(1.3, k));
 }
 
