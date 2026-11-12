@@ -407,16 +407,75 @@
     scale: calc(1 + var(--beat, 0) * 0.16);
   }
 
-  #bottomBar{
-    position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:8;
-    display:flex; align-items:center; transition:opacity .25s ease, transform .25s ease;
-    color:#eaeaea; font-size:12px; user-select:none; width:70vw; max-width:70vw;
-  }
-  #bottomBarFull{ display:flex; align-items:center; gap:10px; width:100%; min-width:0; }
-  #bottomBarMini{ display:none; align-items:center; gap:8px; width:100%; }
-  #bottomBar.collapsed #bottomBarFull{display:none}
-  #bottomBar.collapsed #bottomBarMini{display:flex}
+  /* ==================== 统一滚动条 ====================
+     默认的浅色滚动条在大面积深色面板里非常刺眼（设置面板尤其明显）。
+     这里统一成"半透明蓝色细条 + 极淡轨道"，所有可滚动区域自动生效。 */
+  *{ scrollbar-width:thin; scrollbar-color:rgba(120,160,255,.36) rgba(255,255,255,.055); }
+  *::-webkit-scrollbar{ width:7px; height:7px; }
+  *::-webkit-scrollbar-track{ background:rgba(255,255,255,.05); border-radius:4px; }
+  *::-webkit-scrollbar-thumb{ background:rgba(120,160,255,.36); border-radius:4px; }
+  *::-webkit-scrollbar-thumb:hover{ background:rgba(120,160,255,.58); }
+  *::-webkit-scrollbar-corner{ background:transparent; }
 
+  /* ==================== 底部控制栏 ====================
+     常驻：贴着窗口底边的一条细进度条（透明磨砂白）
+     鼠标靠近底部：浮出完整控制（歌名/喜欢/音量/歌词/播放/时间） */
+  #bottomBar{
+    position:fixed; left:0; right:0; bottom:0; z-index:9;
+    display:flex; flex-direction:column; align-items:center;
+    color:#eaeaea; font-size:12px; user-select:none;
+  }
+  /* 悬停感应区：底部 70px 一片透明区域，鼠标进来就浮出控制条 */
+  #bottomBar::before{
+    content:''; position:absolute; left:0; right:0; bottom:0; height:70px;
+  }
+
+  /* 常驻进度条：半透明磨砂白，贴住窗口底边 */
+  #bbProgress{
+    width:100%; height:3px;
+    /* 轨道用半透明深色 + 磨砂，亮背景（浅色封面/白雾）上也看得见 */
+    background:rgba(8,12,20,.34);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.10), 0 -1px 0 rgba(0,0,0,.18);
+    cursor:pointer; position:relative; border-radius:0;
+  }
+  #bbProgress .song-progress-fill{
+    height:100%; width:0%; border-radius:0;
+    background:rgba(255,255,255,.62);
+    box-shadow:0 0 8px rgba(255,255,255,.32);
+    transition:width .12s linear;
+  }
+  #bbProgress:hover{ height:5px; }
+  #bbProgress{ transition:height .18s ease; }
+
+  /* 悬停浮出的控制区 */
+  #bbPanel{
+    display:flex; align-items:center; gap:10px;
+    width:min(840px,94vw); box-sizing:border-box;
+    margin-bottom:10px; padding:8px 14px; border-radius:14px;
+    background:rgba(14,18,26,.5); border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    opacity:0; transform:translateY(12px); pointer-events:none;
+    transition:opacity .24s ease, transform .24s ease;
+  }
+  #bottomBar:hover #bbPanel,
+  #bottomBar:focus-within #bbPanel{ opacity:1; transform:none; pointer-events:auto; }
+
+  .bb-song{ flex:1; min-width:0; order:-1; }
+  .bb-name{ font-size:13px; font-weight:600; color:#fff; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; text-shadow:0 1px 6px rgba(0,0,0,.7); }
+  .bb-artist{ font-size:11px; color:#a9bdd8; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; margin-top:1px; }
+  .bb-like{ flex:0 0 auto; display:flex; align-items:center; gap:4px; cursor:pointer;
+    background:transparent; border:0; color:#a9bdd8; padding:2px 4px; border-radius:8px;
+    font-size:11px; transition:color .15s, background .15s; }
+  .bb-like svg{ width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8; }
+  .bb-like:hover{ background:rgba(255,255,255,.09); color:#fff; }
+  .bb-like.liked{ color:#ff5d7a; }
+  .bb-like.liked svg{ fill:currentColor; stroke:currentColor; }
+  .bb-vol{ flex:0 0 auto; display:flex; align-items:center; gap:6px; }
+  .bb-vol svg{ width:15px; height:15px; fill:currentColor; color:#a9bdd8; }
+  .bb-vol input[type=range]{ width:64px; }
   .bar-btn{
     flex:0 0 auto; width:32px;height:32px; border-radius:50%;
     border:1px solid rgba(255,255,255,.15); background:rgba(15,18,25,.5);
@@ -517,6 +576,8 @@
   #c.bg-switching{filter:blur(9px) saturate(1.06);opacity:.72}
 
   /* 切歌时的淡入淡出 */
+  .bb-song{transition:opacity .2s ease, transform .2s ease}
+  .bb-song.swap-out{opacity:0;transform:translateY(-3px)}
   #player .now-playing{transition:opacity .2s ease, transform .2s ease}
   #player .now-playing.swap-out{opacity:0;transform:translateY(-3px)}
 
@@ -1165,16 +1226,7 @@
   </div>
   <div id="likedPanel"></div>
 
-  <div class="now-playing">
-    <div class="name" id="nowName">未播放</div>
-    <div class="artist" id="nowArtist">—</div>
-  </div>
-  <div class="like-row">
-    <button id="likeBtn" class="like-btn" title="喜欢这首歌" aria-label="喜欢这首歌" disabled>
-      <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9.5C1.5 7.5 4 4 7.5 4c2 0 3.5 1 4.5 2.5C13 5 14.5 4 16.5 4 20 4 22.5 7.5 21 11.5 19 16.5 12 21 12 21z"/></svg>
-      <span id="likeText">喜欢</span>
-    </button>
-  </div>
+  <!-- 歌名/歌手、喜欢、音量、歌词开关已移到页面底部的常驻控制条 -->
   <div class="controls">
     <button id="playPauseBtn" class="song-play-pause" title="播放 / 暂停" aria-label="播放或暂停" disabled>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -1184,17 +1236,7 @@
     </div>
     <span class="time-label song-time" id="timeLabel">0:00 / 0:00</span>
   </div>
-  
-  <div class="range-row" style="margin-top: 2px;">
-    <span>音量</span>
-    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8">
-    <span class="val" id="vVolume">80%</span>
-  </div>
 
-  <label class="toggle-row" style="margin-top:4px;">
-    <span class="lbl">显示歌词</span>
-    <input type="checkbox" id="lyricToggle" checked><div class="switch"></div>
-  </label>
 </div>
 
 <button id="playerRestoreBtn" class="visible" title="展开播放器" aria-label="展开播放器">
@@ -1239,11 +1281,6 @@
 
   <footer class="bv-foot">
     <div class="bv-fcover"><img id="bvCover" alt=""></div>
-    <div class="bv-fmeta">
-      <div id="bvFName">未播放</div>
-      <div id="bvFArtist">—</div>
-    </div>
-    <div id="bvLyric"></div>
     <div class="bv-fctrl">
       <button class="bv-btn" type="button" id="bvPrev" title="上一首">&#9198;</button>
       <button class="bv-btn song-play-pause" type="button" id="bvPlay" title="播放 / 暂停" aria-label="播放或暂停" disabled>&#9654;</button>
@@ -1306,20 +1343,35 @@
 </div>
 
 <div id="bottomBar">
-  <div id="bottomBarFull">
+  <!-- 鼠标靠近底部才浮出：歌名/歌手 + 喜欢 + 音量 + 歌词 + 播放控制 + 时间 -->
+  <div id="bbPanel">
+    <div class="bb-song">
+      <div class="bb-name" id="nowName">未播放</div>
+      <div class="bb-artist" id="nowArtist">—</div>
+    </div>
+    <button id="likeBtn" class="bb-like" title="喜欢这首歌" aria-label="喜欢这首歌" disabled>
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9.5C1.5 7.5 4 4 7.5 4c2 0 3.5 1 4.5 2.5C13 5 14.5 4 16.5 4 20 4 22.5 7.5 21 11.5 19 16.5 12 21 12 21z"/></svg>
+      <span id="likeText">喜欢</span>
+    </button>
+    <div class="bb-vol">
+      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a3.5 3.5 0 0 0-2-3.15v6.3A3.5 3.5 0 0 0 16.5 12z"/></svg>
+      <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8" title="音量">
+    </div>
+    <button id="bbLyricBtn" class="bar-btn" title="显示 / 隐藏歌词" aria-label="显示或隐藏歌词"
+            style="width:28px;height:28px;border-radius:8px">
+      <svg viewBox="0 0 24 24"><path d="M4 5h16v2H4zm0 6h11v2H4zm0 6h16v2H4z"/></svg>
+    </button>
     <button class="bar-btn" id="prevBtn" title="上一首" aria-label="上一首"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
     <button class="bar-btn bar-play song-play-pause" id="barPlayPause" title="播放 / 暂停" aria-label="播放或暂停" disabled><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
     <button class="bar-btn" id="nextBtn" title="下一首" aria-label="下一首"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
-    <button class="bar-btn bar-mode" id="modeBtn" title="顺序播放" aria-label="切换播放模式">🔁</button>
-    <div class="song-progress" title="点击跳转"><div class="song-progress-fill"></div></div>
+    <button class="bar-btn bar-mode" id="modeBtn" title="列表循环" aria-label="切换播放模式"></button>
     <span class="song-time">0:00 / 0:00</span>
-    <button class="bar-btn" id="collapseBarBtn" title="收起控制条" aria-label="收起控制条"><svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></button>
+    <input type="checkbox" id="lyricToggle" checked hidden>
   </div>
-  <div id="bottomBarMini">
-    <div class="song-progress" title="点击跳转"><div class="song-progress-fill"></div></div>
-    <button class="bar-btn" id="expandBarBtn" title="展开控制条" aria-label="展开控制条"><svg viewBox="0 0 24 24"><path d="M7 14l5-5 5 5z"/></svg></button>
-  </div>
-</div>
+
+  <!-- 常驻：透明磨砂白进度条 -->
+  <div id="bbProgress" class="song-progress" title="点击跳转"><div class="song-progress-fill"></div></div>
+</div>iv>
 
 <script>
 "use strict";
@@ -2697,13 +2749,41 @@ const $ = (id) => document.getElementById(id);
 const searchInput = $('searchInput'), searchBtn = $('searchBtn'), resultList = $('resultList');
 const nowName = $('nowName'), nowArtist = $('nowArtist'), playerStatus = $('playerStatus');
 const coverBgBtn = $('coverBgBtn'), bottomBar = $('bottomBar');
-const collapseBarBtn = $('collapseBarBtn'), expandBarBtn = $('expandBarBtn');
+const barLyricBtn = $('bbLyricBtn');
 const prevBtn = $('prevBtn'), nextBtn = $('nextBtn'), modeBtn = $('modeBtn');
 const rootStyle = document.documentElement.style;
 
 const PLAY_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
 const PAUSE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
-const MODE_CONFIG = { list: { label: '🔁', title: '顺序播放' }, single: { label: '🔂', title: '单曲循环' }, shuffle: { label: '🔀', title: '随机播放' } };
+const MODE_ICON = {
+  order:   '<svg viewBox="0 0 1024 1024" width="17" height="17" fill="currentColor"><path d="M106 85.5c-22.1 0-40 17.9-40 40v760.6c0 22.1 17.9 40 40 40s40-17.9 40-40V125.5c0-22.1-17.9-40-40-40zM457.3 85.5c-22.1 0-40 17.9-40 40v760.6c0 22.1 17.9 40 40 40s40-17.9 40-40V125.5c0-22.1-17.9-40-40-40zM955.1 661.4c-7.1-12.4-20.3-20-34.6-20h-72c0-0.8 0.1-1.5 0.1-2.3V125.5c0-22.1-17.9-40-40-40s-40 17.9-40 40v513.6c0 0.8 0 1.5 0.1 2.3h-87c-14.3 0-27.5 7.6-34.6 20-7.1 12.4-7.1 27.6 0 40l119.4 206.8c7.1 12.4 20.3 20 34.6 20s27.5-7.6 34.6-20l119.4-206.8c7.2-12.4 7.2-27.7 0-40z m-154 146.8L751 721.4h100.2l-50.1 86.8z"/></svg>',
+  list:    '<svg viewBox="0 0 1024 1024" width="17" height="17" fill="currentColor"><path d="M361.5 727.8c-119.1 0-215.9-96.9-215.9-215.9 0-119.1 96.9-215.9 215.9-215.9 2.3 0 4.6-0.2 6.8-0.6v58.3c0 12.3 14 19.4 23.9 12.1l132.6-97.6c8.1-6 8.1-18.2 0-24.2l-132.6-97.6c-9.9-7.3-23.9-0.2-23.9 12.1v58.1c-2.2-0.4-4.5-0.6-6.8-0.6-39.8 0-78.5 7.9-115 23.4-35.2 15-66.8 36.3-94 63.5s-48.6 58.8-63.5 94c-15.5 36.5-23.4 75.2-23.4 115s7.9 78.5 23.4 115c15 35.2 36.3 66.8 63.5 94s58.8 48.6 94 63.5c36.5 15.5 75.2 23.4 115 23.4 22.1 0 40-17.9 40-40s-17.9-40-40-40zM938.2 396.9c-15-35.2-36.3-66.8-63.5-94s-58.8-48.6-94-63.5c-36.5-15.5-75.2-23.4-115-23.4-22.1 0-40 17.9-40 40s17.9 40 40 40c119.1 0 215.9 96.9 215.9 215.9 0 119.1-96.9 215.9-215.9 215.9-4.1 0-8.1 0.6-11.8 1.8v-60.8c0-12.3-14-19.4-23.9-12.1l-132.6 97.6c-8.1 6-8.1 18.2 0 24.2L629.9 876c9.9 7.3 23.9 0.2 23.9-12.1V806c3.7 1.2 7.7 1.8 11.8 1.8 39.8 0 78.5-7.9 115-23.4 35.2-15 66.8-36.3 94-63.5s48.6-58.8 63.5-94c15.5-36.5 23.4-75.2 23.4-115s-7.8-78.5-23.3-115z"/></svg>',
+  single:  '<svg viewBox="0 0 1024 1024" width="17" height="17" fill="currentColor"><path d="M361.5 727.8c-119.1 0-215.9-96.9-215.9-215.9 0-119.1 96.9-215.9 215.9-215.9 2.3 0 4.6-0.2 6.8-0.6v58.3c0 12.3 14 19.4 23.9 12.1l132.6-97.6c8.1-6 8.1-18.2 0-24.2l-132.6-97.6c-9.9-7.3-23.9-0.2-23.9 12.1v58.1c-2.2-0.4-4.5-0.6-6.8-0.6-39.8 0-78.5 7.9-115 23.4-35.2 15-66.8 36.3-94 63.5s-48.6 58.8-63.5 94c-15.5 36.5-23.4 75.2-23.4 115s7.9 78.5 23.4 115c15 35.2 36.3 66.8 63.5 94s58.8 48.6 94 63.5c36.5 15.5 75.2 23.4 115 23.4 22.1 0 40-17.9 40-40s-17.9-40-40-40zM938.2 396.9c-15-35.2-36.3-66.8-63.5-94s-58.8-48.6-94-63.5c-36.5-15.5-75.2-23.4-115-23.4-22.1 0-40 17.9-40 40s17.9 40 40 40c119.1 0 215.9 96.9 215.9 215.9 0 119.1-96.9 215.9-215.9 215.9-4.1 0-8.1 0.6-11.8 1.8v-60.8c0-12.3-14-19.4-23.9-12.1l-132.6 97.6c-8.1 6-8.1 18.2 0 24.2L629.9 876c9.9 7.3 23.9 0.2 23.9-12.1V806c3.7 1.2 7.7 1.8 11.8 1.8 39.8 0 78.5-7.9 115-23.4 35.2-15 66.8-36.3 94-63.5s48.6-58.8 63.5-94c15.5-36.5 23.4-75.2 23.4-115s-7.8-78.5-23.3-115z"/><path d="M512.8 660.6c22.1-0.1 39.9-18.1 39.8-40.2l-1.2-214.1c-0.1-22-18-39.8-40-39.8h-0.2c-22.1 0.1-39.9 18.1-39.8 40.2l1.2 214.1c0.1 22 18 39.8 40 39.8h0.2z"/></svg>',
+  shuffle: '<svg viewBox="0 0 1024 1024" width="17" height="17" fill="currentColor"><path d="M914.2 705L796.4 596.8c-8.7-8-22.7-1.8-22.7 10V688c-69.5-1.8-134-39.7-169.3-99.8l-45.1-77 47-80.2c34.9-59.6 98.6-97.4 167.4-99.8v60.1c0 11.8 14 17.9 22.7 10l117.8-108.1c5.8-5.4 5.8-14.6 0-19.9L796.4 165c-8.7-8-22.7-1.8-22.7 10v76H758c-4.7 0-9.3 0.8-13.5 2.3-36.5 4.7-72 16.6-104.1 35-42.6 24.4-78.3 59.8-103.1 102.2L513 432l-24.3-41.5c-24.8-42.4-60.5-77.7-103.1-102.2C343 263.9 294.5 251 245.3 251H105c-22.1 0-40 17.9-40 40s17.9 40 40 40h140.3c71.4 0 138.3 38.3 174.4 99.9l47 80.2-45.1 77c-36.2 61.7-103 99.9-174.4 99.9H105c-22.1 0-40 17.9-40 40s17.9 40 40 40l142 0.1h0.2c49.1 0 97.6-12.9 140.2-37.3 42.7-24.4 78.3-59.8 103.2-102.2l22.4-38.3 22.4 38.3c24.8 42.4 60.5 77.8 103.2 102.2 33.1 18.9 69.6 30.9 107.3 35.4 3.8 1.2 7.8 1.8 11.9 1.8l15.9 0.1v55c0 11.8 14 17.9 22.7 10L914.2 725c5.9-5.5 5.9-14.7 0-20z"/></svg>',
+};
+const MODE_CONFIG = {
+  order:   { icon: MODE_ICON.order,   title: '顺序播放' },
+  list:    { icon: MODE_ICON.list,    title: '列表循环' },
+  single:  { icon: MODE_ICON.single,  title: '单曲循环' },
+  shuffle: { icon: MODE_ICON.shuffle, title: '随机播放' },
+};
+const MODE_ORDER = ['order', 'list', 'single', 'shuffle'];
+function applyModeIcon() {
+  const cfg = MODE_CONFIG[playMode] || MODE_CONFIG.list;
+  if (!modeBtn) return;
+  modeBtn.innerHTML = cfg.icon;
+  modeBtn.title = cfg.title;
+  modeBtn.setAttribute('aria-label', cfg.title);
+}
+// 初始化图标与歌词开关外观
+applyModeIcon();
+try {
+  const _cb = $('lyricToggle');
+  if (barLyricBtn && _cb) {
+    barLyricBtn.classList.toggle('on', _cb.checked);
+    barLyricBtn.style.color = _cb.checked ? '#8ec5ff' : '';
+  }
+} catch (e) { /* 忽略 */ }
 
 let statusTimer = null;
 function setPlayerStatus(msg) {
@@ -3321,7 +3401,14 @@ function playNext(auto) {
     playSongAt(idx); return;
   }
   let next = currentPlayIndex + 1;
-  if (next >= playlist.length) next = 0;
+  if (next >= playlist.length) {
+    if (playMode === 'order') {          // 顺序播放：到最后一首就停
+      audio.pause();
+      setPlayerStatus('顺序播放结束');
+      return;
+    }
+    next = 0;                            // 列表循环：回到第一首
+  }
   playSongAt(next);
 }
 
@@ -3339,17 +3426,16 @@ function playPrev() {
 }
 
 function cyclePlayMode() {
-  if (playMode === 'list') playMode = 'shuffle';
-  else if (playMode === 'shuffle') playMode = 'single';
-  else playMode = 'list';
-  const cfg = MODE_CONFIG[playMode];
-  modeBtn.textContent = cfg.label; modeBtn.title = cfg.title;
+  const i = MODE_ORDER.indexOf(playMode);
+  playMode = MODE_ORDER[(i + 1) % MODE_ORDER.length];
+  applyModeIcon();
+  setPlayerStatus('播放模式：' + MODE_CONFIG[playMode].title);
 }
 
 /* 切歌时：信息淡出 → 更新 → 淡入（配合 CSS 的 .swap-out） */
 const swapTimers = new WeakMap();
 function fadeSwapText(nodeA, textA, nodeB, textB) {
-  const wrap = nodeA && nodeA.closest ? nodeA.closest('.now-playing') : null;
+  const wrap = nodeA && nodeA.closest ? (nodeA.closest('.now-playing') || nodeA.closest('.bb-song')) : null;
   const apply = () => {
     if (nodeA) nodeA.textContent = textA;
     if (nodeB) nodeB.textContent = textB;
@@ -3482,7 +3568,14 @@ function handleEnded() {
     playSongAt(idx); return;
   }
   let next = currentPlayIndex + 1;
-  if (next >= playlist.length) next = 0;
+  if (next >= playlist.length) {
+    if (playMode === 'order') {          // 顺序播放：到最后一首就停
+      audio.pause();
+      setPlayerStatus('顺序播放结束');
+      return;
+    }
+    next = 0;                            // 列表循环：回到第一首
+  }
   playSongAt(next);
 }
 
@@ -3941,8 +4034,17 @@ document.querySelectorAll('.song-progress').forEach(bar => {
 prevBtn.addEventListener('click', playPrev);
 nextBtn.addEventListener('click', () => playNext(false));
 modeBtn.addEventListener('click', cyclePlayMode);
-collapseBarBtn.addEventListener('click', () => bottomBar.classList.add('collapsed'));
-expandBarBtn.addEventListener('click', () => bottomBar.classList.remove('collapsed'));
+// 底部栏的歌词开关：驱动隐藏的 lyricToggle（设置面板与存档逻辑都依赖它）
+if (barLyricBtn) {
+  barLyricBtn.addEventListener('click', () => {
+    const cb = $('lyricToggle');
+    if (!cb) return;
+    cb.checked = !cb.checked;
+    cb.dispatchEvent(new Event('change', { bubbles: true }));
+    barLyricBtn.classList.toggle('on', cb.checked);
+    barLyricBtn.style.color = cb.checked ? '#8ec5ff' : '';
+  });
+}
 $('likeBtn').addEventListener('click', toggleLike);
 $('toggleLikedBtn').addEventListener('click', toggleLikedPanel);
 
@@ -4519,21 +4621,14 @@ function bvRenderUser() {
 }
 
 function bvSyncNow() {
-  const n = $('bvFName'), a = $('bvFArtist'), c = $('bvCover'), lyr = $('bvLyric');
-  if (!n) return;
+  // 大视口底部只保留封面 + 播放控制（歌名/歌手、歌词已按需求移除）
+  const c = $('bvCover');
   bvRenderUser();
-  n.textContent = currentSong ? currentSong.name : '未播放';
-  a.textContent = currentSong ? (currentSong.artist || '—') : '—';
   if (c) {
     const u = (currentSong && currentSong.cover) || '';
     if (c.getAttribute('src') !== u) {
       if (u) c.setAttribute('src', u); else c.removeAttribute('src');
     }
-  }
-  if (lyr) {
-    const line = (currentLyricIndex >= 0 && currentLyrics[currentLyricIndex])
-      ? currentLyrics[currentLyricIndex].text : '';
-    if (lyr.textContent !== line) lyr.textContent = line || '';
   }
   document.querySelectorAll('#bvList .bv-row.on').forEach(r => r.classList.remove('on'));
   if (currentSong) {
