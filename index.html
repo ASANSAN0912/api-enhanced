@@ -311,6 +311,29 @@
   }
   .lyric-line.lyric-empty{ font-size:18px;font-style:italic; }
 
+  /* ==================== 暂停时冻结歌词动效 ====================
+     注意：歌词的"上跳/放大"用的是 transform: scale() translateY()，
+     不是独立属性 scale/translate，所以必须覆盖 transform 才能真的齐平。 */
+  body.paused .lyric-line *{ animation-play-state:paused !important; }
+  /* 暂停/恢复时用缓动让字"落回基线"而不是硬切（0.42s，先快后慢） */
+  body.paused .lyric-line.active .lyric-char,
+  body.paused .lyric-line.active .lyric-char.sung,
+  body.paused .lyric-line.active .lyric-char.singing{
+    transition:transform .42s cubic-bezier(.22,1,.36,1) !important;
+  }
+  body.paused .lyric-line.active .lyric-char,
+  body.paused .lyric-line.active .lyric-char.sung,
+  body.paused .lyric-line.active .lyric-char.singing{
+    /* 只取消"上跳 + 放大"，让整行齐平；
+       颜色/发光保持原样 —— 已唱的字继续高亮，没唱的仍是 35% 灰白 */
+    transform:none !important;
+    pointer-events:none;
+  }
+  body.paused.lyric-beat .lyric-line.active{
+    filter:blur(0) brightness(1) !important;             /* 暂停不呼吸 */
+  }
+  body.paused .lyric-char.singing{ position:static !important; z-index:auto !important; }
+
   body.hide-past .lyric-line.past{ opacity:0; }
   body.hide-future .lyric-line:not(.active):not(.past){ opacity:0; }
 
@@ -450,13 +473,57 @@
 
   /* 悬停浮出的控制区 */
   #bbPanel{
-    display:flex; align-items:center; gap:10px;
+    display:flex; flex-direction:column; align-items:stretch; gap:9px;
     width:min(840px,94vw); box-sizing:border-box;
-    margin-bottom:10px; padding:8px 14px; border-radius:14px;
+    margin-bottom:0; padding:11px 14px 9px; border-radius:14px;
     background:rgba(14,18,26,.5); border:1px solid rgba(255,255,255,.1);
     backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
     opacity:0; transform:translateY(12px); pointer-events:none;
     transition:opacity .24s ease, transform .24s ease;
+  }
+  .bb-row{ display:flex; align-items:center; gap:10px; width:100%; min-width:0; }
+  /* 控制栏内部的进度条 */
+  #bbProgress{
+    flex:1 1 auto; width:auto; min-width:90px; max-width:640px; height:4px; border-radius:2px;
+    background:rgba(8,12,20,.42);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.10);
+    cursor:pointer; position:relative;
+  }
+  #bbProgress .song-progress-fill{
+    height:100%; width:0%; border-radius:2px;
+    background:rgba(255,255,255,.72);
+    box-shadow:0 0 8px rgba(255,255,255,.35);
+    transition:width .12s linear;
+  }
+  #bbProgress:hover{ height:6px; transition:height .15s ease; }
+  /* 小视口面板里不再显示进度条与时间 */
+  #player .controls .song-progress,
+  #player .controls .time-label{ display:none !important; }
+  /* 音量：默认只显示图标，悬停/点开展开竖向拉条 */
+  .bb-vol{ position:relative; flex:0 0 auto; }
+  .bb-vol .vol-pop{
+    position:absolute; left:50%; bottom:26px; transform:translateX(-50%) scaleY(.85);
+    transform-origin:bottom center;
+    padding:10px 8px; border-radius:10px;
+    background:rgba(14,18,26,.86); border:1px solid rgba(255,255,255,.14);
+    box-shadow:0 6px 20px rgba(0,0,0,.45);
+    opacity:0; pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .bb-vol:hover .vol-pop,
+  .bb-vol.open .vol-pop{ opacity:1; pointer-events:auto; transform:translateX(-50%) scaleY(1); }
+  .bb-vol input[type=range]{
+    width:6px; height:96px; margin:0; cursor:pointer;
+    writing-mode:vertical-lr; direction:rtl;
+    -webkit-appearance:none; appearance:none; background:transparent;
+  }
+  .bb-vol input[type=range]::-webkit-slider-runnable-track{
+    width:4px; height:96px; border-radius:2px; background:rgba(255,255,255,.22);
+  }
+  .bb-vol input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; margin-left:-4px;
+    border-radius:50%; background:#fff; box-shadow:0 0 6px rgba(0,0,0,.4);
   }
   #bottomBar:hover #bbPanel,
   #bottomBar:focus-within #bbPanel{ opacity:1; transform:none; pointer-events:auto; }
@@ -1281,6 +1348,10 @@
 
   <footer class="bv-foot">
     <div class="bv-fcover"><img id="bvCover" alt=""></div>
+    <div class="bv-fmeta">
+      <div id="bvFName">未播放</div>
+      <div id="bvFArtist">—</div>
+    </div>
     <div class="bv-fctrl">
       <button class="bv-btn" type="button" id="bvPrev" title="上一首">&#9198;</button>
       <button class="bv-btn song-play-pause" type="button" id="bvPlay" title="播放 / 暂停" aria-label="播放或暂停" disabled>&#9654;</button>
@@ -1345,17 +1416,24 @@
 <div id="bottomBar">
   <!-- 鼠标靠近底部才浮出：歌名/歌手 + 喜欢 + 音量 + 歌词 + 播放控制 + 时间 -->
   <div id="bbPanel">
+    <div class="bb-row">
     <div class="bb-song">
       <div class="bb-name" id="nowName">未播放</div>
       <div class="bb-artist" id="nowArtist">—</div>
     </div>
+    <div id="bbProgress" class="song-progress" title="点击跳转"><div class="song-progress-fill"></div></div>
     <button id="likeBtn" class="bb-like" title="喜欢这首歌" aria-label="喜欢这首歌" disabled>
       <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9-9.5C1.5 7.5 4 4 7.5 4c2 0 3.5 1 4.5 2.5C13 5 14.5 4 16.5 4 20 4 22.5 7.5 21 11.5 19 16.5 12 21 12 21z"/></svg>
       <span id="likeText">喜欢</span>
     </button>
-    <div class="bb-vol">
-      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a3.5 3.5 0 0 0-2-3.15v6.3A3.5 3.5 0 0 0 16.5 12z"/></svg>
-      <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8" title="音量">
+    <div class="bb-vol" id="bbVol">
+      <button class="bar-btn" id="bbVolBtn" title="音量" aria-label="音量"
+              style="width:28px;height:28px;border-radius:8px">
+        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a3.5 3.5 0 0 0-2-3.15v6.3A3.5 3.5 0 0 0 16.5 12z"/></svg>
+      </button>
+      <div class="vol-pop">
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8" title="音量">
+      </div>
     </div>
     <button id="bbLyricBtn" class="bar-btn" title="显示 / 隐藏歌词" aria-label="显示或隐藏歌词"
             style="width:28px;height:28px;border-radius:8px">
@@ -1367,10 +1445,10 @@
     <button class="bar-btn bar-mode" id="modeBtn" title="列表循环" aria-label="切换播放模式"></button>
     <span class="song-time">0:00 / 0:00</span>
     <input type="checkbox" id="lyricToggle" checked hidden>
+    </div>
   </div>
 
-  <!-- 常驻：透明磨砂白进度条 -->
-  <div id="bbProgress" class="song-progress" title="点击跳转"><div class="song-progress-fill"></div></div>
+
 </div>iv>
 
 <script>
@@ -4035,6 +4113,17 @@ prevBtn.addEventListener('click', playPrev);
 nextBtn.addEventListener('click', () => playNext(false));
 modeBtn.addEventListener('click', cyclePlayMode);
 // 底部栏的歌词开关：驱动隐藏的 lyricToggle（设置面板与存档逻辑都依赖它）
+// 音量按钮：点击固定展开竖向拉条
+const bbVol = $('bbVol'), bbVolBtn = $('bbVolBtn');
+if (bbVol && bbVolBtn) {
+  bbVolBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    bbVol.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!bbVol.contains(e.target)) bbVol.classList.remove('open');
+  });
+}
 if (barLyricBtn) {
   barLyricBtn.addEventListener('click', () => {
     const cb = $('lyricToggle');
@@ -4091,6 +4180,12 @@ coverBgBtn.addEventListener('click', (e) => {
 
 audio.addEventListener('play', updateAllPlayButtons);
 audio.addEventListener('pause', updateAllPlayButtons);
+audio.addEventListener('play',  () => { document.body.classList.remove('paused'); });
+audio.addEventListener('pause', () => {
+  document.body.classList.add('paused');
+  // 律动值归零，避免停在半拍上
+  try { document.documentElement.style.setProperty('--beat', '0'); } catch (e) { /* 忽略 */ }
+});
 audio.addEventListener('ended', handleEnded);
 audio.addEventListener('error', onAudioErrorCors);   // 先处理 CORS 失败，别把播放搞哑
 audio.addEventListener('error', handleAudioError);
@@ -4621,9 +4716,10 @@ function bvRenderUser() {
 }
 
 function bvSyncNow() {
-  // 大视口底部只保留封面 + 播放控制（歌名/歌手、歌词已按需求移除）
-  const c = $('bvCover');
+  const n = $('bvFName'), a = $('bvFArtist'), c = $('bvCover');
   bvRenderUser();
+  if (n) n.textContent = currentSong ? currentSong.name : '未播放';
+  if (a) a.textContent = currentSong ? (currentSong.artist || '—') : '—';
   if (c) {
     const u = (currentSong && currentSong.cover) || '';
     if (c.getAttribute('src') !== u) {
