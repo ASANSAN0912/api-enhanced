@@ -4674,11 +4674,13 @@ const DV_CFG = {
   outDur: 0.28, outDelay: 0, outScale: 0.9, outRot: 45,
   outEase: 'cubic-bezier(.22,1,.36,1)',
   inDur: 1.03, inDelay: 520, inScale: 1.02, inRot: -30,
-  inStep: 43, inEase: 'cubic-bezier(.22,1,.36,1)', hold: 80,
+  inStep: 43, inEase: 'cubic-bezier(.22,1,.36,1)', hold: 340,
   dur: 0.72,             // 切换动画时长 s
   easing: 'cubic-bezier(.2,.9,.25,1)',
 };
 const DV_SPAN = DV_CFG.span;
+// 便于自动化核对参数（无副作用）
+window.__dvDebug = { cfg: DV_CFG, getMode: () => DV_MODE };
 
 /* ==================== 横向排列（歌单收起时） ==================== */
 Object.assign(DV_CFG, {
