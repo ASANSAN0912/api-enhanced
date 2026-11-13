@@ -4267,18 +4267,28 @@ audio.addEventListener('pause', () => {
     else if (e.clientY < h - 140) hideSoon();
   }, { passive: true });
   window.addEventListener('blur', () => bar.classList.remove('show'));
-  // 白条：点击打开控制栏；点击控制栏以外的任意区域关闭
+  // ===== 底部控制栏显隐：用内联 style.display（最高优先级，CSS 无法覆盖）=====
   const handle = document.getElementById('bbHandle');
+  const bbPanel = document.getElementById('bbPanel');
+  const bbShow = () => {
+    if (bbPanel) bbPanel.style.display = 'flex';
+    bar.classList.remove('hidden');
+  };
+  const bbHide = () => {
+    if (bbPanel) bbPanel.style.display = 'none';
+    bar.classList.add('hidden');
+  };
+  bbShow();                                  // 默认显示
   if (handle) {
     handle.addEventListener('click', (e) => {
       e.stopPropagation();
-      bar.classList.remove('hidden');
+      bbShow();
     });
   }
   document.addEventListener('click', (e) => {
-    if (bar.classList.contains('hidden')) return;
+    if (!bbPanel || bbPanel.style.display === 'none') return;
     if (bar.contains(e.target) || (handle && handle.contains(e.target))) return;
-    bar.classList.add('hidden');
+    bbHide();
   }, true);  // 页面加载后先亮 2.4 秒，让人确认控制栏确实存在（之后仍按鼠标位置自动显隐）
   setTimeout(() => {
     bar.classList.add('show');
