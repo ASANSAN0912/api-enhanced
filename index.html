@@ -1017,6 +1017,20 @@
   }
   /* 感应层本身不拦截点击（只用于 hover） */
   #bbSensor{ pointer-events:auto; }
+
+
+  /* ==================== 底部小把手：点击切换控制栏 ====================
+     不依赖 hover（窗口底边有系统缩放热区，hover 会丢），点击即可切换 */
+  #bbHandle{
+    position:fixed; left:50%; bottom:5px; transform:translateX(-50%);
+    width:64px; height:5px; border-radius:3px;
+    background:rgba(255,255,255,.42);
+    box-shadow:0 0 10px rgba(255,255,255,.28), 0 1px 3px rgba(0,0,0,.35);
+    z-index:41; cursor:pointer; pointer-events:auto;
+    transition:background .18s ease, width .18s ease, opacity .18s ease;
+  }
+  #bbHandle:hover{ background:rgba(255,255,255,.72); width:84px; }
+  #bottomBar.show ~ #bbHandle{ opacity:.35; }
 </style>
 </head>
 <body class="hide-past hide-future">
@@ -1427,6 +1441,7 @@
 </div>
 
 <div id="bbSensor"></div>
+<div id="bbHandle" title="显示 / 隐藏控制栏" aria-label="显示或隐藏控制栏"></div>
 <div id="bottomBar">
   <!-- 鼠标靠近底部才浮出：歌名/歌手 + 喜欢 + 音量 + 歌词 + 播放控制 + 时间 -->
   <div id="bbPanel">
@@ -4219,7 +4234,14 @@ audio.addEventListener('pause', () => {
     else if (e.clientY < h - 140) hideSoon();
   }, { passive: true });
   window.addEventListener('blur', () => bar.classList.remove('show'));
-  // 页面加载后先亮 2.4 秒，让人确认控制栏确实存在（之后仍按鼠标位置自动显隐）
+  // 点击底部小把手切换控制栏（不依赖 hover）
+  const handle = document.getElementById('bbHandle');
+  if (handle) {
+    handle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      bar.classList.toggle('show');
+    });
+  }  // 页面加载后先亮 2.4 秒，让人确认控制栏确实存在（之后仍按鼠标位置自动显隐）
   setTimeout(() => {
     bar.classList.add('show');
     setTimeout(() => bar.classList.remove('show'), 2400);
