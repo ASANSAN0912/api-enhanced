@@ -4770,6 +4770,7 @@ function syncViewSeg() {
     bvEl.classList.toggle('show', big);
     if (!big) bvEl.classList.remove('minimized');   // 切回小视口时清掉收起状态
   }
+  if (!big) { bvState.homeLoaded2 = false; }   // 下次打开重新获取首页数据
   if (!big && typeof bvHideSettings === 'function') bvHideSettings();
   if (rb && !big) rb.classList.remove('visible');
   if (big) bvInit();
@@ -4824,7 +4825,7 @@ function bvRowHtml(song, i) {
   const on = currentSong && String(currentSong.id) === String(song.id) ? ' on' : '';
   return '<div class="bv-row' + on + '" data-i="' + i + '" data-id="' + song.id + '">' +
     '<div class="idx">' + (i + 1) + '</div>' +
-    '<img src="' + bvEsc(cover) + '" alt="" loading="lazy">' +
+    '<img src="' + bvEsc(cover) + '" alt="">' +
     '<div class="meta">' +
     '<div class="name">' + bvEsc(song.name || '未知歌曲') + '</div>' +
     '<div class="ar">' + bvEsc(ar) + '</div>' +
@@ -4922,7 +4923,7 @@ async function bvLoadPlaylists(only) {
     list.innerHTML = arr.map(p =>
       '<div class="bv-row" data-list="' + p.id + '">' +
       '<div class="idx"></div>' +
-      '<img src="' + bvEsc(buildCoverUrl(p.coverImgUrl || p.picUrl || '')) + '" alt="" loading="lazy">' +
+      '<img src="' + bvEsc(buildCoverUrl(p.coverImgUrl || p.picUrl || '')) + '" alt="">' +
       '<div class="meta">' +
       '<div class="name">' + bvEsc(p.name) + '</div>' +
       '<div class="ar">' + (p.trackCount || 0) + ' 首' +
@@ -5068,14 +5069,14 @@ async function bvLoadHome() {
     const songHtml = songs.map((n, i) => {
       const ar = (n.artists || n.ar || []).map(a => a.name).filter(Boolean).join(' / ');
       const cov = buildCoverUrl((n.album && n.album.picUrl) || (n.al && n.al.picUrl) || '', '80y80');
-      return '<div class="bv-song" data-hs="' + i + '"><img src="' + bvEsc(cov) + '" alt="" loading="lazy">' +
+      return '<div class="bv-song" data-hs="' + i + '"><img src="' + bvEsc(cov) + '" alt="">' +
         '<div class="mt"><div class="n">' + bvEsc(n.name || '未知歌曲') + '</div>' +
         '<div class="a">' + bvEsc(ar) + '</div></div></div>';
     }).join('');
 
     const albums = ((al && (al.albums || al.data)) || []).slice(0, 8);
     const albumHtml = albums.map(a =>
-      '<div class="bv-album"><img src="' + bvEsc(buildCoverUrl(a.picUrl || '', '220y220')) + '" alt="" loading="lazy">' +
+      '<div class="bv-album"><img src="' + bvEsc(buildCoverUrl(a.picUrl || '', '220y220')) + '" alt="">' +
       '<div class="n">' + bvEsc(a.name || '') + '</div>' +
       '<div class="a">' + bvEsc((a.artist && a.artist.name) || '') + '</div></div>').join('');
 
@@ -5273,7 +5274,7 @@ async function bvLoadHome2() {
     const LAB = ['推荐', '由你制作', '最新发行', '专属推荐', '专属心偏好歌'];
     const tiles = plays.slice(0, 5).map((p, i) =>
       '<div class="bv-tile" data-list="' + p.id + '">' +
-        '<img src="' + bvEsc(buildCoverUrl(p.picUrl || p.coverImgUrl || '', '600y600')) + '" alt="" loading="lazy">' +
+        '<img src="' + bvEsc(buildCoverUrl(p.picUrl || p.coverImgUrl || '', '600y600')) + '" alt="">' +
         '<div class="ov"><div class="lab">' + (LAB[i] || '推荐') + '</div>' +
         '<div class="ttl">' + bvEsc(p.name) + '</div>' +
         '<div class="sub">' + bvEsc(p.copywriter || (p.trackCount ? p.trackCount + ' 首' : '')) + '</div></div>' +
@@ -5303,13 +5304,13 @@ async function bvLoadHome2() {
     const recentAlbums = Array.from(albMap.values()).slice(0, 12);
     const cells = recentAlbums.map(a =>
       '<div class="bv-cell" data-album="' + (a.id || '') + '">' +
-        '<img src="' + bvEsc(buildCoverUrl(a.pic, '300y300')) + '" alt="" loading="lazy">' +
+        '<img src="' + bvEsc(buildCoverUrl(a.pic, '300y300')) + '" alt="">' +
         '<div class="n">' + bvEsc(a.name) + '</div>' +
         '<div class="a">' + bvEsc(a.ar) + '</div></div>').join('');
 
     const albums = ((al && (al.albums || al.data)) || []).slice(0, 12);
     const albumCells = albums.map(a =>
-      '<div class="bv-cell"><img src="' + bvEsc(buildCoverUrl(a.picUrl || '', '300y300')) + '" alt="" loading="lazy">' +
+      '<div class="bv-cell"><img src="' + bvEsc(buildCoverUrl(a.picUrl || '', '300y300')) + '" alt="">' +
       '<div class="n">' + bvEsc(a.name || '') + '</div>' +
       '<div class="a">' + bvEsc((a.artist && a.artist.name) || '') + '</div></div>').join('');
 
@@ -5318,20 +5319,20 @@ async function bvLoadHome2() {
     const frow = BV_FUNCS.map((f, i) =>
       '<div class="bv-fcard" data-fn="' + f.key + '">' +
         '<div class="thumb">' +
-          (covers[i] ? '<img src="' + bvEsc(covers[i]) + '" alt="" loading="lazy">' : '') +
+          (covers[i] ? '<img src="' + bvEsc(covers[i]) + '" alt="">' : '') +
         '</div>' +
         '<div class="ft"><b>' + f.name + '</b><span class="tip"></span></div>' +
       '</div>').join('');
     const rcArr = ((rc && (rc.recommend || rc.result || rc.data)) || []).slice(0, 12);
     const rcCards = rcArr.map(p =>
       '<div class="bv-cell" data-list="' + p.id + '">' +
-        '<img src="' + bvEsc(buildCoverUrl(p.picUrl || p.coverImgUrl || '', '300y300')) + '" alt="" loading="lazy">' +
+        '<img src="' + bvEsc(buildCoverUrl(p.picUrl || p.coverImgUrl || '', '300y300')) + '" alt="">' +
         '<div class="n">' + bvEsc(p.name) + '</div>' +
         '<div class="a">' + bvEsc(p.copywriter || ((p.playcount || 0) + ' 次播放')) + '</div></div>').join('');
 
     const subArr = ((subAl && (subAl.data || subAl.albums)) || []).slice(0, 12);
     const subCells = subArr.map(a =>
-      '<div class="bv-cell"><img src="' + bvEsc(buildCoverUrl(a.picUrl || '', '300y300')) + '" alt="" loading="lazy">' +
+      '<div class="bv-cell"><img src="' + bvEsc(buildCoverUrl(a.picUrl || '', '300y300')) + '" alt="">' +
       '<div class="n">' + bvEsc(a.name || '') + '</div>' +
       '<div class="a">' + bvEsc(((a.artists && a.artists[0] && a.artists[0].name) || (a.artist && a.artist.name) || '')) + '</div></div>').join('');
 
@@ -5344,6 +5345,17 @@ async function bvLoadHome2() {
       (subCells ? '<div class="bv-sec2"><span class="t">我的收藏专辑</span></div><div class="bv-row">' + subCells + '</div>' : '') +
       (!tiles && !cells && !albumCells ? '<div class="bv-hint">暂时没有内容</div>' : '');
     bvState.homeLoaded2 = true;
+    // 主动预载全部封面，避免打开时逐张闪出来
+    try {
+      box.querySelectorAll('img').forEach(im => {
+        const u = im.getAttribute('src');
+        if (!u) return;
+        const pre = new Image();
+        pre.decoding = 'async';
+        pre.src = u;
+        if (typeof im.decode === 'function') im.decode().catch(() => {});
+      });
+    } catch (e) { /* 忽略 */ }
   } catch (e) {
     box.innerHTML = '<div class="bv-h1">主页</div><div class="bv-hint">加载失败：' + bvEsc(e.message || e) + '</div>';
   }
