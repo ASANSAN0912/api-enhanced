@@ -1292,6 +1292,10 @@
   #dvWall{ pointer-events:auto; }
   #dvWall.show{ display:flex !important; }
 
+  /* 禁止原生图片拖拽（否则会打断墙面的拖动 / 拖出 ghost 图） */
+  img{ -webkit-user-drag:none; user-drag:none; user-select:none; -webkit-user-select:none; }
+  a, img{ -webkit-touch-callout:none; }
+
   /* 右侧「我的收藏专辑」折叠分组 */
   .dv-alb-group{ border-bottom:1px solid #eef2f8; }
   .dv-alb-group-hd{
@@ -6506,6 +6510,20 @@ function dvStep(delta) {
   dvRenderSlots(false);
   dvSyncSongHighlight();
 }
+
+/* ---------- 图片保护：禁止拖拽与另存为 ---------- */
+document.addEventListener('dragstart', function (e) {
+  const t = e.target;
+  if (t && t.tagName === 'IMG') e.preventDefault();
+}, true);
+document.addEventListener('contextmenu', function (e) {
+  const t = e.target;
+  if (t && t.tagName === 'IMG') e.preventDefault();
+}, true);
+document.addEventListener('mousedown', function (e) {
+  const t = e.target;
+  if (t && t.tagName === 'IMG') e.preventDefault();
+}, true);
 
 /* ---------- 事件 ---------- */
 /* ==================== 3D 视口：专辑墙 ==================== */
