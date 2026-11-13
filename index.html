@@ -1227,6 +1227,40 @@
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
     font-size:11.5px; line-height:1.42; color:rgba(255,255,255,.86);
   }
+
+  /* ==================== 3D 视口：专辑墙（拼贴墙） ==================== */
+  #dvWall{
+    position:absolute; inset:0; z-index:20; display:none;
+    flex-direction:column; background:#0d1016;
+  }
+  #dvWall.show{ display:flex; }
+  .dv-wall-head{ flex:0 0 auto; display:flex; align-items:center; gap:12px;
+    padding:14px 20px 10px; color:#e9eef7; }
+  .dv-wall-head .t{ font-size:16px; font-weight:700; letter-spacing:.5px; }
+  .dv-wall-head button{ margin-left:auto; background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.16); color:#dfe8f5; border-radius:16px;
+    padding:6px 16px; font-size:12px; cursor:pointer; }
+  .dv-wall-head button:hover{ background:rgba(255,255,255,.2); }
+  .dv-wall-grid{
+    flex:1; min-height:0; overflow-y:auto; padding:4px 18px 22px;
+    display:grid; gap:7px;
+    grid-template-columns:repeat(auto-fill, minmax(92px, 1fr));
+    grid-auto-rows:92px; grid-auto-flow:dense;
+  }
+  .dv-wt{ position:relative; overflow:hidden; border-radius:5px; cursor:pointer;
+    background:#1b2029; }
+  .dv-wt img{ width:100%; height:100%; object-fit:cover; display:block;
+    transition:transform .25s ease, filter .25s ease; }
+  .dv-wt:hover img{ transform:scale(1.06); filter:brightness(1.12); }
+  .dv-wt span{ position:absolute; left:0; right:0; bottom:0; padding:14px 6px 5px;
+    font-size:10px; color:#fff; background:linear-gradient(to top, rgba(0,0,0,.78), transparent);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:0;
+    transition:opacity .2s ease; }
+  .dv-wt:hover span{ opacity:1; }
+  /* 大小混排，做出拼贴感 */
+  .dv-wt:nth-child(7n+3){ grid-column:span 2; grid-row:span 2; }
+  .dv-wt:nth-child(11n+5){ grid-row:span 2; }
+  .dv-wt:nth-child(13n+2){ grid-column:span 2; }
 </style>
 </head>
 <body class="hide-past hide-future">
@@ -1597,6 +1631,13 @@
 </button>
 
 <div id="discView">
+  <div class="dv-wall" id="dvWall">
+    <div class="dv-wall-head">
+      <span class="t">专辑墙</span>
+      <button id="dvWallClose" type="button">关闭</button>
+    </div>
+    <div class="dv-wall-grid" id="dvWallGrid"></div>
+  </div>
   <div class="dv-stage" id="dvStage">
     <div id="dvSlots"></div>
     <div id="dvInfo">
@@ -1608,7 +1649,8 @@
       <span>滚轮 / ↑↓ 切换</span>
       <span>·</span>
       <span>点击或回车选中播放</span>
-      <button id="dvModeBtn" type="button" title="切换光盘 / 专辑盒">切换成专辑盒</button>
+      <button id="dvWallBtn" type="button" title="专辑墙">专辑墙</button>
+    <button id="dvModeBtn" type="button" title="切换光盘 / 专辑盒">切换成专辑盒</button>
       <span>Esc 返回</span>
     </div>
   </div>
@@ -6366,6 +6408,7 @@ function dvOpen() {
 }
 
 function dvClose() {
+  dvCloseWall();
   DV.open = false;
   document.body.classList.remove('disc-mode');
   const v = $('discView');
@@ -6384,7 +6427,75 @@ function dvStep(delta) {
 }
 
 /* ---------- 事件 ---------- */
+/* ==================== 3D 视口：专辑墙 ==================== */
+async function dvLoadWall() {
+  const wrap = $('dvWall'), grid = $('dvWallGrid');
+  if (!wrap || !grid) return;
+  wrap.classList.add('show');
+  // 专辑墙里不提供光盘/专辑盒切换
+  const modeBtn2 = $('dvModeBtn');
+  if (modeBtn2) modeBtn2.style.display = 'none';
+  if (grid.dataset.loaded) return;
+  grid.innerHTML = '<div class="bv-hint" style="grid-column:1/-1;color:#8ea4c8;padding:20px">加载中…</div>';
+  try {
+    let albums = [];
+    const d = await requestAPI('/album/sublist', { limit: 100, offset: 0 }).catch(() => null);
+    albums = (d && (d.data || d.albums)) || [];
+    if (!albums.length) {
+      // 没收藏专辑就退化成"推荐歌单封面墙"
+      const d2 = await requestAPI('/top/playlist', { order: 'hot', limit: 60 }).catch(() => null);
+      albums = ((d2 && (d2.playlists || d2.data)) || []).map(p => ({ id: p.id, name: p.name, picUrl: p.coverImgUrl || p.picUrl }));
+    }
+    if (!albums.length) {
+      grid.innerHTML = '<div class="bv-hint" style="grid-column:1/-1;color:#8ea4c8;padding:20px">没有可展示的专辑</div>';
+      return;
+    }
+    grid.innerHTML = albums.map((a, i) => {
+      const pic = buildCoverUrl(a.picUrl || a.coverImgUrl || '', '300y300');
+      const nm = a.name || '';
+      const aid = a.id || '';
+      return '<div class="dv-wt" data-album="' + aid + '" data-i="' + i + '">' +
+        '<img src="' + bvEsc(pic) + '" alt="" loading="lazy">' +
+        '<span>' + bvEsc(nm) + '</span></div>';
+    }).join('');
+    grid.dataset.loaded = '1';
+    grid.dataset.albums = JSON.stringify(albums.map(a => ({ id: a.id, name: a.name, pic: a.picUrl || a.coverImgUrl || '' })));
+  } catch (e) {
+    grid.innerHTML = '<div class="bv-hint" style="grid-column:1/-1;color:#ff9a9a;padding:20px">加载失败：' + bvEsc(e.message || e) + '</div>';
+  }
+}
+function dvCloseWall() {
+  const wrap = $('dvWall');
+  if (wrap) wrap.classList.remove('show');
+  const modeBtn2 = $('dvModeBtn');
+  if (modeBtn2) modeBtn2.style.display = '';
+}
+function dvWireWall() {
+  const btn = $('dvWallBtn'), close = $('dvWallClose'), grid = $('dvWallGrid');
+  if (btn) btn.addEventListener('click', dvLoadWall);
+  if (close) close.addEventListener('click', dvCloseWall);
+  if (grid && !grid.dataset.wired) {
+    grid.dataset.wired = '1';
+    grid.addEventListener('click', (e) => {
+      const tile = e.target.closest('.dv-wt[data-album]');
+      if (!tile) return;
+      const id = tile.dataset.album;
+      if (!id) return;
+      dvCloseWall();
+      dvClose();
+      requestAPI('/album', { id: id }).then(d => {
+        const al0 = (d && d.album) || null;
+        const songs2 = (d && d.songs) || [];
+        if (!songs2.length) return;
+        setViewMode('big');
+        setTimeout(() => bvShowList((al0 && al0.name) || '专辑', songs2.map(bvNormSong),
+          (al0 && al0.artist && al0.artist.name) || ''), 120);
+      }).catch(() => {});
+    });
+  }
+}
 function dvWire() {
+  dvWireWall();
   const btn = $('discBtn'), close = $('dvClose'), refresh = $('dvRefresh');
   const topClose = $('dvTopClose');
   if (topClose) topClose.addEventListener('click', dvClose);
