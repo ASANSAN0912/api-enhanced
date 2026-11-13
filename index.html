@@ -6790,7 +6790,10 @@ function dvLoadAlbumSongs(id, row) {
       el.addEventListener('click', () => {
         const sid = el.dataset.sid;
         const song = songs.find(x => String(x.id) === String(sid));
-        if (song) playSong(song);
+        if (song) {
+          const artistStr = (song.ar || song.artists || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+          playSong({ id: song.id, name: song.name, artist: artistStr, cover: song._cover || (song.al && song.al.picUrl) || '' });
+        }
       });
     });
   }).catch(() => {
