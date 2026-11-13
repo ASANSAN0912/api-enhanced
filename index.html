@@ -1031,6 +1031,39 @@
   }
   #bbHandle:hover{ background:rgba(255,255,255,.72); width:84px; }
   #bottomBar.show ~ #bbHandle{ opacity:.35; }
+
+  /* ==================== 底部控制栏显隐（最终版） ====================
+     默认直接显示；点小把手加 .hidden 彻底 display:none 隐藏。
+     用 display 而不是 opacity，避免被其它透明度规则覆盖。 */
+  #bbPanel{
+    opacity:1 !important;
+    transform:none !important;
+    pointer-events:auto !important;
+  }
+  #bottomBar.hidden #bbPanel{ display:none !important; }
+
+  /* 3D 选歌时隐藏底部控制栏与把手：它们层级比 3D 视图高，会挡住里面的按钮 */
+  body.disc-mode #bottomBar,
+  body.disc-mode #bbHandle{ display:none !important; }
+
+  /* ==================== 控制栏过渡动画 + 白条联动 ==================== */
+  /* 展开时从下往上淡入 */
+  @keyframes bbIn{
+    from{ opacity:0; transform:translateY(12px) }
+    to  { opacity:1; transform:none }
+  }
+  #bottomBar:not(.hidden) #bbPanel{
+    animation:bbIn .24s cubic-bezier(.22,1,.36,1) both;
+  }
+  /* 控制栏展开时隐藏白条（用 :has 检测状态，纯 CSS 无需额外交互代码） */
+  #bbHandle{
+    transition:opacity .22s ease, transform .22s ease, width .18s ease, background .18s ease;
+  }
+  body:has(#bottomBar:not(.hidden)) #bbHandle{
+    opacity:0 !important;
+    transform:translateX(-50%) translateY(8px) !important;
+    pointer-events:none !important;
+  }
 </style>
 </head>
 <body class="hide-past hide-future">
@@ -4234,14 +4267,19 @@ audio.addEventListener('pause', () => {
     else if (e.clientY < h - 140) hideSoon();
   }, { passive: true });
   window.addEventListener('blur', () => bar.classList.remove('show'));
-  // 点击底部小把手切换控制栏（不依赖 hover）
+  // 白条：点击打开控制栏；点击控制栏以外的任意区域关闭
   const handle = document.getElementById('bbHandle');
   if (handle) {
     handle.addEventListener('click', (e) => {
       e.stopPropagation();
-      bar.classList.toggle('show');
+      bar.classList.remove('hidden');
     });
-  }  // 页面加载后先亮 2.4 秒，让人确认控制栏确实存在（之后仍按鼠标位置自动显隐）
+  }
+  document.addEventListener('click', (e) => {
+    if (bar.classList.contains('hidden')) return;
+    if (bar.contains(e.target) || (handle && handle.contains(e.target))) return;
+    bar.classList.add('hidden');
+  }, true);  // 页面加载后先亮 2.4 秒，让人确认控制栏确实存在（之后仍按鼠标位置自动显隐）
   setTimeout(() => {
     bar.classList.add('show');
     setTimeout(() => bar.classList.remove('show'), 2400);
