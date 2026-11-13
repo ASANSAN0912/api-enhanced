@@ -1064,6 +1064,13 @@
     transform:translateX(-50%) translateY(8px) !important;
     pointer-events:none !important;
   }
+
+  /* 感应层已废弃（现在用点击白条控制），彻底停用；
+     3D 选歌时把底部所有浮层都让位，避免挡住"切换光盘/专辑盒"按钮 */
+  #bbSensor{ display:none !important; pointer-events:none !important; }
+  body.disc-mode #bottomBar,
+  body.disc-mode #bbHandle,
+  body.disc-mode #bbSensor{ display:none !important; pointer-events:none !important; }
 </style>
 </head>
 <body class="hide-past hide-future">
