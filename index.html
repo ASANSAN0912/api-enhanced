@@ -5202,7 +5202,13 @@ async function bvRunFunc(key, card) {
       if (!songId) { setTip('先播放一首歌再用心动模式'); return; }
       const d = await requestAPI('/playmode/intelligence/list', { id: songId, pid: pid });
       const arr = bvArr(d).map(bvNormSong);
-      if (!arr.length) { setTip('心动模式暂无内容（需登录）'); return; }
+      if (!arr.length) {
+        let raw = '';
+        try { raw = JSON.stringify(d).slice(0, 140); } catch (e) { raw = String(d); }
+        setTip('心动模式返回为空：' + raw);
+        console.warn('[心跳] /playmode/intelligence/list 返回', d, '参数 id=' + songId + ' pid=' + pid);
+        return;
+      }
       playlist = arr.map(s => Object.assign({}, s));
       currentPlayIndex = 0;
       const n0 = arr[0];
