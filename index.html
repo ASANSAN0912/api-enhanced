@@ -5141,10 +5141,17 @@ function bvArr(d) {
   return [];
 }
 function bvNormSong(s) {
-  const n = s.song || s;
+  const n = (s && (s.song || s.data)) || s || {};
+  const alb = n.album || n.al || {};
+  let ar = n.artists || n.ar;
+  if (!ar && n.artist) ar = [{ name: n.artist }];
+  if (!ar && n.singer) ar = [{ name: n.singer }];
   return Object.assign({}, n, {
-    ar: n.artists || n.ar,
-    _cover: buildCoverUrl((n.album && n.album.picUrl) || (n.al && n.al.picUrl) || '', '120y120'),
+    id: n.id || n.songId || n.songID,
+    name: n.name || n.songName || n.title || n.songname || '未知歌曲',
+    ar: ar || [],
+    al: alb,
+    _cover: buildCoverUrl(alb.picUrl || n.picUrl || '', '120y120'),
   });
 }
 const BV_FUNCS = [
