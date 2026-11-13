@@ -4242,20 +4242,13 @@ function loop(now) {
   updateLyric(); updateAllProgress();
 }
 
+/* 未播放时的默认背景：纯白（原来是一堆彩色模糊光点，按需求去掉） */
 function makeDefaultBackground() {
-  const cv = document.createElement('canvas'); cv.width = 1600; cv.height = 1000;
+  const cv = document.createElement('canvas');
+  cv.width = 16; cv.height = 16;
   const x = cv.getContext('2d');
-  const g = x.createLinearGradient(0, 0, 1600, 1000);
-  g.addColorStop(0.0, '#0f2027'); g.addColorStop(0.45, '#203a43'); g.addColorStop(1.0, '#2c5364');
-  x.fillStyle = g; x.fillRect(0, 0, 1600, 1000);
-  const palette = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#a29bfe', '#fd79a8', '#74b9ff'];
-  for (let i = 0; i < 16; i++) {
-    const cx = Math.random() * 1600, cy = Math.random() * 1000, rr = 120 + Math.random() * 380;
-    const col = palette[i % palette.length];
-    const rg = x.createRadialGradient(cx, cy, 0, cx, cy, rr);
-    rg.addColorStop(0, col + 'cc'); rg.addColorStop(1, col + '00');
-    x.fillStyle = rg; x.beginPath(); x.arc(cx, cy, rr, 0, Math.PI * 2); x.fill();
-  }
+  x.fillStyle = '#ffffff';
+  x.fillRect(0, 0, 16, 16);
   return cv;
 }
 
