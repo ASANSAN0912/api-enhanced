@@ -5184,15 +5184,13 @@ async function bvRunFunc(key, card) {
       let songId = currentSong && currentSong.id;
       let pid = bvState.playlistId;
       if (!pid) {
-        let a0 = [];
-        const d0 = await requestAPI('/personalized/playlist', { limit: 1 }).catch(() => null);
-        a0 = (d0 && (d0.result || d0.data)) || [];
-        if (!a0.length) {
-          const d0b = await requestAPI('/top/playlist', { order: 'hot', limit: 1 }).catch(() => null);
-          a0 = (d0b && (d0b.playlists || d0b.result || d0b.data)) || [];
-        }
-        if (!a0.length) { setTip('后端缺少推荐歌单接口（/personalized/playlist 与 /top/playlist 均不可用）'); return; }
-        pid = a0[0].id;
+        // 心动模式只接受"你自己歌单"里的类型，优先「我喜欢的音乐」(specialType=5)
+        let plist = [];
+        const upl = await requestAPI('/user/playlist', { uid: currentUser.uid, limit: 200 }).catch(() => null);
+        plist = (upl && (upl.playlist || (upl.data && upl.data.playlist))) || [];
+        if (!plist.length) { setTip('读取不到你的歌单，无法启动心动模式'); return; }
+        const fav = plist.find(p => p.specialType === 5) || plist[0];
+        pid = fav.id;
       }
       if (!songId) {
         const dd = await requestAPI('/playlist/detail', { id: pid });
