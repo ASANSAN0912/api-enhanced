@@ -1005,6 +1005,18 @@
     .dv-panel{flex:0 0 340px}
     .dv-slot{width:260px;height:260px;margin:-130px 0 0 -130px}
   }
+
+  /* ==================== 底部感应层（纯 CSS 触发，不依赖 JS） ====================
+     鼠标进入窗口底部 130px 就浮出控制栏；比依赖 :hover 稳得多 */
+  #bbSensor{
+    position:fixed; left:0; right:0; bottom:0; height:130px;
+    z-index:39; background:transparent;
+  }
+  #bbSensor:hover ~ #bottomBar #bbPanel{
+    opacity:1 !important; transform:none !important; pointer-events:auto !important;
+  }
+  /* 感应层本身不拦截点击（只用于 hover） */
+  #bbSensor{ pointer-events:auto; }
 </style>
 </head>
 <body class="hide-past hide-future">
@@ -1414,6 +1426,7 @@
   <div id="lyricScroll"></div>
 </div>
 
+<div id="bbSensor"></div>
 <div id="bottomBar">
   <!-- 鼠标靠近底部才浮出：歌名/歌手 + 喜欢 + 音量 + 歌词 + 播放控制 + 时间 -->
   <div id="bbPanel">
