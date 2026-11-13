@@ -5120,6 +5120,23 @@ function bvShowList(title, songs, sub) {
   bvSetMain(title, sub || ((songs || []).length + ' 首'));
   bvRenderSongs(songs || []);
 }
+function bvArr(d) {
+  if (!d) return [];
+  if (Array.isArray(d)) return d;
+  var pool = [d.data, d.result, d.recommend, d.songs, d.dailySongs];
+  for (var i = 0; i < pool.length; i++) {
+    var c = pool[i];
+    if (Array.isArray(c)) return c;
+    if (c && typeof c === 'object') {
+      if (Array.isArray(c.dailySongs)) return c.dailySongs;
+      if (Array.isArray(c.songs)) return c.songs;
+      if (Array.isArray(c.recommend)) return c.recommend;
+      if (Array.isArray(c.data)) return c.data;
+      if (Array.isArray(c.result)) return c.result;
+    }
+  }
+  return [];
+}
 function bvNormSong(s) {
   const n = s.song || s;
   return Object.assign({}, n, {
@@ -5142,7 +5159,7 @@ async function bvRunFunc(key, card) {
       if (!(currentCookie && currentUser && currentUser.uid)) { setTip('需要登录后才能获取每日推荐'); return; }
       setTip('正在获取今日推荐…');
       const d = await requestAPI('/recommend/songs', {});
-      const arr = ((d && (d.data || d.recommend)) || []).map(bvNormSong);
+      const arr = bvArr(d).map(bvNormSong);
       if (!arr.length) { setTip('今日推荐为空'); return; }
       const first = arr[0];
       setTip('从「' + (first.name || '') + '」听起');
@@ -5150,7 +5167,7 @@ async function bvRunFunc(key, card) {
     } else if (key === 'fm') {
       setTip('正在接入私人 FM…');
       const d = await requestAPI('/personal_fm', {});
-      const arr = ((d && (d.data || d.result)) || []).map(bvNormSong);
+      const arr = bvArr(d).map(bvNormSong);
       if (!arr.length) { setTip('私人 FM 需要登录后使用'); return; }
       playlist = arr.map(s => Object.assign({}, s));
       currentPlayIndex = 0;
@@ -5176,7 +5193,7 @@ async function bvRunFunc(key, card) {
       }
       if (!songId) { setTip('先播放一首歌再用心动模式'); return; }
       const d = await requestAPI('/playmode/intelligence/list', { id: songId, pid: pid });
-      const arr = ((d && (d.data || d.result)) || []).map(bvNormSong);
+      const arr = bvArr(d).map(bvNormSong);
       if (!arr.length) { setTip('心动模式暂无内容（需登录）'); return; }
       playlist = arr.map(s => Object.assign({}, s));
       currentPlayIndex = 0;
@@ -5243,7 +5260,7 @@ async function bvLoadHome2() {
         '<div class="sub">' + bvEsc(p.copywriter || (p.trackCount ? p.trackCount + ' 首' : '')) + '</div></div>' +
       '</div>').join('');
 
-    const rawSongs = ((ns && (ns.result || ns.data)) || []).slice(0, 12);
+    const rawSongs = bvArr(ns).slice(0, 12);
     const songs = rawSongs.map(s => s.song || s);
     bvState.homeSongs = songs;
 
