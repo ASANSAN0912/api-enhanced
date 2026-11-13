@@ -1071,6 +1071,162 @@
   body.disc-mode #bottomBar,
   body.disc-mode #bbHandle,
   body.disc-mode #bbSensor{ display:none !important; pointer-events:none !important; }
+
+  /* 打开大视口时隐藏底部白条（大视口本身占满右侧，不需要它） */
+  body.big-view #bbHandle{ display:none !important; }
+
+  /* ==================== 大视口内的设置面板 ====================
+     直接把原 #ui 面板搬进来显示，所有控件与绑定保持原样 */
+  .bv-settings{ display:none; flex:1; min-height:0; overflow-y:auto; padding:14px 16px 20px; }
+  body.bv-settings-on .bv-settings{ display:block; }
+  body.bv-settings-on .bv-list{ display:none; }
+  body.bv-settings-on .bv-main-head{ display:none; }
+  #ui.in-big{
+    position:static !important;
+    left:auto !important; top:auto !important;
+    width:100% !important; max-width:760px !important;
+    max-height:none !important; height:auto !important;
+    margin:0 auto;
+    background:transparent !important;
+    border:0 !important; box-shadow:none !important;
+    backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+    padding:0 !important;
+  }
+  #ui.in-big .title{ display:none !important; }
+
+  /* 设置面板已移入大视口，小视口不再提供入口（隐藏左上角"展开设置"按钮） */
+  #restoreBtn{ display:none !important; }
+
+  /* ==================== 大视口：首页（发现） ==================== */
+  .bv-home{ display:none; flex:1; min-height:0; overflow-y:auto; padding:4px 18px 26px; }
+  body.bv-home-on .bv-home{ display:block; }
+  body.bv-home-on .bv-list,
+  body.bv-home-on .bv-main-head,
+  body.bv-home-on .bv-settings{ display:none !important; }
+  .bv-h1{ font-size:26px; font-weight:800; color:#fff; margin:10px 0 20px; letter-spacing:.5px; }
+  .bv-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  .bv-card{ cursor:pointer; }
+  .bv-card .lab{ font-size:11px; color:#8ea4c8; margin-bottom:1px; }
+  .bv-card .ttl{ font-size:13px; color:#fff; font-weight:600; margin-bottom:1px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bv-card .sub{ font-size:11px; color:#7f93b0; margin-bottom:9px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bv-card img{ width:100%; aspect-ratio:1.9/1; object-fit:cover;
+    border-radius:11px; background:#1b2029; display:block; }
+  .bv-sec{ display:flex; align-items:baseline; gap:9px; margin:26px 0 10px; }
+  .bv-sec .t{ font-size:17px; font-weight:700; color:#fff; }
+  .bv-sec .m{ font-size:12px; color:#7f93b0; }
+  .bv-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:4px 20px; }
+  .bv-song{ display:flex; align-items:center; gap:10px; padding:6px; border-radius:9px; cursor:pointer; }
+  .bv-song:hover{ background:rgba(255,255,255,.07); }
+  .bv-song img{ width:44px; height:44px; border-radius:6px; object-fit:cover; background:#1b2029; flex:0 0 auto; }
+  .bv-song .mt{ min-width:0; flex:1; }
+  .bv-song .n{ font-size:13px; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bv-song .a{ font-size:11px; color:#8ea4c8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bv-albums{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .bv-album img{ width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:9px; background:#1b2029; display:block; }
+  .bv-album .n{ font-size:12px; color:#fff; margin-top:7px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bv-album .a{ font-size:11px; color:#8ea4c8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ==================== 首页：横向卡片行（Apple Music 风格） ==================== */
+  .bv-h1{ font-size:27px; font-weight:800; color:#fff; margin:6px 0 22px; letter-spacing:.5px; }
+  .bv-sec2{ display:flex; align-items:baseline; gap:10px; margin:22px 0 12px; }
+  .bv-sec2 .t{ font-size:18px; font-weight:700; color:#fff; }
+  .bv-sec2 .m{ font-size:12px; color:#7f93b0; }
+  .bv-row{ display:flex; gap:18px; overflow-x:auto; overflow-y:hidden;
+    padding:2px 2px 10px; scrollbar-width:thin; }
+  .bv-row::-webkit-scrollbar{ height:6px; }
+  .bv-row::-webkit-scrollbar-thumb{ background:rgba(120,160,255,.35); border-radius:3px; }
+
+  /* 第一行：大方块，文字压在封面底部 */
+  .bv-tile{ position:relative; flex:0 0 auto; width:290px; aspect-ratio:1/1;
+    border-radius:12px; overflow:hidden; cursor:pointer; background:#151a22; }
+  .bv-tile img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .bv-tile .ov{ position:absolute; left:0; right:0; bottom:0; padding:14px 14px 12px;
+    background:linear-gradient(to top, rgba(0,0,0,.82) 12%, rgba(0,0,0,.35) 55%, rgba(0,0,0,0));
+    color:#fff; }
+  .bv-tile .lab{ font-size:10px; color:rgba(255,255,255,.78); margin-bottom:3px; }
+  .bv-tile .ttl{ font-size:14px; font-weight:700; line-height:1.32;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .bv-tile .sub{ font-size:11px; color:rgba(255,255,255,.72); margin-top:3px; line-height:1.42;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .bv-tile:hover .ov{ background:linear-gradient(to top, rgba(0,0,0,.9) 12%, rgba(0,0,0,.45) 55%, rgba(0,0,0,0)); }
+
+  /* 第二/三行：方形封面 + 下方文字 */
+  .bv-cell{ flex:0 0 auto; width:184px; cursor:pointer; }
+  .bv-cell img{ width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:10px;
+    background:#151a22; display:block; }
+  .bv-cell .n{ font-size:12.5px; color:#fff; margin-top:8px; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+  .bv-cell .a{ font-size:11px; color:#8ea4c8; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap; }
+
+  /* 修正：flex 行的 stretch 会压扁卡片，这里用显式尺寸 */
+  .bv-row{ align-items:flex-start; }
+  .bv-tile{ width:260px !important; height:260px !important; }
+  .bv-tile img{ width:100% !important; height:100% !important; }
+  .bv-cell{ width:184px !important; }
+  .bv-cell img{ width:184px !important; height:184px !important; }
+
+  /* ==================== 首页：功能入口卡（每日推荐 / 雷达 / 心动 / 漫游 / 相似） ==================== */
+  .bv-frow{ display:flex; gap:14px; overflow-x:auto; padding:2px 2px 10px; align-items:flex-start; }
+  .bv-fcard{ position:relative; flex:0 0 auto; width:196px; height:258px; border-radius:10px;
+    overflow:hidden; cursor:pointer; background:#1a2029; display:flex; flex-direction:column; }
+  .bv-fcard .thumb{ position:relative; flex:1; min-height:0; }
+  .bv-fcard .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .bv-fcard .hd{ position:absolute; left:9px; top:8px; right:9px; display:flex; align-items:center; gap:5px;
+    font-size:13px; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,.55); }
+  .bv-fcard .ft{ flex:0 0 auto; padding:9px 10px; font-size:11px; line-height:1.42; color:#eef3fa;
+    background:rgba(255,255,255,.14); max-height:62px; overflow:hidden;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .bv-fcard:hover .ft{ background:rgba(255,255,255,.22); }
+
+  .bv-chips{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
+  .bv-chip{ padding:5px 13px; border-radius:15px; font-size:12px; cursor:pointer;
+    color:#cfdcee; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1);
+    transition:background .15s,border-color .15s,color .15s; user-select:none; }
+  .bv-chip:hover{ background:rgba(255,255,255,.14); color:#fff; }
+  .bv-chip.on{ background:rgba(79,155,255,.28); border-color:rgba(79,155,255,.55); color:#fff; }
+  .bv-mode-sel{ background:rgba(255,255,255,.08); color:#cfdcee; border:1px solid rgba(255,255,255,.12);
+    border-radius:15px; padding:5px 9px; font-size:12px; outline:none; }
+
+  /* ==================== 首页大卡片：竖版 + 底部半透明文字块（仿 Apple Music） ==================== */
+  .bv-tile{ width:250px !important; height:352px !important; border-radius:14px !important; }
+  .bv-tile img{ width:100% !important; height:100% !important; object-fit:cover !important; }
+  .bv-tile .ov{
+    left:10px !important; right:10px !important; bottom:10px !important;
+    padding:12px 14px 13px !important; border-radius:11px !important;
+    background:rgba(16,20,28,.62) !important;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    box-shadow:0 6px 20px rgba(0,0,0,.28);
+  }
+  .bv-tile .lab{ font-size:11px !important; font-weight:700 !important; color:#fff !important;
+    margin-bottom:5px !important; letter-spacing:.4px; }
+  .bv-tile .ttl{ font-size:15px !important; font-weight:800 !important; line-height:1.3 !important;
+    color:#fff !important; letter-spacing:.2px; }
+  .bv-tile .sub{ font-size:13px !important; font-weight:500 !important; color:rgba(255,255,255,.88) !important;
+    margin-top:3px !important; -webkit-line-clamp:1; }
+  .bv-tile .hd{ display:none !important; }
+
+  /* 功能卡：文字统一放左下角、左对齐，不要图标 */
+  .bv-fcard .hd{ display:none !important; }
+  .bv-fcard .ft{
+    text-align:left !important;
+    padding:10px 12px 11px !important;
+    max-height:74px !important;
+    background:rgba(16,20,28,.62) !important;
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    display:block !important;
+    color:#fff !important;
+  }
+  .bv-fcard .ft b{
+    display:block; font-size:13px; font-weight:700; line-height:1.3; margin-bottom:3px;
+    color:#fff; letter-spacing:.2px;
+  }
+  .bv-fcard .ft .tip{
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    font-size:11.5px; line-height:1.42; color:rgba(255,255,255,.86);
+  }
 </style>
 </head>
 <body class="hide-past hide-future">
@@ -1395,11 +1551,15 @@
 
   <div class="bv-body">
     <aside class="bv-side">
+      <div class="bv-side-title">发现</div>
+      <button class="bv-nav" type="button" data-nav="home">首页</button>
       <div class="bv-side-title">我的音乐</div>
       <button class="bv-nav" type="button" data-nav="liked">我喜欢的音乐</button>
       <button class="bv-nav" type="button" data-nav="recent">最近播放</button>
       <button class="bv-nav" type="button" data-nav="subscribed">收藏的歌单</button>
       <button class="bv-nav" type="button" data-nav="created">创建的歌单</button>
+      <div class="bv-side-title">其他</div>
+      <button class="bv-nav" type="button" data-nav="settings">设置</button>
       <div class="bv-side-title">歌单</div>
       <div id="bvPlaylistBox"></div>
     </aside>
@@ -1409,6 +1569,8 @@
         <div id="bvMainTitle">我喜欢的音乐</div>
         <div id="bvMainSub"></div>
       </div>
+      <div class="bv-home" id="bvHome"></div>
+      <div class="bv-settings" id="bvSettingsBox"></div>
       <div class="bv-list" id="bvList"></div>
     </main>
   </div>
@@ -4605,6 +4767,7 @@ function syncViewSeg() {
     bvEl.classList.toggle('show', big);
     if (!big) bvEl.classList.remove('minimized');   // 切回小视口时清掉收起状态
   }
+  if (!big && typeof bvHideSettings === 'function') bvHideSettings();
   if (rb && !big) rb.classList.remove('visible');
   if (big) bvInit();
 }
@@ -4770,6 +4933,7 @@ async function bvLoadPlaylists(only) {
 }
 
 async function bvLoadPlaylist(id, name) {
+  bvState.playlistId = String(id);
   bvSetMain(name || '歌单', '');
   bvHint('加载中…');
   try {
@@ -4849,8 +5013,367 @@ function bvSyncNow() {
   if (lk) lk.classList.toggle('liked', !!(currentSong && likedIds.has(String(currentSong.id))));
 }
 
+/* 设置面板搬进大视口 / 搬回原位 */
+function bvShowSettings() {
+  const ui = $('ui'), box = $('bvSettingsBox');
+  if (!ui || !box) return;
+  ui.classList.add('in-big');
+  ui.classList.remove('hidden');
+  ui.style.display = 'flex';
+  box.appendChild(ui);
+  document.body.classList.add('bv-settings-on');
+  bvSetMain('设置', '');
+}
+function bvHideSettings() {
+  const ui = $('ui'), box = $('bvSettingsBox');
+  document.body.classList.remove('bv-settings-on');
+  if (!ui) return;
+  ui.classList.remove('in-big');
+  ui.style.display = '';
+  if (box && box.contains(ui) && ui.parentNode === box) document.body.appendChild(ui);
+}
+/* ==================== 大视口首页（发现） ==================== */
+async function bvLoadHome() {
+  const box = $('bvHome');
+  if (!box) return;
+  document.body.classList.add('bv-home-on');
+  if (typeof bvHideSettings === 'function') bvHideSettings();
+  if (bvState.homeLoaded) return;
+  box.innerHTML = '<div class="bv-h1">新发现</div><div class="bv-hint">加载中…</div>';
+  try {
+    const [pl, ns, al, subAl, rc, rec] = await Promise.all([
+      requestAPI('/personalized/playlist', { limit: 3 }).catch(() => null),
+      requestAPI('/personalized/newsong', { limit: 8 }).catch(() => null),
+      requestAPI('/album/newest', {}).catch(() => null),
+      requestAPI('/album/sublist', { limit: 12 }).catch(() => null),
+      requestAPI('/recommend/resource', {}).catch(() => null),
+      (currentUser && currentUser.uid ? requestAPI('/user/record', { uid: currentUser.uid, type: 1 }).catch(() => null) : null),
+    ]);
+    const plays = (pl && (pl.result || pl.data)) || [];
+    const LAB = ['日推', '私人雷达', '心动推荐'];
+    const cards = plays.slice(0, 3).map((p, i) =>
+      '<div class="bv-card" data-list="' + p.id + '">' +
+        '<div class="lab">' + (LAB[i] || '推荐') + '</div>' +
+        '<div class="ttl">' + bvEsc(p.name) + '</div>' +
+        '<div class="sub">' + bvEsc(p.copywriter || (p.trackCount ? p.trackCount + ' 首' : '')) + '</div>' +
+        '<img src="' + bvEsc(buildCoverUrl(p.picUrl || p.coverImgUrl || '', '500y260')) + '" alt="">' +
+      '</div>').join('');
+
+    const rawSongs = ((ns && (ns.result || ns.data)) || []).slice(0, 8);
+    const songs = rawSongs.map(s => s.song || s);
+    bvState.homeSongs = songs;
+    const songHtml = songs.map((n, i) => {
+      const ar = (n.artists || n.ar || []).map(a => a.name).filter(Boolean).join(' / ');
+      const cov = buildCoverUrl((n.album && n.album.picUrl) || (n.al && n.al.picUrl) || '', '80y80');
+      return '<div class="bv-song" data-hs="' + i + '"><img src="' + bvEsc(cov) + '" alt="" loading="lazy">' +
+        '<div class="mt"><div class="n">' + bvEsc(n.name || '未知歌曲') + '</div>' +
+        '<div class="a">' + bvEsc(ar) + '</div></div></div>';
+    }).join('');
+
+    const albums = ((al && (al.albums || al.data)) || []).slice(0, 8);
+    const albumHtml = albums.map(a =>
+      '<div class="bv-album"><img src="' + bvEsc(buildCoverUrl(a.picUrl || '', '220y220')) + '" alt="" loading="lazy">' +
+      '<div class="n">' + bvEsc(a.name || '') + '</div>' +
+      '<div class="a">' + bvEsc((a.artist && a.artist.name) || '') + '</div></div>').join('');
+
+    box.innerHTML = '<div class="bv-h1">新发现</div>' +
+      (cards ? '<div class="bv-cards">' + cards + '</div>' : '') +
+      (songHtml ? '<div class="bv-sec"><span class="t">新歌精选</span><span class="m">' + songs.length + ' 首</span></div>' +
+        '<div class="bv-grid">' + songHtml + '</div>' : '') +
+      (albumHtml ? '<div class="bv-sec"><span class="t">本周新发行</span></div>' +
+        '<div class="bv-albums">' + albumHtml + '</div>' : '') +
+      (!cards && !songHtml && !albumHtml ? '<div class="bv-hint">暂时没有内容</div>' : '');
+    bvState.homeLoaded = true;
+  } catch (e) {
+    box.innerHTML = '<div class="bv-h1">新发现</div><div class="bv-hint">加载失败：' + bvEsc(e.message || e) + '</div>';
+  }
+}
+
+/* ==================== 私人 FM（带模式） ==================== */
+let bvFmMode = 'DEFAULT';
+async function bvFmPlay(mode, submode) {
+  const params = { mode: mode || 'DEFAULT' };
+  if (params.mode === 'SCENE_RCMD') params.submode = submode || 'RELAX';
+  bvFmMode = params.mode;
+  try {
+    const d = await requestAPI('/personal/fm/mode', params);
+    let arr = ((d && (d.data || d.result)) || []).map(bvNormSong);
+    if (!arr.length) {
+      const d2 = await requestAPI('/personal_fm', {}).catch(() => null);
+      arr = ((d2 && (d2.data || d2.result)) || []).map(bvNormSong);
+    }
+    if (!arr.length) { setPlayerStatus('私人 FM 需要登录后使用'); return; }
+    playlist = arr.map(s => Object.assign({}, s));
+    currentPlayIndex = 0;
+    const n = arr[0];
+    const ar = (n.ar || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+    playSong({ id: n.id, name: n.name, artist: ar, cover: n._cover });
+    const names = { DEFAULT: '默认', FAMILIAR: '熟悉', EXPLORE: '探索', SCENE_RCMD: '场景', PUZZLE_MODE_RCMD: '拼图' };
+    setPlayerStatus('私人 FM · ' + (names[params.mode] || params.mode) + '模式');
+  } catch (e) {
+    setPlayerStatus('私人 FM 加载失败：' + (e.message || e));
+  }
+}
+/* ==================== 首页五个功能入口 ==================== */
+function bvShowList(title, songs, sub) {
+  document.body.classList.remove('bv-home-on');
+  bvSetMain(title, sub || ((songs || []).length + ' 首'));
+  bvRenderSongs(songs || []);
+}
+function bvNormSong(s) {
+  const n = s.song || s;
+  return Object.assign({}, n, {
+    ar: n.artists || n.ar,
+    _cover: buildCoverUrl((n.album && n.album.picUrl) || (n.al && n.al.picUrl) || '', '120y120'),
+  });
+}
+const BV_FUNCS = [
+  { key: 'daily',   name: '每日推荐' },
+  { key: 'fm',      name: '私人 FM' },
+  { key: 'heart',   name: '心动模式' },
+  { key: 'roam',    name: '私人漫游' },
+  { key: 'similar', name: '相似歌曲' },
+];
+async function bvRunFunc(key, card) {
+  const sub = card ? card.querySelector('.tip') : null;
+  const setTip = (txt) => { if (sub) sub.textContent = txt; };
+  try {
+    if (key === 'daily') {
+      if (!(currentCookie && currentUser && currentUser.uid)) { setTip('需要登录后才能获取每日推荐'); return; }
+      setTip('正在获取今日推荐…');
+      const d = await requestAPI('/recommend/songs', {});
+      const arr = ((d && (d.data || d.recommend)) || []).map(bvNormSong);
+      if (!arr.length) { setTip('今日推荐为空'); return; }
+      const first = arr[0];
+      setTip('从「' + (first.name || '') + '」听起');
+      bvShowList('每日推荐', arr);
+    } else if (key === 'fm') {
+      setTip('正在接入私人 FM…');
+      const d = await requestAPI('/personal_fm', {});
+      const arr = ((d && (d.data || d.result)) || []).map(bvNormSong);
+      if (!arr.length) { setTip('私人 FM 需要登录后使用'); return; }
+      playlist = arr.map(s => Object.assign({}, s));
+      currentPlayIndex = 0;
+      const n0 = arr[0];
+      const ar0 = (n0.ar || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+      playSong({ id: n0.id, name: n0.name, artist: ar0, cover: n0._cover });
+      setTip('私人 FM：' + arr.length + ' 首，从「' + n0.name + '」开始');
+    } else if (key === 'heart') {
+      if (!(currentCookie && currentUser && currentUser.uid)) { setTip('需要登录后才能使用心动模式'); return; }
+      setTip('正在获取心动推荐…');
+      let songId = currentSong && currentSong.id;
+      let pid = bvState.playlistId;
+      if (!pid) {
+        const d0 = await requestAPI('/personalized/playlist', { limit: 1 });
+        const a0 = (d0 && (d0.result || d0.data)) || [];
+        if (!a0.length) { setTip('暂无可用歌单'); return; }
+        pid = a0[0].id;
+      }
+      if (!songId) {
+        const dd = await requestAPI('/playlist/detail', { id: pid });
+        const pl = (dd && (dd.playlist || (dd.data && dd.data.playlist))) || {};
+        songId = pl.tracks && pl.tracks[0] && pl.tracks[0].id;
+      }
+      if (!songId) { setTip('先播放一首歌再用心动模式'); return; }
+      const d = await requestAPI('/playmode/intelligence/list', { id: songId, pid: pid });
+      const arr = ((d && (d.data || d.result)) || []).map(bvNormSong);
+      if (!arr.length) { setTip('心动模式暂无内容（需登录）'); return; }
+      playlist = arr.map(s => Object.assign({}, s));
+      currentPlayIndex = 0;
+      const n0 = arr[0];
+      const ar0 = (n0.ar || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+      playSong({ id: n0.id, name: n0.name, artist: ar0, cover: n0._cover });
+      setTip('心动模式：' + arr.length + ' 首，从「' + n0.name + '」开始');
+    } else if (key === 'roam') {
+      setTip('正在接入私人 FM…');
+      const _sub = document.getElementById('bvFmSub');
+      bvFmPlay(bvFmMode, _sub ? _sub.value : 'RELAX');
+      return;
+      const d = await requestAPI('/personal_fm', {});
+      const list = ((d && (d.data || d.result)) || []).map(bvNormSong);
+      if (!list.length) { setTip('私人 FM 需要登录后使用'); return; }
+      // 私人 FM 一次返回若干首，多拉两次攒成一个队列
+      let arr = list;
+      try {
+        const more = await requestAPI('/personal_fm', {});
+        arr = arr.concat(((more && (more.data || more.result)) || []).map(bvNormSong));
+      } catch (e) { /* 忽略 */ }
+      const start = Math.floor(Math.random() * arr.length);
+      playlist = arr.map(s => Object.assign({}, s));
+      currentPlayIndex = start;
+      const n = arr[start];
+      const ar = (n.ar || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+      playSong({ id: n.id, name: n.name, artist: ar, cover: n._cover });
+      setTip('正在漫游：' + n.name);
+    } else if (key === 'similar') {
+      if (!currentSong) { setTip('先播放一首歌，再找相似'); return; }
+      setTip('正在找与「' + currentSong.name + '」相似的歌…');
+      const d = await requestAPI('/simi/song', { id: currentSong.id });
+      const arr = ((d && (d.songs || d.data)) || []).map(bvNormSong);
+      setTip(arr.length ? '从「' + currentSong.name + '」出发，' + arr.length + ' 首相似' : '没有找到相似歌曲');
+      if (arr.length) bvShowList('相似歌曲', arr, '基于「' + currentSong.name + '」');
+    }
+  } catch (e) {
+    setTip('加载失败：' + (e.message || e));
+  }
+}
+async function bvLoadHome2() {
+  const box = $('bvHome');
+  if (!box) return;
+  document.body.classList.add('bv-home-on');
+  if (typeof bvHideSettings === 'function') bvHideSettings();
+  if (bvState.homeLoaded2) return;
+  box.innerHTML = '<div class="bv-h1">主页</div><div class="bv-hint">加载中…</div>';
+  try {
+    const [pl, ns, al, subAl, rc, rec] = await Promise.all([
+      requestAPI('/personalized/playlist', { limit: 5 }).catch(() => null),
+      requestAPI('/personalized/newsong', { limit: 12 }).catch(() => null),
+      requestAPI('/album/newest', {}).catch(() => null),
+      requestAPI('/album/sublist', { limit: 12 }).catch(() => null),
+      requestAPI('/recommend/resource', {}).catch(() => null),
+      (currentUser && currentUser.uid ? requestAPI('/user/record', { uid: currentUser.uid, type: 1 }).catch(() => null) : null),
+    ]);
+    const plays = (pl && (pl.result || pl.data)) || [];
+    const LAB = ['推荐', '由你制作', '最新发行', '专属推荐', '专属心偏好歌'];
+    const tiles = plays.slice(0, 5).map((p, i) =>
+      '<div class="bv-tile" data-list="' + p.id + '">' +
+        '<img src="' + bvEsc(buildCoverUrl(p.picUrl || p.coverImgUrl || '', '600y600')) + '" alt="" loading="lazy">' +
+        '<div class="ov"><div class="lab">' + (LAB[i] || '推荐') + '</div>' +
+        '<div class="ttl">' + bvEsc(p.name) + '</div>' +
+        '<div class="sub">' + bvEsc(p.copywriter || (p.trackCount ? p.trackCount + ' 首' : '')) + '</div></div>' +
+      '</div>').join('');
+
+    const rawSongs = ((ns && (ns.result || ns.data)) || []).slice(0, 12);
+    const songs = rawSongs.map(s => s.song || s);
+    bvState.homeSongs = songs;
+
+    // 最近播放的专辑：从播放记录里按专辑去重
+    const recArr = ((rec && (rec.allData || rec.data || rec.weekData)) || []);
+    const albMap = new Map();
+    recArr.forEach(it => {
+      const s = it.song || it.data || it;
+      const alb = s && (s.album || s.al);
+      if (!alb) return;
+      const key = alb.id || alb.name;
+      if (!key || albMap.has(key)) return;
+      albMap.set(key, {
+        id: alb.id,
+        name: alb.name || '未知专辑',
+        pic: alb.picUrl || '',
+        ar: (alb.artists || alb.ar || []).map(a => a.name).filter(Boolean).join(' / ') ||
+            ((s.artists || s.ar || []).map(a => a.name).join(' / ')) || '',
+      });
+    });
+    const recentAlbums = Array.from(albMap.values()).slice(0, 12);
+    const cells = recentAlbums.map(a =>
+      '<div class="bv-cell" data-album="' + (a.id || '') + '">' +
+        '<img src="' + bvEsc(buildCoverUrl(a.pic, '300y300')) + '" alt="" loading="lazy">' +
+        '<div class="n">' + bvEsc(a.name) + '</div>' +
+        '<div class="a">' + bvEsc(a.ar) + '</div></div>').join('');
+
+    const albums = ((al && (al.albums || al.data)) || []).slice(0, 12);
+    const albumCells = albums.map(a =>
+      '<div class="bv-cell"><img src="' + bvEsc(buildCoverUrl(a.picUrl || '', '300y300')) + '" alt="" loading="lazy">' +
+      '<div class="n">' + bvEsc(a.name || '') + '</div>' +
+      '<div class="a">' + bvEsc((a.artist && a.artist.name) || '') + '</div></div>').join('');
+
+    const covers = plays.map(p => buildCoverUrl(p.picUrl || p.coverImgUrl || '', '300y300'))
+      .concat(songs.map(n => buildCoverUrl((n.album && n.album.picUrl) || (n.al && n.al.picUrl) || '', '300y300')));
+    const frow = BV_FUNCS.map((f, i) =>
+      '<div class="bv-fcard" data-fn="' + f.key + '">' +
+        '<div class="thumb">' +
+          (covers[i] ? '<img src="' + bvEsc(covers[i]) + '" alt="" loading="lazy">' : '') +
+        '</div>' +
+        '<div class="ft"><b>' + f.name + '</b><span class="tip"></span></div>' +
+      '</div>').join('');
+    const rcArr = ((rc && (rc.recommend || rc.result || rc.data)) || []).slice(0, 12);
+    const rcCards = rcArr.map(p =>
+      '<div class="bv-cell" data-list="' + p.id + '">' +
+        '<img src="' + bvEsc(buildCoverUrl(p.picUrl || p.coverImgUrl || '', '300y300')) + '" alt="" loading="lazy">' +
+        '<div class="n">' + bvEsc(p.name) + '</div>' +
+        '<div class="a">' + bvEsc(p.copywriter || ((p.playcount || 0) + ' 次播放')) + '</div></div>').join('');
+
+    const subArr = ((subAl && (subAl.data || subAl.albums)) || []).slice(0, 12);
+    const subCells = subArr.map(a =>
+      '<div class="bv-cell"><img src="' + bvEsc(buildCoverUrl(a.picUrl || '', '300y300')) + '" alt="" loading="lazy">' +
+      '<div class="n">' + bvEsc(a.name || '') + '</div>' +
+      '<div class="a">' + bvEsc(((a.artists && a.artists[0] && a.artists[0].name) || (a.artist && a.artist.name) || '')) + '</div></div>').join('');
+
+    box.innerHTML = '<div class="bv-h1">主页</div>' +
+      '<div class="bv-sec2"><span class="t">推荐</span></div><div class="bv-frow">' + frow + '</div>' +
+            (tiles ? '<div class="bv-sec2"><span class="t">专属精选推荐</span></div><div class="bv-row">' + tiles + '</div>' : '') +
+      (cells ? '<div class="bv-sec2"><span class="t">最近播放的专辑</span><span class="m">' + recentAlbums.length + ' 张</span></div><div class="bv-row">' + cells + '</div>' : '') +
+      (albumCells ? '<div class="bv-sec2"><span class="t">本周新发行</span></div><div class="bv-row">' + albumCells + '</div>' : '') +
+      (rcCards ? '<div class="bv-sec2"><span class="t">每日推荐歌单</span></div><div class="bv-row">' + rcCards + '</div>' : '') +
+      (subCells ? '<div class="bv-sec2"><span class="t">我的收藏专辑</span></div><div class="bv-row">' + subCells + '</div>' : '') +
+      (!tiles && !cells && !albumCells ? '<div class="bv-hint">暂时没有内容</div>' : '');
+    bvState.homeLoaded2 = true;
+  } catch (e) {
+    box.innerHTML = '<div class="bv-h1">主页</div><div class="bv-hint">加载失败：' + bvEsc(e.message || e) + '</div>';
+  }
+}
+function bvWireHome2() {
+  const box = $('bvHome');
+  if (!box || box.dataset.wired2) return;
+  box.dataset.wired2 = '1';
+  box.addEventListener('click', (e) => {
+    const fcard = e.target.closest('.bv-fcard[data-fn]');
+    if (fcard) { bvRunFunc(fcard.dataset.fn, fcard); return; }
+    const cellList = e.target.closest('.bv-cell[data-list]');
+    if (cellList) { bvLoadPlaylist(cellList.dataset.list, cellList.querySelector('.n').textContent); return; }
+    const tile = e.target.closest('.bv-tile[data-list]');
+    if (tile) { bvLoadPlaylist(tile.dataset.list, (tile.querySelector('.ttl') || {}).textContent || '歌单'); return; }
+    const albCell = e.target.closest('.bv-cell[data-album]');
+    if (albCell) {
+      const aid = albCell.dataset.album;
+      if (!aid) return;
+      requestAPI('/album', { id: aid }).then(d => {
+        const al0 = (d && d.album) || (d && d.data && d.data.album) || null;
+        const songs2 = (d && d.songs) || (d && d.data && d.data.songs) || [];
+        if (!songs2.length) return;
+        bvShowList((al0 && al0.name) || '专辑', songs2.map(bvNormSong), (al0 && al0.artist && al0.artist.name) || '');
+      }).catch(() => {});
+      return;
+    }
+    const cell = e.target.closest('.bv-cell[data-hs]');
+    if (cell) {
+      const i = parseInt(cell.dataset.hs, 10);
+      const n = (bvState.homeSongs || [])[i];
+      if (!n) return;
+      const ar = (n.artists || n.ar || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+      const cover = buildCoverUrl((n.album && n.album.picUrl) || (n.al && n.al.picUrl) || '', '300y300');
+      playlist = (bvState.homeSongs || []).map(s => Object.assign({}, s, { ar: s.artists || s.ar }));
+      currentPlayIndex = i;
+      playSong({ id: n.id, name: n.name, artist: ar, cover });
+    }
+  });
+}
+function bvWireHome() {
+  const box = $('bvHome');
+  if (!box || box.dataset.wired) return;
+  box.dataset.wired = '1';
+  box.addEventListener('click', (e) => {
+    const card = e.target.closest('.bv-card[data-list]');
+    if (card) { bvLoadPlaylist(card.dataset.list, card.querySelector('.ttl').textContent); return; }
+    const row = e.target.closest('.bv-song[data-hs]');
+    if (row) {
+      const i = parseInt(row.dataset.hs, 10);
+      const n = (bvState.homeSongs || [])[i];
+      if (!n) return;
+      const ar = (n.artists || n.ar || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
+      const cover = buildCoverUrl((n.album && n.album.picUrl) || (n.al && n.al.picUrl) || '', '300y300');
+      playlist = (bvState.homeSongs || []).map(s => Object.assign({}, s, { ar: s.artists || s.ar }));
+      currentPlayIndex = i;
+      playSong({ id: n.id, name: n.name, artist: ar, cover });
+    }
+  });
+}
 function bvOnNav(kind) {
   bvState.nav = kind;
+  if (kind === 'home') { bvLoadHome2(); bvWireHome2(); return; }
+  document.body.classList.remove('bv-home-on');
+  if (kind === 'settings') { bvShowSettings(); return; }
+  bvHideSettings();
   if (kind === 'liked') bvLoadLiked();
   else if (kind === 'recent') bvLoadRecent();
   else if (kind === 'subscribed') bvLoadPlaylists('subscribed');
@@ -4913,7 +5436,7 @@ function bvInit() {
     bvState.inited = true;
     bvWire();
     bvRenderUser();
-    bvOnNav('liked');
+    bvOnNav('home');
   }
   bvSyncNow();
 }
