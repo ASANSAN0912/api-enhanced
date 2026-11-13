@@ -6770,7 +6770,15 @@ function dvLoadAlbumSongs(id, row) {
   if (!box || box.dataset.loaded) return;
   box.dataset.loaded = '1';
   requestAPI('/album', { id: id }).then(d => {
-    const songs = ((d && d.songs) || []).map(bvNormSong);
+    const albumArtist = (d && d.album && d.album.artist && (d.album.artist.name || d.album.artist)) || '';
+    const songs = ((d && d.songs) || []).map(raw => {
+      const x = bvNormSong(raw);
+      if ((!x.ar || !x.ar.length) && albumArtist) x.ar = [{ name: albumArtist }];
+      x.artists = x.ar;                       // 兼容两种读法
+      if (!x.al || !x.al.picUrl) x.al = (d && d.album) || x.al || {};
+      if (!x._cover || x._cover.indexOf('?') === 0) x._cover = buildCoverUrl((x.al && x.al.picUrl) || '', '120y120');
+      return x;
+    });
     if (!songs.length) {
       box.innerHTML = '<div class="bv-hint" style="padding:6px 4px;color:#8fa1b8">没有歌曲</div>';
       return;
