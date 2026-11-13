@@ -1292,6 +1292,21 @@
   #dvWall{ pointer-events:auto; }
   #dvWall.show{ display:flex !important; }
 
+  /* 右侧「我的收藏专辑」折叠分组 */
+  .dv-alb-group{ border-bottom:1px solid #eef2f8; }
+  .dv-alb-group-hd{
+    display:flex; align-items:center; gap:8px; padding:10px 12px;
+    cursor:pointer; font-size:12.5px; font-weight:600; color:#1d2836;
+    user-select:none;
+  }
+  .dv-alb-group-hd:hover{ background:#f6f9ff; }
+  .dv-alb-group-hd .nm{ flex:1; }
+  .dv-alb-group-hd .caret{ transition:transform .22s ease; color:#8fa1b8; font-size:13px; }
+  .dv-alb-group.open .dv-alb-group-hd{ color:#1d5fd0; background:#eef5ff; }
+  .dv-alb-group.open .dv-alb-group-hd .caret{ transform:rotate(90deg); }
+  .dv-alb-group-body{ display:none; max-height:calc(100vh - 260px); overflow-y:auto; }
+  .dv-alb-group.open .dv-alb-group-body{ display:block; }
+
   /* 专辑墙在左侧舞台；右侧面板是专辑名称列表 */
   #discView .dv-stage #dvWall{
     position:absolute !important; inset:0 !important;
@@ -1701,7 +1716,6 @@
       <span>滚轮 / ↑↓ 切换</span>
       <span>·</span>
       <span>点击或回车选中播放</span>
-      <button id="dvWallBtn" type="button" title="专辑墙">专辑墙</button>
     <button id="dvModeBtn" type="button" title="切换光盘 / 专辑盒">切换成专辑盒</button>
       <span>Esc 返回</span>
     </div>
@@ -1720,6 +1734,14 @@
       <h3>我的歌单</h3>
       <div class="sub" id="dvSub">自动同步你的全部歌单</div>
       <button class="btn-mini" id="dvRefresh" type="button">刷新歌单</button>
+    </div>
+
+    <div class="dv-alb-group">
+      <div class="dv-alb-group-hd" id="dvAlbToggle">
+        <span class="nm">我的收藏专辑</span>
+        <span class="caret">›</span>
+      </div>
+      <div class="dv-alb-group-body" id="dvAlbBody"></div>
     </div>
 
     <div class="dv-scroll" id="dvGroups"></div>
@@ -6718,7 +6740,7 @@ window.addEventListener('resize', function () {
 const DV_ALB_SONGS = {};
 
 function dvBuildAlbumList(albums) {
-  const box = $('dvGroups');
+  const box = $('dvAlbBody');
   if (!box) return;
   box.innerHTML = albums.map((a, i) => {
     const id = a.id || '';
@@ -6769,7 +6791,7 @@ function dvLoadAlbumSongs(id, row) {
 }
 
 function dvFocusAlbum(id) {
-  const box = $('dvGroups');
+  const box = $('dvAlbBody');
   if (!box || !id) return;
   const row = box.querySelector('.dv-alb[data-aid="' + id + '"]');
   if (!row) return;
@@ -6787,6 +6809,8 @@ function dvFocusAlbum(id) {
 function dvCloseWall() {
   const wrap = $('dvWall');
   if (wrap) wrap.classList.remove('show');
+  const grp = document.querySelector('.dv-alb-group');
+  if (grp) grp.classList.remove('open');
   const dv = $('discView');
   if (dv) dv.classList.remove('wall-mode');
   dvWallRestore();
@@ -6797,6 +6821,17 @@ function dvCloseWall() {
 function dvWireWall() {
   const btn = $('dvWallBtn'), close = $('dvWallClose'), grid = $('dvWallGrid');
   if (btn) btn.addEventListener('click', dvLoadWall);
+  // 右侧面板「我的收藏专辑」折叠分组
+  const toggle = $('dvAlbToggle');
+  const group = toggle ? toggle.parentElement : null;
+  if (toggle && !toggle.dataset.wired) {
+    toggle.dataset.wired = '1';
+    toggle.addEventListener('click', () => {
+      const open = group.classList.toggle('open');
+      if (open) dvLoadWall();
+      else dvCloseWall();
+    });
+  }
   dvWireWallClick();
   dvWireWallPan();
   dvWireWallHover();
