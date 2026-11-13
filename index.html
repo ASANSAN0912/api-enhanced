@@ -6789,11 +6789,14 @@ function dvLoadAlbumSongs(id, row) {
     box.querySelectorAll('.dv-alb-song').forEach(el => {
       el.addEventListener('click', () => {
         const sid = el.dataset.sid;
-        const song = songs.find(x => String(x.id) === String(sid));
-        if (song) {
-          const artistStr = (song.ar || song.artists || []).map(a => a.name).filter(Boolean).join(' / ') || '未知歌手';
-          playSong({ id: song.id, name: song.name, artist: artistStr, cover: song._cover || (song.al && song.al.picUrl) || '' });
-        }
+        const idx = songs.findIndex(x => String(x.id) === String(sid));
+        if (idx < 0) return;
+        // 把整张专辑设为播放队列，点哪首就从哪首开始，后续自动续播
+        playlist = songs.map(s => ({
+          id: s.id, name: s.name, ar: s.ar || s.artists || [],
+          artists: s.ar || s.artists || [], al: s.al || {}, _cover: s._cover || ''
+        }));
+        playSongAt(idx);
       });
     });
   }).catch(() => {
