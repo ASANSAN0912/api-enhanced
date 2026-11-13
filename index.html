@@ -5049,7 +5049,7 @@ async function bvLoadHome() {
       requestAPI('/personalized/playlist', { limit: 3 }).catch(() => null),
       requestAPI('/personalized/newsong', { limit: 8 }).catch(() => null),
       requestAPI('/album/newest', {}).catch(() => null),
-      requestAPI('/album/sublist', { limit: 12 }).catch(() => null),
+      requestAPI('/album/sublist', { limit: 25, offset: 0 }).catch(() => null),
       requestAPI('/recommend/resource', {}).catch(() => requestAPI('/top/playlist', { order: 'new', limit: 12 }).catch(() => null)),
       (currentUser && currentUser.uid ? requestAPI('/user/record', { uid: currentUser.uid, type: 1 }).catch(() => null) : null),
     ]);
@@ -5266,7 +5266,7 @@ async function bvLoadHome2() {
       requestAPI('/personalized/playlist', { limit: 5 }).catch(() => requestAPI('/top/playlist', { order: 'hot', limit: 5 }).catch(() => null)),
       requestAPI('/personalized/newsong', { limit: 12 }).catch(() => null),
       requestAPI('/album/newest', {}).catch(() => null),
-      requestAPI('/album/sublist', { limit: 12 }).catch(() => null),
+      requestAPI('/album/sublist', { limit: 25, offset: 0 }).catch(() => null),
       requestAPI('/recommend/resource', {}).catch(() => requestAPI('/top/playlist', { order: 'new', limit: 12 }).catch(() => null)),
       (currentUser && currentUser.uid ? requestAPI('/user/record', { uid: currentUser.uid, type: 1 }).catch(() => null) : null),
     ]);
