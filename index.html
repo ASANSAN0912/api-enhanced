@@ -5141,7 +5141,7 @@ function bvArr(d) {
   return [];
 }
 function bvNormSong(s) {
-  const n = (s && (s.song || s.data)) || s || {};
+  const n = (s && (s.songInfo || s.song || s.data || s.track)) || s || {};
   const alb = n.album || n.al || {};
   let ar = n.artists || n.ar;
   if (!ar && n.artist) ar = [{ name: n.artist }];
