@@ -4206,6 +4206,11 @@ audio.addEventListener('pause', () => {
     else if (e.clientY < h - 140) hideSoon();
   }, { passive: true });
   window.addEventListener('blur', () => bar.classList.remove('show'));
+  // 页面加载后先亮 2.4 秒，让人确认控制栏确实存在（之后仍按鼠标位置自动显隐）
+  setTimeout(() => {
+    bar.classList.add('show');
+    setTimeout(() => bar.classList.remove('show'), 2400);
+  }, 700);
   // 点一下底部也能唤出（触屏/触控板轻点）
   window.addEventListener('mousedown', (e) => {
     const h = window.innerHeight || 800;
