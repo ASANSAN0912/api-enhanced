@@ -1261,6 +1261,62 @@
   .dv-wt:nth-child(7n+3){ grid-column:span 2; grid-row:span 2; }
   .dv-wt:nth-child(11n+5){ grid-row:span 2; }
   .dv-wt:nth-child(13n+2){ grid-column:span 2; }
+
+  /* ==================== 专辑墙（随机瀑布流） ==================== */
+  #dvWall{ background:#ffffff !important; }
+  #dvWall .dv-wall-grid{
+    position:relative; padding:0; margin:0;
+    width:100%; height:100%; overflow:hidden;
+  }
+  .dv-wt{
+    position:absolute; left:0; top:0;
+    overflow:hidden; background:#1b2029; cursor:pointer;
+    transition:filter .42s cubic-bezier(.22,1,.36,1),
+               opacity .42s cubic-bezier(.22,1,.36,1),
+               transform .34s cubic-bezier(.22,1,.36,1),
+               box-shadow .34s ease;
+    will-change:transform;
+  }
+  .dv-wt img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .dv-wt span{
+    position:absolute; left:0; right:0; bottom:0; padding:14px 6px 5px;
+    font-size:10px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    background:linear-gradient(to top, rgba(0,0,0,.78), transparent); opacity:0;
+    transition:opacity .2s ease;
+  }
+  .dv-wt:hover span{ opacity:1; }
+
+  /* 专辑墙按钮必须可点（.dv-hint 整条是 pointer-events:none） */
+  #dvWallBtn{ pointer-events:auto !important; }
+  #dvWallClose{ pointer-events:auto !important; }
+  #dvWall{ pointer-events:auto; }
+  #dvWall.show{ display:flex !important; }
+
+  /* 专辑墙在左侧舞台；右侧面板是专辑名称列表 */
+  #discView .dv-stage #dvWall{
+    position:absolute !important; inset:0 !important;
+    z-index:6; margin:0; display:none;
+  }
+  #discView .dv-stage #dvWall.show{ display:flex !important; }
+  #discView.wall-mode .dv-stage #dvSlots,
+  #discView.wall-mode .dv-stage #dvInfo{ visibility:hidden; }
+  /* 右侧专辑列表 */
+  .dv-alb{ border-bottom:1px solid #eef2f8; }
+  .dv-alb-hd{
+    display:flex; align-items:center; gap:8px; padding:9px 10px;
+    cursor:pointer; font-size:12.5px; color:#1d2836;
+  }
+  .dv-alb-hd:hover{ background:#f4f8ff; }
+  .dv-alb-hd.on{ background:#eaf2ff; color:#1d5fd0; font-weight:600; }
+  .dv-alb-hd .nm{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dv-alb-hd .ar{ font-size:10.5px; color:#8fa1b8; flex:0 0 auto; }
+  .dv-alb-songs{ display:none; padding:2px 10px 8px; }
+  .dv-alb.open .dv-alb-songs{ display:block; }
+  .dv-alb-song{
+    font-size:11.5px; color:#4a5b70; padding:5px 4px; border-radius:6px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;
+  }
+  .dv-alb-song:hover{ background:#f2f7ff; color:#1d5fd0; }
 </style>
 </head>
 <body class="hide-past hide-future">
@@ -1631,15 +1687,11 @@
 </button>
 
 <div id="discView">
-  <div class="dv-wall" id="dvWall">
-    <div class="dv-wall-head">
-      <span class="t">专辑墙</span>
-      <button id="dvWallClose" type="button">关闭</button>
-    </div>
-    <div class="dv-wall-grid" id="dvWallGrid"></div>
-  </div>
   <div class="dv-stage" id="dvStage">
     <div id="dvSlots"></div>
+    <div class="dv-wall" id="dvWall">
+      <div class="dv-wall-grid" id="dvWallGrid"></div>
+    </div>
     <div id="dvInfo">
       <div class="al"></div>
       <div class="nm"></div>
@@ -5596,6 +5648,12 @@ const DV_CFG = {
   outEase: 'cubic-bezier(.22,1,.36,1)',
   inDur: 1.03, inDelay: 520, inScale: 1.02, inRot: -30,
   inStep: 43, inEase: 'cubic-bezier(.22,1,.36,1)', hold: 340,
+  // ---- 专辑墙 ----
+  wallCell: 92, wallGap: 0, wallRadius: 0, wallHover: 1,
+  wallCount: 60, wallBig: 12, wallHuge: 3,
+  wallLift: 1.4, wallDimBright: 1.85, wallDimOpacity: 0.3,
+  wallDimContrast: 0.72, wallDimSat: 0.28,
+  wallWave: 2, wallWaveMax: 1500,
   dur: 0.72,             // 切换动画时长 s
   easing: 'cubic-bezier(.2,.9,.25,1)',
 };
@@ -5748,6 +5806,7 @@ function dvSetList(open) {
   dvRenderSlots(false);
   dvSyncSongHighlight();
 }
+  if (typeof window.dvWallRelay === 'function') window.dvWallRelay();
 
 
 
@@ -6431,11 +6490,13 @@ function dvStep(delta) {
 async function dvLoadWall() {
   const wrap = $('dvWall'), grid = $('dvWallGrid');
   if (!wrap || !grid) return;
+  const dv = $('discView');
+  if (dv) dv.classList.add('wall-mode');
   wrap.classList.add('show');
   // 专辑墙里不提供光盘/专辑盒切换
   const modeBtn2 = $('dvModeBtn');
   if (modeBtn2) modeBtn2.style.display = 'none';
-  if (grid.dataset.loaded) return;
+  if (grid.dataset.loaded) { setTimeout(dvWallLayout, 60); setTimeout(dvWallLayout, 340); return; }
   grid.innerHTML = '<div class="bv-hint" style="grid-column:1/-1;color:#8ea4c8;padding:20px">加载中…</div>';
   try {
     let albums = [];
@@ -6450,29 +6511,295 @@ async function dvLoadWall() {
       grid.innerHTML = '<div class="bv-hint" style="grid-column:1/-1;color:#8ea4c8;padding:20px">没有可展示的专辑</div>';
       return;
     }
-    grid.innerHTML = albums.map((a, i) => {
+    const need = Math.max(8, Math.min(200, DV_CFG.wallCount || 60));
+    let html = '';
+    for (let i = 0; i < need; i++) {
+      const a = albums[i % albums.length];
       const pic = buildCoverUrl(a.picUrl || a.coverImgUrl || '', '300y300');
-      const nm = a.name || '';
-      const aid = a.id || '';
-      return '<div class="dv-wt" data-album="' + aid + '" data-i="' + i + '">' +
+      html += '<div class="dv-wt" data-album="' + (a.id || '') + '" data-i="' + i + '">' +
         '<img src="' + bvEsc(pic) + '" alt="" loading="lazy">' +
-        '<span>' + bvEsc(nm) + '</span></div>';
-    }).join('');
+        '<span>' + bvEsc(a.name || '') + '</span></div>';
+    }
+    grid.innerHTML = html;
     grid.dataset.loaded = '1';
+    dvWallLayout();
+    dvBuildAlbumList(albums);
     grid.dataset.albums = JSON.stringify(albums.map(a => ({ id: a.id, name: a.name, pic: a.picUrl || a.coverImgUrl || '' })));
   } catch (e) {
     grid.innerHTML = '<div class="bv-hint" style="grid-column:1/-1;color:#ff9a9a;padding:20px">加载失败：' + bvEsc(e.message || e) + '</div>';
   }
 }
+/* ==================== 专辑墙（与实验室一致） ==================== */
+function dvWallLayout() {
+  const wrap = $('dvWall'), grid = $('dvWallGrid');
+  if (!wrap || !grid) return;
+  const tiles = Array.prototype.slice.call(grid.querySelectorAll('.dv-wt'));
+  if (!tiles.length) return;
+  const vw = wrap.clientWidth, vh = wrap.clientHeight;
+  if (!vw || !vh) return;
+
+  const gap = DV_CFG.wallGap || 0;
+  let base = (DV_CFG.wallCell || 92) * (DV_CFG.__wallZoom || 1);
+  const n = tiles.length;
+
+  // 缩到最小：算出一屏能装下的尺寸
+  if ((DV_CFG.__wallZoom || 1) <= 0.46) {
+    const colsFit = Math.max(3, Math.round(Math.sqrt(n * vw / Math.max(1, vh))));
+    let baseFit = (vw - gap * (colsFit - 1)) / colsFit;
+    const rowsFit = Math.ceil(n / colsFit);
+    const totalH = rowsFit * (baseFit + gap);
+    if (totalH > vh) baseFit *= (vh / totalH);
+    base = Math.max(16, baseFit);
+  }
+
+  const cols = Math.max(3, Math.floor((vw + gap) / (base + gap)));
+  const colW = (vw - gap * (cols - 1)) / cols;
+  const heights = new Array(cols).fill(0);
+
+  tiles.forEach(function (el, k) {
+    const r = ((k * 73 + 17) % 100) / 100;
+    let span = r < 0.18 ? 3 : (r < 0.52 ? 2 : 1);
+    if (span > cols) span = cols;
+    let best = 0, bestH = Infinity;
+    for (let c = 0; c + span <= cols; c++) {
+      let h = 0;
+      for (let s = 0; s < span; s++) if (heights[c + s] > h) h = heights[c + s];
+      if (h < bestH) { bestH = h; best = c; }
+    }
+    const sz = colW * span + gap * (span - 1);
+    const x = best * (colW + gap);
+    const y = bestH;
+    el.style.position = 'absolute';
+    el.style.width = sz.toFixed(1) + 'px';
+    el.style.height = sz.toFixed(1) + 'px';
+    el.style.borderRadius = (DV_CFG.wallRadius || 0) + 'px';
+    const baseT = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0)';
+    el.dataset.base = baseT;
+    el.dataset.bx = x.toFixed(1);
+    el.dataset.by = y.toFixed(1);
+    el.dataset.sz = sz.toFixed(1);
+    el.style.transform = baseT;
+    el.style.zIndex = '1';
+    for (let s = 0; s < span; s++) heights[best + s] = y + sz + gap;
+  });
+  grid.style.position = 'relative';
+  grid.style.height = Math.max.apply(null, heights).toFixed(1) + 'px';
+  // 缩放后垂直居中
+  const gh = grid.offsetHeight, gv = wrap.clientHeight;
+  grid.style.top = (gh > gv ? -(gh - gv) / 2 : 0) + 'px';
+}
+
+function dvWallRestore() {
+  const grid = $('dvWallGrid');
+  if (!grid) return;
+  grid.querySelectorAll('.dv-wt').forEach(function (el) {
+    el.classList.remove('lifted');
+    el.style.transform = el.dataset.base || '';
+    el.style.zIndex = '1';
+    el.style.boxShadow = '';
+    el.style.filter = '';
+    el.style.opacity = '';
+    el.style.transitionDelay = '';
+  });
+}
+
+/* 悬停：只轻微放大 + 邻居轻推（与实验室一致） */
+function dvWallHover(el, all) {
+  const grid = $('dvWallGrid');
+  const hover = DV_CFG.wallHover || 1;
+  all.forEach(function (o) {
+    o.classList.remove('hovered');
+    if (!o.classList.contains('lifted')) o.style.transform = o.dataset.base || '';
+  });
+  if (!el) return;
+  el.classList.add('hovered');
+  if (!el.classList.contains('lifted')) {
+    el.style.transform = (el.dataset.base || '') + ' scale(' + hover + ')';
+    el.style.zIndex = '50';
+  }
+  // 邻居轻推
+  const fx = parseFloat(el.dataset.bx) || 0, fy = parseFloat(el.dataset.by) || 0, fs = parseFloat(el.dataset.sz) || 0;
+  const R = 300, MAX = 26;
+  all.forEach(function (o) {
+    if (o === el || o.classList.contains('lifted')) return;
+    const bx = parseFloat(o.dataset.bx) || 0, by = parseFloat(o.dataset.by) || 0, sz = parseFloat(o.dataset.sz) || 0;
+    const ddx = (bx + sz / 2) - (fx + fs / 2), ddy = (by + sz / 2) - (fy + fs / 2);
+    const d = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
+    if (d > R) return;
+    const kk = (1 - d / R) * MAX;
+    o.style.transform = 'translate3d(' + (bx + (ddx / d) * kk).toFixed(1) + 'px,' + (by + (ddy / d) * kk).toFixed(1) + 'px,0)';
+  });
+}
+function dvWireWallPan() {
+  const wrap = $('dvWall'), grid = $('dvWallGrid');
+  if (!wrap || !grid || grid.dataset.panWired) return;
+  grid.dataset.panWired = '1';
+  let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0, dx2 = 0, dy2 = 0;
+
+  wrap.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    const z = (DV_CFG.__wallZoom || 1) * (e.deltaY < 0 ? 1.1 : 1 / 1.1);
+    DV_CFG.__wallZoom = Math.min(3, Math.max(0.45, z));
+    dx2 = 0; dy2 = 0;
+    grid.style.transform = 'translate(0px,0px)';
+    dvWallLayout();
+  }, { passive: false });
+
+  grid.addEventListener('pointerdown', function (e) {
+    dragging = true; sx = e.clientX; sy = e.clientY; ox = dx2; oy = dy2;
+    grid.style.cursor = 'grabbing';
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    const maxX = Math.max(0, grid.offsetWidth - wrap.clientWidth) + 140;
+    const maxY = Math.max(0, grid.offsetHeight - wrap.clientHeight) + 140;
+    dx2 = Math.min(30, Math.max(-maxX - 30, ox + e.clientX - sx));
+    dy2 = Math.min(30, Math.max(-maxY - 30, oy + e.clientY - sy));
+    grid.style.transform = 'translate(' + dx2 + 'px,' + dy2 + 'px)';
+  });
+  window.addEventListener('pointerup', function () {
+    dragging = false; grid.style.cursor = 'grab';
+  });
+  grid.style.cursor = 'grab';
+}
+
+function dvWireWallHover() {
+  const grid = $('dvWallGrid');
+  if (!grid || grid.dataset.hoverWired) return;
+  grid.dataset.hoverWired = '1';
+  grid.addEventListener('mousemove', function (e) {
+    const el = e.target.closest ? e.target.closest('.dv-wt') : null;
+    const all = Array.prototype.slice.call(grid.querySelectorAll('.dv-wt'));
+    dvWallHover(el, all);
+  });
+  grid.addEventListener('mouseleave', function () { dvWallHover(null, []); });
+}
+function dvWireWallClick() {
+  const grid = $('dvWallGrid');
+  if (!grid || grid.dataset.clickWired) return;
+  grid.dataset.clickWired = '1';
+  grid.addEventListener('click', e => {
+    const tile = e.target.closest ? e.target.closest('.dv-wt') : null;
+    if (!tile) return;
+    const wasLifted = tile.classList.contains('lifted');
+    dvWallRestore();
+    if (wasLifted) return;
+    tile.classList.add('lifted');
+    tile.style.transform = (tile.dataset.base || '') + ' scale(' + (DV_CFG.wallLift || 1.4) + ')';
+    tile.style.zIndex = '60';
+    tile.style.boxShadow = '0 18px 45px rgba(0,0,0,.35)';
+    // 周围灰白：按距离做延迟，形成环形扩散
+    const tr = tile.getBoundingClientRect();
+    const cx = tr.left + tr.width / 2, cy = tr.top + tr.height / 2;
+    grid.querySelectorAll('.dv-wt').forEach(el => {
+      if (el === tile) return;
+      const r2 = el.getBoundingClientRect();
+      const d = Math.hypot(r2.left + r2.width / 2 - cx, r2.top + r2.height / 2 - cy);
+      el.style.transitionDelay = Math.min(DV_CFG.wallWaveMax || 1500, Math.round(d * (DV_CFG.wallWave || 2))) + 'ms';
+      el.style.filter = 'grayscale(' + (1 - (DV_CFG.wallDimSat || 0.28)) + ') brightness(' + (DV_CFG.wallDimBright || 1.85) + ') contrast(' + (DV_CFG.wallDimContrast || 0.72) + ')';
+      el.style.opacity = String(DV_CFG.wallDimOpacity || 0.3);
+    });
+  });
+  grid.addEventListener('mouseover', e => {
+    const cur = e.target.closest ? e.target.closest('.dv-wt') : null;
+    const lifted = grid.querySelector('.dv-wt.lifted');
+    if (lifted && cur !== lifted) dvWallRestore();
+  });
+  grid.addEventListener('mouseleave', dvWallRestore);
+}
+/* 专辑墙：随歌单收起、窗口变化重排 */
+window.dvWallRelay = function () {
+  setTimeout(function () { if (typeof dvWallLayout === 'function') dvWallLayout(); }, 320);
+};
+window.addEventListener('resize', function () {
+  if (document.body.classList.contains('disc-mode')) window.dvWallRelay();
+});
+/* ==================== 右侧：专辑名称列表（可展开歌曲） ==================== */
+const DV_ALB_SONGS = {};
+
+function dvBuildAlbumList(albums) {
+  const box = $('dvGroups');
+  if (!box) return;
+  box.innerHTML = albums.map((a, i) => {
+    const id = a.id || '';
+    return '<div class="dv-alb" data-aid="' + id + '">' +
+      '<div class="dv-alb-hd" data-i="' + i + '">' +
+        '<span class="nm">' + bvEsc(a.name || '未知专辑') + '</span>' +
+        '<span class="ar">' + bvEsc((a.artist && (a.artist.name || a.artist)) || '') + '</span>' +
+      '</div>' +
+      '<div class="dv-alb-songs"><div class="bv-hint" style="padding:6px 4px;color:#8fa1b8">展开后加载歌曲…</div></div>' +
+    '</div>';
+  }).join('');
+
+  box.querySelectorAll('.dv-alb-hd').forEach(hd => {
+    hd.addEventListener('click', () => {
+      const row = hd.parentElement;
+      const id = row.dataset.aid;
+      const open = row.classList.toggle('open');
+      hd.classList.toggle('on', open);
+      if (open) dvLoadAlbumSongs(id, row);
+    });
+  });
+}
+
+function dvLoadAlbumSongs(id, row) {
+  if (!id || !row) return;
+  const box = row.querySelector('.dv-alb-songs');
+  if (!box || box.dataset.loaded) return;
+  box.dataset.loaded = '1';
+  requestAPI('/album', { id: id }).then(d => {
+    const songs = ((d && d.songs) || []).map(bvNormSong);
+    if (!songs.length) {
+      box.innerHTML = '<div class="bv-hint" style="padding:6px 4px;color:#8fa1b8">没有歌曲</div>';
+      return;
+    }
+    box.innerHTML = songs.map((s, i) =>
+      '<div class="dv-alb-song" data-sid="' + (s.id || '') + '">' + (i + 1) + '. ' + bvEsc(s.name || '') + '</div>'
+    ).join('');
+    box.querySelectorAll('.dv-alb-song').forEach(el => {
+      el.addEventListener('click', () => {
+        const sid = el.dataset.sid;
+        const song = songs.find(x => String(x.id) === String(sid));
+        if (song) playSong(song);
+      });
+    });
+  }).catch(() => {
+    box.innerHTML = '<div class="bv-hint" style="padding:6px 4px;color:#ff9a9a">加载失败</div>';
+  });
+}
+
+function dvFocusAlbum(id) {
+  const box = $('dvGroups');
+  if (!box || !id) return;
+  const row = box.querySelector('.dv-alb[data-aid="' + id + '"]');
+  if (!row) return;
+  box.querySelectorAll('.dv-alb.open').forEach(r => {
+    if (r !== row) { r.classList.remove('open'); const h = r.querySelector('.dv-alb-hd'); if (h) h.classList.remove('on'); }
+  });
+  row.classList.add('open');
+  const hd = row.querySelector('.dv-alb-hd');
+  if (hd) hd.classList.add('on');
+  dvLoadAlbumSongs(id, row);
+  row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+
 function dvCloseWall() {
   const wrap = $('dvWall');
   if (wrap) wrap.classList.remove('show');
+  const dv = $('discView');
+  if (dv) dv.classList.remove('wall-mode');
+  dvWallRestore();
   const modeBtn2 = $('dvModeBtn');
   if (modeBtn2) modeBtn2.style.display = '';
+  if (typeof dvWallRelay === 'function') dvWallRelay();
 }
 function dvWireWall() {
   const btn = $('dvWallBtn'), close = $('dvWallClose'), grid = $('dvWallGrid');
   if (btn) btn.addEventListener('click', dvLoadWall);
+  dvWireWallClick();
+  dvWireWallPan();
+  dvWireWallHover();
   if (close) close.addEventListener('click', dvCloseWall);
   if (grid && !grid.dataset.wired) {
     grid.dataset.wired = '1';
@@ -6481,16 +6808,7 @@ function dvWireWall() {
       if (!tile) return;
       const id = tile.dataset.album;
       if (!id) return;
-      dvCloseWall();
-      dvClose();
-      requestAPI('/album', { id: id }).then(d => {
-        const al0 = (d && d.album) || null;
-        const songs2 = (d && d.songs) || [];
-        if (!songs2.length) return;
-        setViewMode('big');
-        setTimeout(() => bvShowList((al0 && al0.name) || '专辑', songs2.map(bvNormSong),
-          (al0 && al0.artist && al0.artist.name) || ''), 120);
-      }).catch(() => {});
+      dvFocusAlbum(id);
     });
   }
 }
